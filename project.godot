@@ -18,7 +18,6 @@ config/icon="res://icon.svg"
 [autoload]
 
 SceneSwitcher="*res://Scripts/SceneSwitcher.gd"
-GameConfig="*res://Scripts/game_config.gd"
 SettingsManager="*res://Scripts/settings_manager.gd"
 ResourceCache="*res://Scripts/ResourceCache.gd"
 

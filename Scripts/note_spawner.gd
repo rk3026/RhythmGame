@@ -30,10 +30,8 @@ func start_spawning():
 	
 	var hit_times = get_note_times(notes, resolution, tempo_events)
 	
-	# Get note speed with proper priority: SettingsManager > GameConfig > default
+	# Get note speed from SettingsManager
 	var note_speed = 20.0
-	if is_instance_valid(GameConfig):
-		note_speed = GameConfig.note_speed
 	if is_instance_valid(SettingsManager):
 		note_speed = SettingsManager.note_speed
 	
@@ -51,34 +49,33 @@ func start_spawning():
 		if is_sustain:
 			sustain_length = (notes[i].length / resolution) * (60.0 / get_current_bpm(tempo_events, notes[i].pos))
 		# Deduplicate spawn entries: if an existing spawn has same lane & hit_time within tiny epsilon, skip
-		var dup = false
-		for existing in spawn_data:
-			if existing.lane == lane and abs(existing.hit_time - hit_time) < 0.0005:
-				dup = true
-				# If one is sustain and the other not, prefer sustain (extend existing)
-				if is_sustain and not existing.is_sustain:
-					existing.is_sustain = true
-					existing.sustain_length = sustain_length
-				elif is_sustain and existing.is_sustain and sustain_length > existing.sustain_length:
-					existing.sustain_length = sustain_length
-				break
-		if dup:
-			continue
-		# Store spawn_time RELATIVE to song start (timeline uses relative time)
-		spawn_data.append({spawn_time = spawn_time, lane = lane, hit_time = hit_time, note_type = note_type, is_sustain = is_sustain, sustain_length = sustain_length, travel_time = travel_time})
+		add_spawn_entry(spawn_time, lane, hit_time, note_type, is_sustain, sustain_length, travel_time)
 	
 	spawn_data.sort_custom(func(a, b): return a.spawn_time < b.spawn_time)
 	spawning_started = true
 
+func add_spawn_entry(spawn_time: float, lane: int, hit_time: float, note_type: NoteType.Type, is_sustain: bool, sustain_length: float, travel_time: float):
+	for existing in spawn_data:
+		if existing.lane == lane and abs(existing.hit_time - hit_time) < 0.0005:
+			# Merge sustains
+			if is_sustain and not existing.is_sustain:
+				existing.is_sustain = true
+				existing.sustain_length = sustain_length
+			elif is_sustain and existing.is_sustain and sustain_length > existing.sustain_length:
+				existing.sustain_length = sustain_length
+			return  # Don't add new
+	# Add new
+	spawn_data.append({spawn_time = spawn_time, lane = lane, hit_time = hit_time, note_type = note_type, is_sustain = is_sustain, sustain_length = sustain_length, travel_time = travel_time})
+
 func get_note_type(note: Dictionary) -> int:
 	if note.fret == 5:  # Open notes (fret 7 already converted to 5 by parser)
-		return 3  # OPEN
+		return NoteType.Type.OPEN
 	elif note.is_tap:
-		return 2  # TAP
+		return NoteType.Type.TAP
 	elif note.is_hopo:
-		return 1  # HOPO
+		return NoteType.Type.HOPO
 	else:
-		return 0  # REGULAR
+		return NoteType.Type.REGULAR
 
 func get_note_times(notes: Array, resolution: int, tempo_events: Array) -> Array:
 	var times = []
@@ -130,14 +127,11 @@ func spawn_note_for_lane(lane_index: int, hit_time: float, note_type: int, is_su
 	var lane_x = lanes[lane_index]
 	note.position = Vector3(lane_x, 0, initial_z)
 	
-	# Get note speed with proper priority: SettingsManager > GameConfig > default
+	# Get note speed from SettingsManager
 	var note_speed = 20.0
-	if is_instance_valid(GameConfig):
-		note_speed = GameConfig.note_speed
 	if is_instance_valid(SettingsManager):
 		note_speed = SettingsManager.note_speed
 
-	note.speed = note_speed
 	# Keep the conceptual spawn time aligned with schedule (used only for animations / diagnostics)
 	if relative_spawn_time >= 0.0:
 		note.spawn_time = relative_spawn_time
@@ -244,11 +238,8 @@ func _command_spawn_note(lane_index: int, hit_time: float, note_type: int, is_su
 	var lane_x = lanes[lane_index]
 	note.position = Vector3(lane_x, 0, initial_z)
 	var note_speed = 20.0
-	if is_instance_valid(GameConfig):
-		note_speed = GameConfig.note_speed
 	if is_instance_valid(SettingsManager):
 		note_speed = SettingsManager.note_speed
-	note.speed = note_speed
 	# Keep spawn_time in RELATIVE song time (used by reposition logic)
 	note.spawn_time = relative_spawn_time
 	note.expected_hit_time = hit_time

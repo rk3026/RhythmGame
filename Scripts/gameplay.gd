@@ -24,8 +24,6 @@ var settings_manager
 var animation_director: Node = null
 var chart_offset: float = 0.0
 
-@onready var config = load("res://Scripts/game_config.gd").new()
-
 func find_audio_file(folder_path: String) -> String:
 	var dir = DirAccess.open(folder_path)
 	if not dir:
@@ -133,9 +131,6 @@ func _ready():
 	
 	# Apply user settings (note speed and custom keys) after configuring components
 	if settings_manager:
-		# Apply custom note speed if available
-		if is_instance_valid(GameConfig):
-			GameConfig.note_speed = settings_manager.note_speed
 		# Re-configure input handler with custom keys
 		input_handler.setup_lane_keys(num_lanes)
 	
@@ -339,13 +334,13 @@ func _on_note_hit(note, grade: int):
 		current_tween.kill()
 	label.modulate.a = 1
 	var grade_str = ""
-	if grade == GameConfig.HitGrade.PERFECT:
+	if grade == SettingsManager.HitGrade.PERFECT:
 		grade_str = "Perfect"
 		label.modulate = Color.GREEN
-	elif grade == GameConfig.HitGrade.GREAT:
+	elif grade == SettingsManager.HitGrade.GREAT:
 		grade_str = "Great"
 		label.modulate = Color.YELLOW
-	elif grade == GameConfig.HitGrade.GOOD:
+	elif grade == SettingsManager.HitGrade.GOOD:
 		grade_str = "Good"
 		label.modulate = Color.ORANGE
 	else:
@@ -388,7 +383,7 @@ func _on_note_miss(_note):
 		score_manager.add_miss()
 	if animation_director:
 		# Use BAD grade constant for consistent size difference
-		animation_director.animate_judgement_label(label, GameConfig.HitGrade.BAD)
+		animation_director.animate_judgement_label(label, SettingsManager.HitGrade.BAD)
 	# Fade out
 	current_tween = create_tween()
 	current_tween.tween_property(label, "modulate:a", 0, 1.0)

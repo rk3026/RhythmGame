@@ -29,9 +29,9 @@ func create_hit_zones():
 		var zone = MeshInstance3D.new()
 		zone.name = "HitZone" + str(i)
 		zone.mesh = QuadMesh.new()
-		zone.mesh.size = Vector2(zone_width, GameConfig.zone_height)
+		zone.mesh.size = Vector2(zone_width, SettingsManager.zone_height)
 		var material = StandardMaterial3D.new()
-		material.albedo_color = GameConfig.lane_colors[i % GameConfig.lane_colors.size()]
+		material.albedo_color = SettingsManager.lane_colors[i % SettingsManager.lane_colors.size()]
 		zone.material_override = material
 		original_materials.append(material.duplicate())
 		zone.position = Vector3(lanes[i], 0.01, 0)
@@ -49,7 +49,7 @@ func create_lane_lines():
 		line.mesh = BoxMesh.new()
 		line.mesh.size = Vector3(0.1, 0.1, mesh.size.y)
 		var material = StandardMaterial3D.new()
-		material.albedo_color = GameConfig.line_color
+		material.albedo_color = SettingsManager.line_color
 		line.material_override = material
 		line.position = Vector3(x, 0.05, -10)
 		get_parent().add_child(line)

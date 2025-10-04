@@ -1,9 +1,18 @@
 extends Node
 
-# Singleton (autoload) recommended. Manages persistent user settings (keybinds, note speed, volumes, etc.)
-# Stores settings in user://settings.cfg with validation
+# Singleton (autoload). Manages all game settings including persistent user settings and gameplay constants
+# Stores user settings in user://settings.cfg with validation
 
 const CONFIG_PATH := "user://settings.cfg"
+
+# Hit grade enum (formerly in GameConfig)
+enum HitGrade {
+	PERFECT,
+	GREAT,
+	GOOD,
+	BAD,
+	MISS
+}
 
 # Setting constraints for validation
 const MIN_NOTE_SPEED := 5.0
@@ -13,11 +22,21 @@ const MAX_VOLUME := 1.0
 const MIN_TIMING_OFFSET := -500.0
 const MAX_TIMING_OFFSET := 500.0
 
+# User settings (persistent)
 var lane_keys: Array = [] # current runtime keycodes for lanes
 var default_lane_keys: Array = [KEY_D, KEY_F, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON]
 var note_speed: float = 20.0
 var master_volume: float = 1.0
 var timing_offset: float = 0.0
+
+# Gameplay constants (formerly in GameConfig)
+var lane_colors: Array[Color] = [Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.ORANGE, Color.PURPLE]
+var spawn_interval: float = 2.0
+var zone_height: float = 0.5
+var line_color: Color = Color.BLACK
+var perfect_window: float = 0.025
+var great_window: float = 0.05
+var good_window: float = 0.1
 
 func _ready():
 	load_settings()

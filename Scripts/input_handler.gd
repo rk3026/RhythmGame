@@ -8,9 +8,9 @@ var num_lanes: int
 var lanes: Array = []
 var gameplay: Node
 var song_start_time: float
-var key_states: Array = []  # Track which keys are currently pressed
-var processed_frame_id: int = -1  # Avoid double processing within same frame
-var key_changed_this_frame: bool = false  # Track if any key state changed
+var key_states: Array[bool] = []
+var processed_frame_id: int = -1
+var key_changed_this_frame: bool = false
 
 func _ready():
 	# Defer lane/key initialization until gameplay passes proper lane data.
@@ -32,13 +32,10 @@ func setup_lane_keys(lanes_count: int):
 	# Fallback default keys if SettingsManager singleton not available yet
 	var default_keys = [KEY_D, KEY_F, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON]
 	
-	# Try to use SettingsManager first (user's custom keys), then GameConfig, then defaults
+	# Try to use SettingsManager first (user's custom keys), then defaults
 	if is_instance_valid(SettingsManager):
 		lane_keys = SettingsManager.lane_keys.slice(0, lanes_count)
 		print("Using SettingsManager keys: ", lane_keys)
-	elif is_instance_valid(GameConfig) and GameConfig.has_method("get"):
-		lane_keys = GameConfig.lane_keys.slice(0, lanes_count)
-		print("Using GameConfig keys: ", lane_keys)
 	else:
 		lane_keys = default_keys.slice(0, lanes_count)
 		print("Warning: No settings available, using default keys: ", lane_keys)
@@ -101,15 +98,15 @@ func check_hit(lane_index: int):
 	var hit_grade_good = 2
 	var hit_grade_bad = 3
 	
-	# Use GameConfig if available
-	if is_instance_valid(GameConfig):
-		perfect_window = GameConfig.perfect_window
-		great_window = GameConfig.great_window
-		good_window = GameConfig.good_window
-		hit_grade_perfect = GameConfig.HitGrade.PERFECT
-		hit_grade_great = GameConfig.HitGrade.GREAT
-		hit_grade_good = GameConfig.HitGrade.GOOD
-		hit_grade_bad = GameConfig.HitGrade.BAD
+	# Use SettingsManager if available
+	if is_instance_valid(SettingsManager):
+		perfect_window = SettingsManager.perfect_window
+		great_window = SettingsManager.great_window
+		good_window = SettingsManager.good_window
+		hit_grade_perfect = SettingsManager.HitGrade.PERFECT
+		hit_grade_great = SettingsManager.HitGrade.GREAT
+		hit_grade_good = SettingsManager.HitGrade.GOOD
+		hit_grade_bad = SettingsManager.HitGrade.BAD
 	
 	# Collect candidate notes in this lane within the largest timing window
 	var lane_x = lanes[lane_index]

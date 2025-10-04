@@ -2,11 +2,11 @@ extends ICommand
 class_name HitNoteCommand
 
 var grade: int
-var note_type: int
+var note_type: NoteType.Type
 var prev_combo: int
 var score_delta: int = 0
 
-func _init(p_time: float, p_grade: int, p_note_type: int, p_prev_combo: int):
+func _init(p_time: float, p_grade: int, p_note_type: NoteType.Type, p_prev_combo: int):
 	scheduled_time = p_time
 	grade = p_grade
 	note_type = p_note_type

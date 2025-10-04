@@ -2,7 +2,6 @@ extends MeshInstance3D
 
 signal note_finished(note_tail)
 
-@export var speed: float = 10.0
 var sustain_length: float = 0.0  # in seconds
 var fret: int = 0
 var note_type: int = 0  # NoteType enum from note.gd
@@ -31,10 +30,10 @@ func update_visuals():
 		material_override = mat
 
 		# Slight vertical lift to avoid coplanar z-fight with board surface
-		var tail_z = - (sustain_length * speed) / 2
+		var tail_z = - (sustain_length * SettingsManager.note_speed) / 2
 		position = Vector3(0, 0, tail_z)
 		rotation_degrees = Vector3(-90, 0, 0)
-		mesh.size = Vector2(0.1, sustain_length * speed)
+		mesh.size = Vector2(0.1, sustain_length * SettingsManager.note_speed)
 	else:
 		mesh = null
 

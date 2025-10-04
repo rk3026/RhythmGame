@@ -8,21 +8,21 @@ var score = 0
 var max_combo = 0
 var grade_counts := {"perfect":0, "great":0, "good":0, "bad":0, "miss":0}
 
-func add_hit(grade: int, note_type: int = 0):
+func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR):
 	combo += 1
 	if combo > max_combo:
 		max_combo = combo
 	var base_score = 0
-	if grade == GameConfig.HitGrade.PERFECT:
+	if grade == SettingsManager.HitGrade.PERFECT:
 		base_score = 10
 		grade_counts.perfect += 1
-	elif grade == GameConfig.HitGrade.GREAT:
+	elif grade == SettingsManager.HitGrade.GREAT:
 		base_score = 8
 		grade_counts.great += 1
-	elif grade == GameConfig.HitGrade.GOOD:
+	elif grade == SettingsManager.HitGrade.GOOD:
 		base_score = 5
 		grade_counts.good += 1
-	elif grade == GameConfig.HitGrade.BAD:
+	elif grade == SettingsManager.HitGrade.BAD:
 		base_score = 3
 		grade_counts.bad += 1
 	var type_multiplier = get_type_multiplier(note_type)
@@ -30,13 +30,8 @@ func add_hit(grade: int, note_type: int = 0):
 	emit_signal("combo_changed", combo)
 	emit_signal("score_changed", score)
 
-func get_type_multiplier(note_type: int) -> int:
-	match note_type:
-		0: return 1  # REGULAR
-		1: return 2  # HOPO
-		2: return 2  # TAP
-		3: return 1  # OPEN
-		_: return 1
+func get_type_multiplier(note_type: NoteType.Type) -> int:
+	return NoteType.get_multiplier(note_type)
 
 func add_sustain_score(delta: float):
 	var sustain_points = delta * combo
@@ -49,18 +44,18 @@ func add_miss():
 	emit_signal("combo_changed", combo)
 
 # ---------------- Reversible API for command pattern ----------------
-func remove_hit(grade: int, _note_type: int, prev_combo: int, score_delta: int):
+func remove_hit(grade: int, _note_type: NoteType.Type, prev_combo: int, score_delta: int):
 	# Roll back combo & score and decrement grade bucket
 	combo = prev_combo
 	score -= score_delta
 	match grade:
-		GameConfig.HitGrade.PERFECT:
+		SettingsManager.HitGrade.PERFECT:
 			grade_counts.perfect = max(0, grade_counts.perfect - 1)
-		GameConfig.HitGrade.GREAT:
+		SettingsManager.HitGrade.GREAT:
 			grade_counts.great = max(0, grade_counts.great - 1)
-		GameConfig.HitGrade.GOOD:
+		SettingsManager.HitGrade.GOOD:
 			grade_counts.good = max(0, grade_counts.good - 1)
-		GameConfig.HitGrade.BAD:
+		SettingsManager.HitGrade.BAD:
 			grade_counts.bad = max(0, grade_counts.bad - 1)
 	emit_signal("combo_changed", combo)
 	emit_signal("score_changed", score)
