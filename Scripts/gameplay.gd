@@ -16,6 +16,7 @@ var original_materials: Array = []
 @export var chart_path: String
 @export var instrument: String
 
+var preloaded_data: Dictionary = {}
 var current_tween = null
 var audio_player: AudioStreamPlayer
 var song_finished: bool = false
@@ -56,17 +57,37 @@ var parser_factory: ParserFactory
 
 func _ready():
 	parser_factory = load("res://Scripts/Parsers/ParserFactory.gd").new()
-	var parser = parser_factory.create_parser_for_file(chart_path)
-	if not parser:
-		push_error("Failed to create parser for: " + chart_path)
-		return
 	
-	var sections = parser.load_chart(chart_path)
-	var resolution = parser.get_resolution(sections)
-	var offset = parser.get_offset(sections)
-	chart_offset = offset
-	var tempo_events = parser.get_tempo_events(sections)
-	var notes = parser.get_notes(sections, instrument, resolution)
+	var sections
+	var resolution
+	var offset
+	var tempo_events
+	var notes
+	var parser
+	
+	if preloaded_data.is_empty():
+		# Original loading logic
+		parser = parser_factory.create_parser_for_file(chart_path)
+		if not parser:
+			push_error("Failed to create parser for: " + chart_path)
+			return
+		
+		sections = parser.load_chart(chart_path)
+		resolution = parser.get_resolution(sections)
+		offset = parser.get_offset(sections)
+		chart_offset = offset
+		tempo_events = parser.get_tempo_events(sections)
+		notes = parser.get_notes(sections, instrument, resolution)
+	else:
+		# Use preloaded data
+		sections = preloaded_data.sections
+		resolution = preloaded_data.resolution
+		offset = preloaded_data.offset
+		chart_offset = offset
+		tempo_events = preloaded_data.tempo_events
+		notes = preloaded_data.notes
+		parser = preloaded_data.parser
+	
 	var max_type = 0
 	for note in notes:
 		max_type = max(max_type, note.fret)
@@ -127,10 +148,14 @@ func _ready():
 	_on_combo_changed(0)
 	_on_score_changed(0)
 	
-	var music_stream = parser.get_music_stream(sections)
-	if not music_stream:
-		var ini_parser = parser_factory.create_metadata_parser()
-		music_stream = ini_parser.get_music_stream_from_ini(chart_path)
+	var music_stream
+	if preloaded_data.is_empty():
+		music_stream = parser.get_music_stream(sections)
+		if not music_stream:
+			var ini_parser = parser_factory.create_metadata_parser()
+			music_stream = ini_parser.get_music_stream_from_ini(chart_path)
+	else:
+		music_stream = preloaded_data.music_stream
 	
 	var folder = chart_path.get_base_dir()
 	var audio_path = ""

@@ -22,7 +22,7 @@ func get_tempo_events(_sections: Dictionary) -> Array:
 	push_error("get_tempo_events() must be implemented by subclass")
 	return []
 
-func get_notes(_sections: Dictionary, _instrument: String, _resolution: int) -> Array:
+func get_notes(_sections: Dictionary, _instrument: String, _resolution: int, _progress_callback: Callable = Callable()) -> Array:
 	push_error("get_notes() must be implemented by subclass")
 	return []
 

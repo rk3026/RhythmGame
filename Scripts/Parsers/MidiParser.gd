@@ -131,7 +131,7 @@ func get_tempo_events(sections: Dictionary) -> Array:
 	tempo_events.sort_custom(func(a, b): return a.tick < b.tick)
 	return tempo_events
 
-func get_notes(sections: Dictionary, instrument: String, resolution: int) -> Array:
+func get_notes(sections: Dictionary, _instrument: String, _resolution: int, _progress_callback: Callable = Callable()) -> Array:
 	var notes = []
 	var current_time = 0
 	var active_notes = {}  # note -> start_time

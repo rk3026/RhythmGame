@@ -4,7 +4,7 @@ class_name ChartParser
 
 # ChartParser.gd - Parses .chart files for rhythm game
 
-func load_chart(path: String) -> Dictionary:
+func load_chart(path: String, progress_callback: Callable = Callable()) -> Dictionary:
 	# Check cache first
 	var cached = ResourceCache.get_cached_chart(path)
 	if not cached.is_empty():
@@ -26,11 +26,16 @@ func load_chart(path: String) -> Dictionary:
 		push_error("Chart file is empty: " + path)
 		return {}
 	
+	if progress_callback.is_valid():
+		progress_callback.call(10)  # 10% - File loaded
+	
 	var sections = {}
 	var current_section = ""
 	var in_section = false
 	
 	var lines = content.split("\n")
+	var total_lines = lines.size()
+	
 	for line_num in range(lines.size()):
 		var line = lines[line_num].strip_edges()
 		if line.begins_with("[") and line.ends_with("]"):
@@ -49,6 +54,14 @@ func load_chart(path: String) -> Dictionary:
 				push_warning("Found content without section at line " + str(line_num + 1))
 				continue
 			sections[current_section].append(line)
+		
+		# Report progress during parsing
+		if progress_callback.is_valid() and line_num % 1000 == 0:  # Update every 1000 lines
+			var progress = 10 + (line_num * 10.0 / total_lines)  # 10-20% range for parsing
+			progress_callback.call(progress)
+	
+	if progress_callback.is_valid():
+		progress_callback.call(20)  # 20% - Parsing complete
 	
 	if sections.is_empty():
 		push_error("No valid sections found in chart file: " + path)
@@ -109,13 +122,17 @@ func get_tempo_events(sections: Dictionary) -> Array:
 	events.sort_custom(func(a, b): return a.tick < b.tick)
 	return events
 
-func get_notes(sections: Dictionary, instrument: String, resolution: int) -> Array:
+func get_notes(sections: Dictionary, instrument: String, resolution: int, progress_callback: Callable = Callable()) -> Array:
 	var notes = []
 	var specials = {}  # pos -> {hopo_flip: bool, tap_flip: bool}
 	# We'll collect raw notes first, then deduplicate by (pos,fret) to avoid overlapping duplicates
 	
 	if sections.has(instrument):
-		for line in sections[instrument]:
+		var lines = sections[instrument]
+		var total_lines = lines.size()
+		
+		for line_idx in range(lines.size()):
+			var line = lines[line_idx]
 			if " = N " in line:
 				var parts = line.split(" = N ")
 				var pos = int(parts[0])
@@ -136,11 +153,23 @@ func get_notes(sections: Dictionary, instrument: String, resolution: int) -> Arr
 				elif fret == 7:
 					# Open note, treat as fret 5
 					notes.append({pos = pos, fret = 5, length = length})
+			
+			# Report progress during note parsing
+			if progress_callback.is_valid() and line_idx % 500 == 0:  # Update every 500 lines
+				var progress = 25 + (line_idx * 15.0 / total_lines)  # 25-40% range for note parsing
+				progress_callback.call(progress)
+	
+	if progress_callback.is_valid():
+		progress_callback.call(40)  # 40% - Note parsing complete
 	
 	# Sort notes by position
+	if progress_callback.is_valid():
+		progress_callback.call(45)  # 45% - Sorting notes
 	notes.sort_custom(func(a, b): return a.pos < b.pos)
 
 	# Deduplicate any exact (pos,fret) collisions (can happen if chart has duplicated lines or parser invoked twice on same data)
+	if progress_callback.is_valid():
+		progress_callback.call(50)  # 50% - Deduplicating notes
 	var deduped: Array = []
 	var seen = {}
 	for n in notes:
@@ -160,6 +189,8 @@ func get_notes(sections: Dictionary, instrument: String, resolution: int) -> Arr
 	notes = deduped
 	
 	# Determine HOPO and tap
+	if progress_callback.is_valid():
+		progress_callback.call(55)  # 55% - Determining HOPO/tap notes
 	for i in range(notes.size()):
 		var note = notes[i]
 		var pos = note.pos
@@ -178,6 +209,9 @@ func get_notes(sections: Dictionary, instrument: String, resolution: int) -> Arr
 			note.is_hopo = !note.is_hopo
 		
 		note.is_tap = specials.has(pos) and specials[pos].tap_flip
+	
+	if progress_callback.is_valid():
+		progress_callback.call(60)  # 60% - Note processing complete
 	
 	return notes
 

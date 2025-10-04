@@ -328,10 +328,10 @@ func _on_preview(song_info: Dictionary):
 func _on_play(chart_path: String, instrument: String, difficulty: String):
 	if audio_player.playing:
 		audio_player.stop()
-	var gameplay = load("res://Scenes/gameplay.tscn").instantiate()
-	gameplay.chart_path = chart_path
-	gameplay.instrument = difficulty + instrument
-	SceneSwitcher.push_scene_instance(gameplay)
+	var loading_screen = load("res://Scenes/loading_screen.tscn").instantiate()
+	loading_screen.chart_path = chart_path
+	loading_screen.instrument = difficulty + instrument
+	SceneSwitcher.push_scene_instance(loading_screen)
 
 func _on_back_button_pressed():
 	if audio_player.playing:
