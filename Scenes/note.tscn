@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3 uid="uid://dqlmjinr4b3jx"]
+
+[ext_resource type="Script" uid="uid://dc3weyf7a03e1" path="res://Scripts/note.gd" id="1_qrs789"]
+[ext_resource type="Texture2D" uid="uid://i5j8xayi6kjd" path="res://icon.svg" id="2_tuv012"]
+
+[node name="Note" type="Sprite3D"]
+texture = ExtResource("2_tuv012")
+script = ExtResource("1_qrs789")

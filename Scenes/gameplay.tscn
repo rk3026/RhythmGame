@@ -1,0 +1,207 @@
+[gd_scene load_steps=11 format=3 uid="uid://cy8f37l2slbwk"]
+
+[ext_resource type="Script" uid="uid://3arnqosf5atb" path="res://Scripts/gameplay.gd" id="1_abc123"]
+[ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="2_1qnfl"]
+[ext_resource type="Script" uid="uid://4aqk5tx5avw4" path="res://Scripts/pause_handler.gd" id="2_pause_handler"]
+[ext_resource type="Script" uid="uid://d0lnfmt06jefo" path="res://Scripts/input_handler.gd" id="4_input_handler"]
+[ext_resource type="Script" uid="uid://7kxrltvq7psj" path="res://Scripts/ScoreManager.gd" id="5_score_manager"]
+[ext_resource type="Script" uid="uid://ct8l028b31w44" path="res://Scripts/note_spawner.gd" id="6_note_spawner"]
+[ext_resource type="Script" uid="uid://d0prnscc0kmja" path="res://Scripts/NotePool.gd" id="7_note_pool"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_def456"]
+size = Vector2(10, 30)
+orientation = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wbxth"]
+transparency = 1
+albedo_texture = ExtResource("2_1qnfl")
+uv1_scale = Vector3(5, 1, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
+bg_color = Color(0, 0, 0, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+
+[node name="Gameplay" type="Node3D"]
+script = ExtResource("1_abc123")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 10)
+
+[node name="Runway" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+mesh = SubResource("QuadMesh_def456")
+surface_material_override/0 = SubResource("StandardMaterial3D_wbxth")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 2.0
+autostart = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 10, 0)
+
+[node name="PauseHandler" type="Node" parent="."]
+process_mode = 3
+script = ExtResource("2_pause_handler")
+
+[node name="InputHandler" type="Node" parent="."]
+script = ExtResource("4_input_handler")
+
+[node name="ScoreManager" type="Node" parent="."]
+script = ExtResource("5_score_manager")
+
+[node name="NoteSpawner" type="Node" parent="."]
+script = ExtResource("6_note_spawner")
+
+[node name="NotePool" type="Node" parent="NoteSpawner"]
+script = ExtResource("7_note_pool")
+
+[node name="UI" type="CanvasLayer" parent="."]
+process_mode = 3
+
+[node name="JudgementLabel" type="Label" parent="UI"]
+offset_left = 350.0
+offset_top = 200.0
+offset_right = 450.0
+offset_bottom = 264.0
+theme_override_font_sizes/font_size = 64
+horizontal_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="UI"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 110.0
+offset_bottom = 60.0
+theme_override_font_sizes/font_size = 32
+text = "Combo: 0"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="UI"]
+offset_left = 10.0
+offset_top = 50.0
+offset_right = 110.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 32
+text = "Score: 0"
+horizontal_alignment = 1
+
+[node name="DebugTimeline" type="Panel" parent="UI"]
+offset_left = 620.0
+offset_top = 10.0
+offset_right = 940.0
+offset_bottom = 150.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_pause")
+
+[node name="VBox" type="VBoxContainer" parent="UI/DebugTimeline"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 130.0
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="UI/DebugTimeline/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Timeline Debug"
+
+[node name="TimeLabel" type="Label" parent="UI/DebugTimeline/VBox"]
+layout_mode = 2
+text = "Time: 0.000"
+
+[node name="DirectionLabel" type="Label" parent="UI/DebugTimeline/VBox"]
+layout_mode = 2
+text = "Dir: +1"
+
+[node name="ProgressLabel" type="Label" parent="UI/DebugTimeline/VBox"]
+layout_mode = 2
+text = "Exec: 0/0"
+
+[node name="Buttons" type="HBoxContainer" parent="UI/DebugTimeline/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Back2" type="Button" parent="UI/DebugTimeline/VBox/Buttons"]
+layout_mode = 2
+text = "<< -2s"
+
+[node name="Fwd2" type="Button" parent="UI/DebugTimeline/VBox/Buttons"]
+layout_mode = 2
+text = "+2s >>"
+
+[node name="ToggleDir" type="Button" parent="UI/DebugTimeline/VBox/Buttons"]
+layout_mode = 2
+text = "Toggle Dir"
+
+[node name="PauseButton" type="Button" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -80.0
+offset_bottom = 40.0
+grow_horizontal = 0
+text = "Pause"
+
+[node name="PauseMenu" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pause")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/PauseMenu/Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -70.0
+offset_right = 100.0
+offset_bottom = 70.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="UI/PauseMenu/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="UI/PauseMenu/Panel/VBoxContainer"]
+layout_mode = 2
+text = "Resume"
+
+[node name="EndSongButton" type="Button" parent="UI/PauseMenu/Panel/VBoxContainer"]
+layout_mode = 2
+text = "End Song"
+
+[node name="SongSelectButton" type="Button" parent="UI/PauseMenu/Panel/VBoxContainer"]
+layout_mode = 2
+text = "Song Select"
+
+[node name="MainMenuButton" type="Button" parent="UI/PauseMenu/Panel/VBoxContainer"]
+layout_mode = 2
+text = "Main Menu"
