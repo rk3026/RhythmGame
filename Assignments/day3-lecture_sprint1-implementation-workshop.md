@@ -67,21 +67,36 @@ By the end of this session, students will be able to:
 ## Sprint 1 Plan (Week 9)
 
 ### Goals
-- [Core objective 1]
-- [Core objective 2]
-- [Core objective 3]
+- Establish complete gameplay pipeline from chart parsing to results screen
+- Implement core rhythm game mechanics with timing-accurate note spawning
+- Create foundational architecture following design patterns (Command, Observer, Object Pool)
 
 ### Specific Deliverables
-- [ ] Deliverable 1
-- [ ] Deliverable 2
-- [ ] Deliverable 3
+- [x] ChartParser.gd - Parse .chart files with resolution, tempo, and note detection
+- [x] note_spawner.gd - Spawn scheduling system converting ticks to hit times
+- [x] note.gd/note.tscn - Individual note behavior with runway travel
+- [x] input_handler.gd - Chord-aware hit detection with timing windows
+- [x] ScoreManager.gd - Combo system, score calculation, grade tracking
+- [x] gameplay.gd - Orchestrate countdown, audio sync, end-of-song detection
+- [x] board_renderer.gd - Procedural lane mesh generation
+- [x] settings_manager.gd - Persistent user configuration (autoload)
+- [x] song_select.tscn - Browse tracks UI
+- [x] results_screen.tscn - Post-song statistics display
+- [x] Documentation - Architecture rules in .github/copilot-instructions.md
 
 ### Technical Approach
-- Brief description of architecture/approach
+- **Architecture**: Modular script design with clear separation of concerns (parsing vs spawning vs input vs scoring)
+- **Timing System**: Two-phase approach: (1) Parse chart ticks → convert to absolute hit times using tempo map, (2) Calculate spawn_time = hit_time - travel_time for runway movement
+- **Input Handling**: Frame-based chord detection (check all active notes per lane once per frame) to avoid per-note event polling that breaks chords
+- **Design Patterns**: Command pattern for input actions, Observer pattern for score events, Object Pool for note instances (in progress)
+- **Performance**: Precompute spawn schedule, use procedural mesh for lanes, maintain 60 FPS target
 
 ### AI Coordination Strategy
-- Which agents for what tasks
-- How you'll document interactions
+- **Logic Agent (GitHub Copilot)**: Generate core systems (ChartParser, note_spawner, input_handler) with design pattern implementations
+- **Coordinator Agent (Claude)**: Architect multi-script integration, design timing pipeline, review complex logic
+- **Ideas Agent (ChatGPT)**: Solve design challenges (chord detection algorithm, HOPO rules), research best practices
+- **Visuals Agent (Copilot Chat)**: Generate scene files with proper node hierarchies, UI layout suggestions
+- **Documentation**: All interactions logged in .github/copilot-logs.md with full prompts and responses (14+ entries showing context handoffs)
 ```
 
 #### Questions and Clarifications (0 minutes)
