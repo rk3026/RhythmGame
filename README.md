@@ -13,3 +13,5 @@ This project is a 3D rhythm game where players hit moving notes to the beat of s
 - Scoring system with combos
 - Customizable settings (note speed, key bindings)
 - Chart creation system
+- Animations and particle effects
+- Sound effects
