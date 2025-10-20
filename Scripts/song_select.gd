@@ -1,15 +1,25 @@
 extends Control
 
-@onready var song_list_container = $ScrollContainer/VBoxContainer
+@onready var song_list_container = $MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer
+@onready var song_info_panel = $MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer
 @onready var audio_player = $AudioStreamPlayer
-@onready var back_button = $BackButton
+@onready var back_button = $MarginContainer/VBoxContainer/Top/BackButton
 
 var parser_factory: ParserFactory
+var selected_song_info: Dictionary = {}
+var all_songs: Array = []
 
 func _ready():
 	parser_factory = load("res://Scripts/Parsers/ParserFactory.gd").new()
+	# Clear sample items from scene
+	for child in song_list_container.get_children():
+		child.queue_free()
 	scan_songs()
 	back_button.connect("pressed", Callable(self, "_on_back_button_pressed"))
+	
+	# Auto-select first song if available
+	if all_songs.size() > 0:
+		_on_song_selected(all_songs[0])
 
 func scan_songs():
 	var tracks_dir = "res://Assets/Tracks/"
@@ -24,6 +34,7 @@ func scan_songs():
 		if dir.current_is_dir():
 			var song_info = parse_song_info(file_name)
 			if song_info:
+				all_songs.append(song_info)
 				add_song_to_ui(song_info)
 		file_name = dir.get_next()
 	dir.list_dir_end()
@@ -205,101 +216,187 @@ func _scan_midi_instruments(chart_path: String) -> Dictionary:
 	return instruments
 
 func add_song_to_ui(song_info: Dictionary):
-	var panel = PanelContainer.new()
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.15, 1)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.border_color = Color(0.3, 0.3, 0.3, 1)
-	style.content_margin_left = 10
-	style.content_margin_top = 10
-	style.content_margin_right = 10
-	style.content_margin_bottom = 10
-	panel.add_theme_stylebox_override("panel", style)
+	# Create the song button (flat style, 50px height)
+	var song_button = Button.new()
+	song_button.custom_minimum_size = Vector2(0, 50)
+	song_button.flat = true
 	
+	# Create the background panel with semi-transparent style
+	var panel = Panel.new()
+	panel.layout_mode = 1
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Allow clicks to pass through to button
+	
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.7647059, 0.7647059, 0.7647059, 0.2509804)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	song_button.add_child(panel)
+	
+	# Create HBoxContainer for labels
 	var hbox = HBoxContainer.new()
+	hbox.layout_mode = 1
+	hbox.anchor_right = 1.0
+	hbox.anchor_bottom = 1.0
+	hbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	hbox.grow_vertical = Control.GROW_DIRECTION_BOTH
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_theme_constant_override("separation", 20)
+	song_button.add_child(hbox)
 	
-	# Album art
-	var texture_rect = TextureRect.new()
-	if song_info.image_path:
-		texture_rect.texture = load(song_info.image_path)
-	texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	texture_rect.custom_minimum_size = Vector2(100, 100)
-	texture_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hbox.add_child(texture_rect)
+	# Create LabelSettings for consistent styling
+	var label_settings = LabelSettings.new()
+	label_settings.font_size = 22
 	
-	# Song info
-	var info_vbox = VBoxContainer.new()
-	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info_vbox.add_theme_constant_override("separation", 5)
+	# Artist container with fixed width
+	var artist_container = Control.new()
+	artist_container.custom_minimum_size = Vector2(200, 0)
+	artist_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	artist_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_child(artist_container)
 	
-	var title_label = Label.new()
-	title_label.text = song_info.title
-	title_label.add_theme_font_size_override("font_size", 24)
-	info_vbox.add_child(title_label)
+	# Artist label (uppercase, right-aligned, auto-scroll)
+	var artist_label = load("res://Scripts/Components/AutoScrollLabel.gd").new()
+	artist_label.layout_mode = 1
+	artist_label.anchor_right = 1.0
+	artist_label.anchor_bottom = 1.0
+	artist_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	artist_label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	artist_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	artist_label.set_label_settings(label_settings)
+	artist_label.set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT)
+	artist_label.set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER)
+	artist_label.set_text(song_info.artist.to_upper())
+	artist_container.add_child(artist_label)
 	
-	var artist_label = Label.new()
-	artist_label.text = "by " + song_info.artist
-	artist_label.add_theme_font_size_override("font_size", 18)
-	info_vbox.add_child(artist_label)
+	# Song container with fixed width
+	var song_container = Control.new()
+	song_container.custom_minimum_size = Vector2(300, 0)
+	song_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	song_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_child(song_container)
 	
-	var album_label = Label.new()
-	if song_info.album:
-		album_label.text = "Album: " + song_info.album
-		album_label.add_theme_font_size_override("font_size", 14)
-		info_vbox.add_child(album_label)
+	# Song title label (left-aligned, auto-scroll)
+	var song_label = load("res://Scripts/Components/AutoScrollLabel.gd").new()
+	song_label.layout_mode = 1
+	song_label.anchor_right = 1.0
+	song_label.anchor_bottom = 1.0
+	song_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	song_label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	song_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	song_label.set_label_settings(label_settings)
+	song_label.set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER)
+	song_label.set_horizontal_alignment(HORIZONTAL_ALIGNMENT_LEFT)
+	song_label.set_text(song_info.title)
+	song_container.add_child(song_label)
 	
-	var year_genre_label = Label.new()
-	var extra_info = []
-	if song_info.year:
-		extra_info.append(song_info.year)
-	if song_info.genre:
-		extra_info.append(song_info.genre)
-	if song_info.length:
-		extra_info.append(song_info.length)
-	year_genre_label.text = " | ".join(extra_info)
-	if year_genre_label.text:
-		year_genre_label.add_theme_font_size_override("font_size", 14)
-		info_vbox.add_child(year_genre_label)
+	# Score label (placeholder for future high score tracking)
+	var score_label = Label.new()
+	score_label.text = ""  # Will be populated when score tracking is implemented
+	score_label.label_settings = label_settings
+	score_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_child(score_label)
 	
-	var difficulty_label = Label.new()
-	difficulty_label.text = "Charter: " + song_info.charter
-	difficulty_label.add_theme_font_size_override("font_size", 16)
-	info_vbox.add_child(difficulty_label)
+	# Percent label (placeholder for future completion tracking)
+	var percent_label = Label.new()
+	percent_label.text = ""  # Will be populated when completion tracking is implemented
+	percent_label.label_settings = label_settings
+	percent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_child(percent_label)
 	
-	hbox.add_child(info_vbox)
+	# Connect button press to update song info panel
+	song_button.connect("pressed", Callable(self, "_on_song_selected").bind(song_info))
 	
-	# Buttons
-	var buttons_vbox = VBoxContainer.new()
-	buttons_vbox.custom_minimum_size = Vector2(200, 0)
-	buttons_vbox.size_flags_horizontal = Control.SIZE_SHRINK_END
-	buttons_vbox.add_theme_constant_override("separation", 10)
+	song_list_container.add_child(song_button)
+
+func _on_song_selected(song_info: Dictionary):
+	selected_song_info = song_info
 	
-	var preview_button = Button.new()
-	preview_button.text = "Preview"
-	preview_button.connect("pressed", Callable(self, "_on_preview").bind(song_info))
-	buttons_vbox.add_child(preview_button)
+	# Update album art
+	var album_art = song_info_panel.get_node("AlbumArt")
+	if song_info.image_path and FileAccess.file_exists(song_info.image_path):
+		var texture = load(song_info.image_path)
+		if texture:
+			# Replace ColorRect with TextureRect if needed
+			if album_art is ColorRect:
+				var texture_rect = TextureRect.new()
+				texture_rect.name = "AlbumArt"
+				texture_rect.custom_minimum_size = Vector2(250, 250)
+				texture_rect.layout_mode = 2
+				texture_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				texture_rect.texture = texture
+				texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+				texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				
+				var parent = album_art.get_parent()
+				var index = album_art.get_index()
+				parent.remove_child(album_art)
+				album_art.queue_free()
+				parent.add_child(texture_rect)
+				parent.move_child(texture_rect, index)
+			elif album_art is TextureRect:
+				album_art.texture = texture
 	
-	# Add play buttons for each instrument and difficulty
+	# Update song title
+	var song_title = song_info_panel.get_node("SongTitle")
+	song_title.bbcode_enabled = true
+	song_title.clear()
+	song_title.append_text(_convert_color_tags_to_bbcode(song_info.title))
+	
+	# Update artist
+	var artist = song_info_panel.get_node("Artist")
+	artist.bbcode_enabled = true
+	artist.clear()
+	artist.append_text(_convert_color_tags_to_bbcode("Artist: " + song_info.artist))
+	
+	# Update album
+	var album = song_info_panel.get_node("Album")
+	album.bbcode_enabled = true
+	album.clear()
+	album.append_text(_convert_color_tags_to_bbcode("Album: " + (song_info.album if song_info.album else "Unknown")))
+	album.visible = true
+	
+	# Update year
+	var year = song_info_panel.get_node("Year")
+	year.bbcode_enabled = true
+	year.clear()
+	year.append_text(_convert_color_tags_to_bbcode("Year: " + (song_info.year if song_info.year else "Unknown")))
+	year.visible = true
+	
+	# Update genre
+	var genre = song_info_panel.get_node("Genre")
+	genre.bbcode_enabled = true
+	genre.clear()
+	genre.append_text(_convert_color_tags_to_bbcode("Genre: " + (song_info.genre if song_info.genre else "Unknown")))
+	genre.visible = true
+	
+	# Update length
+	var length = song_info_panel.get_node("Length")
+	length.bbcode_enabled = true
+	length.clear()
+	length.append_text(_convert_color_tags_to_bbcode("Length: " + (song_info.length if song_info.length else "Unknown")))
+	length.visible = true
+	
+	# Update charter (convert HTML-style color tags to BBCode)
+	var charter = song_info_panel.get_node("Charter")
+	charter.bbcode_enabled = true
+	charter.clear()
+	charter.append_text(_convert_color_tags_to_bbcode("Charter: " + song_info.charter))
+	
+	# Update difficulty buttons
+	var difficulty_container = $MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer
+	for child in difficulty_container.get_children():
+		child.queue_free()
+	
+	# Add buttons for each instrument and difficulty
 	for instrument in song_info.instruments.keys():
-		var instrument_label = Label.new()
-		instrument_label.text = instrument
-		instrument_label.add_theme_font_size_override("font_size", 16)
-		buttons_vbox.add_child(instrument_label)
-		
 		for difficulty in song_info.instruments[instrument]:
-			var play_button = Button.new()
-			play_button.text = difficulty
-			play_button.connect("pressed", Callable(self, "_on_play").bind(song_info.chart_path, instrument, difficulty))
-			buttons_vbox.add_child(play_button)
-	
-	hbox.add_child(buttons_vbox)
-	
-	panel.add_child(hbox)
-	song_list_container.add_child(panel)
+			var button = Button.new()
+			button.text = difficulty + " " + instrument
+			button.connect("pressed", Callable(self, "_on_play").bind(song_info.chart_path, instrument, difficulty))
+			difficulty_container.add_child(button)
 
 func _on_preview(song_info: Dictionary):
 	if audio_player.playing:
@@ -337,6 +434,29 @@ func _on_back_button_pressed():
 	if audio_player.playing:
 		audio_player.stop()
 	SceneSwitcher.pop_scene()
+
+func _convert_color_tags_to_bbcode(text: String) -> String:
+	# Convert HTML-like <color=#HEX> tags (as found in some song.ini files)
+	# to Godot RichTextLabel BBCode: [color=#HEX]. Also normalize missing '#'.
+	var result := text
+
+	# 1) Convert open tags: <color=#aabbcc> or <color=aabbcc>
+	var re_open := RegEx.new()
+	# Capture any value up to '>' allowing optional '#'
+	re_open.compile("<color=([^>]+)>")
+	result = re_open.sub(result, "[color=$1]", true)
+
+	# 2) Convert close tags: </color>
+	var re_close := RegEx.new()
+	re_close.compile("</color>")
+	result = re_close.sub(result, "[/color]", true)
+
+	# 3) Ensure [color=HEX] has a leading '#'
+	var re_missing_hash := RegEx.new()
+	re_missing_hash.compile("\\[color=([0-9a-fA-F]{3,8})\\]")
+	result = re_missing_hash.sub(result, "[color=#$1]", true)
+
+	return result
 
 func _notification(what):
 	if what == NOTIFICATION_VISIBILITY_CHANGED:

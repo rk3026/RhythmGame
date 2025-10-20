@@ -37,10 +37,16 @@ func get_song_info_from_ini(chart_path: String) -> Dictionary:
 	var ini_path = chart_path.get_base_dir() + "/song.ini"
 	var ini_data = parse_ini_file(ini_path)
 	
-	if not ini_data.has("song"):
+	# Check for both "song" and "Song" (case-insensitive)
+	var song_section = null
+	if ini_data.has("song"):
+		song_section = ini_data["song"]
+	elif ini_data.has("Song"):
+		song_section = ini_data["Song"]
+	
+	if song_section == null:
 		return {}
 	
-	var song_section = ini_data["song"]
 	var info = {}
 	
 	# Basic song information
@@ -82,8 +88,15 @@ func get_music_stream_from_ini(chart_path: String) -> String:
 	var ini_path = chart_path.get_base_dir() + "/song.ini"
 	var ini_data = parse_ini_file(ini_path)
 	
-	if ini_data.has("song") and ini_data["song"].has("MusicStream"):
-		var music_path = ini_data["song"]["MusicStream"]
+	# Check for both "song" and "Song" (case-insensitive)
+	var song_section = null
+	if ini_data.has("song"):
+		song_section = ini_data["song"]
+	elif ini_data.has("Song"):
+		song_section = ini_data["Song"]
+	
+	if song_section != null and song_section.has("MusicStream"):
+		var music_path = song_section["MusicStream"]
 		# Check if it's an absolute path (starts with drive letter like C:\ or D:\)
 		if music_path.length() > 2 and music_path[1] == ":" and music_path[0].is_valid_identifier():
 			print("Warning: Absolute path detected in MusicStream, ignoring: ", music_path)

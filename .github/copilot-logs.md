@@ -1,3 +1,21 @@
+### Prompt
+Can we modify the song select tscn and gdscript to make the labels for the song name and artist automatically scroll for the longer song names and artists to be seen? (See <attachments> above for file contents. You may not need to search or read the file again.)
+### Response
+Added an `AutoScrollLabel` component and updated `Scripts/song_select.gd` to use it for the artist and song title rows in the song list. The component scrolls the text horizontally within its slot when the text is wider than the viewport. Also adjusted the scene `Scenes/song_select.tscn` sample labels to use scrolling overrun behavior for preview. This makes long song names and artists readable.
+---
+### Prompt
+There is an issue with the colors of the charters for the song.ini. For example, in the song.ini for one, there is:
+charter = <color=#a5002c>M</color><color=#ff0038>i</color><color=#f84b61>s</color><color=#f2848d>c</color><color=#f6b6cd>e</color><color=#f6b6cd>l</color><color=#f2848d>l</color><color=#f84b61>a</color><color=#ff0038>n</color><color=#a5002c>y</color>
+
+But when this is put in a richtextlabel, the colors aren't actually displayed. Please fix. (See <attachments> above for file contents. You may not need to search or read the file again.)
+### Response
+Updated `Scripts/song_select.gd` to correctly display colored charter text by:
+- Converting HTML-like `<color=...>` tags from `song.ini` to RichTextLabel BBCode `[color=...]` via `_convert_color_tags_to_bbcode`.
+- Normalizing missing `#` in color values.
+- Switching from `.text = ...` to `clear() + append_text(...)` on RichTextLabel nodes with `bbcode_enabled = true`, ensuring the BBCode is parsed and rendered.
+
+This makes entries like `charter = <color=#a5002c>M</color>...` render with colors in the UI.
+---
 # Godot Rhythm Game
 
 ## Description
