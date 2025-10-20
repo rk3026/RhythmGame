@@ -151,12 +151,12 @@ func spawn_note_for_lane(lane_index: int, hit_time: float, note_type: int, is_su
 	if not note.is_connected("note_finished", Callable(self, "_on_note_finished")):
 		note.connect("note_finished", Callable(self, "_on_note_finished"))
 	# Signals are now connected once in the pool
-	active_notes.append(note)
-	note.update_visuals()
-	# Provide effect pool reference for sustain grinding if available
+	# Provide effect pool reference for sustain grinding BEFORE visuals so tail picks it up
 	var gameplay = get_parent()
 	if gameplay and gameplay.has_node("HitEffectPool"):
 		note.hit_effect_pool = gameplay.get_node("HitEffectPool")
+	active_notes.append(note)
+	note.update_visuals()
 	# Emit spawn event for animation system
 	emit_signal("note_spawned", note)
 
@@ -254,10 +254,11 @@ func _command_spawn_note(lane_index: int, hit_time: float, note_type: int, is_su
 	if not note.is_connected("note_finished", Callable(self, "_on_note_finished")):
 		note.connect("note_finished", Callable(self, "_on_note_finished"))
 	active_notes.append(note)
-	note.update_visuals()
+	# Set effect pool BEFORE visuals so the created tail can emit sustain particles
 	var gameplay = get_parent()
 	if gameplay and gameplay.has_node("HitEffectPool"):
 		note.hit_effect_pool = gameplay.get_node("HitEffectPool")
+	note.update_visuals()
 	emit_signal("note_spawned", note)
 	return note
 

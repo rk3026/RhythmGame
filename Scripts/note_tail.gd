@@ -12,6 +12,7 @@ var _next_sustain_emit_time: float = 0.0
 var sustain_emit_interval: float = 0.09  # seconds between grind particles
 var sustain_effect_scale: float = 0.6
 var hit_effect_pool: Node = null
+var _input_handler: Node = null
 
 func _ready():
 	update_visuals()
@@ -51,11 +52,25 @@ func _process(_delta: float):
 			visible = false
 
 	# While holding sustain at hit line, emit small grind particles
-	if was_hit and visible and hit_effect_pool:
+	# Require the lane key to be held to visually indicate active hold
+	if was_hit and visible and hit_effect_pool and _is_lane_pressed():
 		var now = Time.get_ticks_msec() / 1000.0
 		if now >= _next_sustain_emit_time:
 			_emit_sustain_particle()
 			_next_sustain_emit_time = now + sustain_emit_interval
+
+func _is_lane_pressed() -> bool:
+	# Locate and cache InputHandler by walking up to a parent that has it as a child
+	if _input_handler == null or not is_instance_valid(_input_handler):
+		var node: Node = self
+		while node:
+			if node.has_node("InputHandler"):
+				_input_handler = node.get_node("InputHandler")
+				break
+			node = node.get_parent()
+	if _input_handler and fret >= 0 and fret < _input_handler.key_states.size():
+		return _input_handler.key_states[fret]
+	return true  # Fallback to true if we can't resolve input (preserves previous visuals)
 
 func _emit_sustain_particle():
 	if not hit_effect_pool or not hit_effect_pool.has_method("get_effect"):

@@ -12,6 +12,24 @@ I've implemented truly accurate loading progress The UI now follows Clone Hero's
 ---
 
 ### Prompt
+Another issue i want to fix is the particle effects on the hold notes. Right now, they only occur at the beginning and end of the note tails / hold note lines. But i want it to have effects the whole time I'm holding the note. So it looks like it is grinding / hitting the note when the player is pressing the key for it and everything. please identify and fix this issue.  (See <attachments> above for file contents. You may not need to search or read the file again.)
+
+### Response
+Implemented continuous sustain particle effects that emit while the player is actively holding the corresponding lane key during a sustain.
+
+Changes:
+- `note_spawner.gd`: Ensured `note.hit_effect_pool` is assigned BEFORE `note.update_visuals()` in both spawn paths so the `note_tail` receives a valid pool when instantiated.
+- `note_tail.gd`: Added gating to emit sustain particles only when the lane key is currently held (queried via `InputHandler.key_states`). Added a cached `_input_handler` lookup to avoid fragile hierarchy assumptions and to keep it efficient.
+
+Behavior:
+- On sustain hit, `note_tail` periodically emits “grind” particles at the hit line as long as the key remains held and until the sustain ends.
+- If the player releases early, particles stop immediately; if they hold to the end, particles continue until sustain completion.
+
+This creates a consistent visual “grinding” effect throughout holds, matching the requested look and feel while remaining lightweight via the pooled effect system.
+
+---
+
+### Prompt
 There is a bug in the scene switching. Look through all the scenes and scripts for them. The logic is broken somehow. All i want is for the scenes to be pushed and popped correctly on the stack. Look thoroughly at the logic of switching between main menu, song select, gameplay, results. There is an issue between these four scenes switching.
 
 ### Response
