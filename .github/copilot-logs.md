@@ -7,7 +7,53 @@ This is a rhythm game project developed using the Godot engine. The game plays m
 Yes, I want the TRULY accurate loading bar. PLEASE figure out how to do this, you can use context7 or look up online, whatever to make it possible.
 
 ### Response
-I've implemented truly accurate loading progress by adding progress callbacks to the ChartParser! Now the loading bar shows real-time progress during actual parsing operations instead of arbitrary percentages.
+I've implemented truly accurate loading progress The UI now follows Clone Hero's design philosophy while maintaining your project's GDScript patterns and scene management. The layout is fully modular - you can easily add functionality to placeholder buttons, customize colors/fonts via theme overrides, or replace the ColorRect album art with actual textures when ready.
+
+---
+
+### Prompt
+There is a bug in the scene switching. Look through all the scenes and scripts for them. The logic is broken somehow. All i want is for the scenes to be pushed and popped correctly on the stack. Look thoroughly at the logic of switching between main menu, song select, gameplay, results. There is an issue between these four scenes switching.
+
+### Response
+I've identified and fixed the scene switching bug in your rhythm game. The issue was in `results_screen.gd` where the retry function was pushing a new gameplay scene on top of the old one instead of replacing it.
+
+**The Bug:**
+The scene stack flow was:
+1. Main Menu → Song Select → Loading Screen → Gameplay (loading replaced) → Results
+2. When clicking "Retry" from results:
+   - Pop results: `[main_menu, song_select, gameplay]`
+   - Push gameplay: `[main_menu, song_select, gameplay, gameplay]` ❌ **WRONG!**
+   - This caused duplicate gameplay scenes on the stack
+
+**The Fix:**
+Changed `results_screen.gd` line 42 from:
+```gdscript
+SceneSwitcher.push_scene_instance(gameplay)
+```
+to:
+```gdscript
+SceneSwitcher.replace_scene_instance(gameplay)  # Replace old gameplay
+```
+
+**Verified Scene Flow:**
+Now the complete navigation works correctly:
+
+| Action | Stack Before | Stack After | ✓ |
+|--------|-------------|-------------|---|
+| Main Menu → Song Select | `[main_menu]` | `[main_menu, song_select]` | ✓ |
+| Song Select → Loading | `[main_menu, song_select]` | `[main_menu, song_select, loading]` | ✓ |
+| Loading → Gameplay | `[main_menu, song_select, loading]` | `[main_menu, song_select, gameplay]` | ✓ (replace) |
+| Gameplay → Results | `[main_menu, song_select, gameplay]` | `[main_menu, song_select, gameplay, results]` | ✓ |
+| Results → Retry | `[main_menu, song_select, gameplay, results]` | `[main_menu, song_select, gameplay]` | ✓ (pop+replace) |
+| Results → Menu | `[main_menu, song_select, gameplay, results]` | `[main_menu, song_select]` | ✓ (pop×2) |
+| Gameplay Pause → Song Select | `[main_menu, song_select, gameplay]` | `[main_menu, song_select]` | ✓ (pop) |
+| Gameplay Pause → Main Menu | `[main_menu, song_select, gameplay]` | `[main_menu]` | ✓ (pop×2) |
+| Main Menu → Settings | `[main_menu]` | `[main_menu, settings]` | ✓ |
+| Settings → Back | `[main_menu, settings]` | `[main_menu]` | ✓ (pop) |
+
+All scene transitions now properly push and pop on the stack without duplicates or orphaned scenes. The key insight was recognizing that the loading screen's `replace_scene_instance` approach should also be used when retrying gameplay from results.
+
+--- progress callbacks to the ChartParser! Now the loading bar shows real-time progress during actual parsing operations instead of arbitrary percentages.
 
 **Major Changes:**
 - **Modified ChartParser.load_chart()**: Added `progress_callback` parameter and reports progress during file parsing (10-20% range)

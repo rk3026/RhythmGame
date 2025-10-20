@@ -39,7 +39,7 @@ func _on_retry():
 	gameplay.chart_path = ProjectSettings.get_setting("application/run/last_chart_path", "")
 	gameplay.instrument = ProjectSettings.get_setting("application/run/last_instrument", "")
 	SceneSwitcher.pop_scene()  # Remove results
-	SceneSwitcher.push_scene_instance(gameplay)
+	SceneSwitcher.replace_scene_instance(gameplay)  # Replace old gameplay
 
 func _on_menu():
 	SceneSwitcher.pop_scene()  # Remove results
