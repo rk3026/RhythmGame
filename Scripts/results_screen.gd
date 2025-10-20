@@ -17,6 +17,10 @@ func _ready():
 	$VBox/StatsContainer/StatsVBox/BreakdownLabel.text = breakdown_text()
 	$VBox/Buttons/ButtonsHBox/RetryButton.connect("pressed", Callable(self, "_on_retry"))
 	$VBox/Buttons/ButtonsHBox/MenuButton.connect("pressed", Callable(self, "_on_menu"))
+	
+	# Add hover effects to buttons
+	_add_hover_effects($VBox/Buttons/ButtonsHBox/RetryButton)
+	_add_hover_effects($VBox/Buttons/ButtonsHBox/MenuButton)
 
 func calculate_accuracy() -> float:
 	var hit_total = hits_per_grade.perfect + hits_per_grade.great + hits_per_grade.good + hits_per_grade.bad
@@ -45,3 +49,19 @@ func _on_menu():
 	SceneSwitcher.pop_scene()  # Remove results
 	SceneSwitcher.pop_scene()  # Remove gameplay
 	# Now song_select is shown
+
+func _add_hover_effects(button: Button):
+	if button:
+		button.connect("mouse_entered", Callable(self, "_on_button_hover_enter").bind(button))
+		button.connect("mouse_exited", Callable(self, "_on_button_hover_exit").bind(button))
+		button.pivot_offset = button.size / 2.0
+
+func _on_button_hover_enter(button: Button):
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.2)
+	tween.tween_property(button, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.2)
+
+func _on_button_hover_exit(button: Button):
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
+	tween.tween_property(button, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.2)

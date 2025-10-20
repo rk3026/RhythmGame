@@ -12,6 +12,11 @@ func _ready():
 	$Margin/VBox/Scroll/Options/NoteSpeedHBox/NoteSpeedSlider.connect("value_changed", Callable(self, "_on_note_speed_changed"))
 	$Margin/VBox/Scroll/Options/MasterVolHBox/MasterSlider.connect("value_changed", Callable(self, "_on_master_changed"))
 	$Margin/VBox/Scroll/Options/TimingOffsetHBox/TimingOffsetSpin.connect("value_changed", Callable(self, "_on_offset_changed"))
+	
+	# Add hover effects to buttons
+	_add_hover_effects($Margin/VBox/BackButton)
+	_add_hover_effects($Margin/VBox/ButtonsHBox/SaveButton)
+	_add_hover_effects($Margin/VBox/ButtonsHBox/ResetButton)
 
 func get_settings_manager():
 	return SettingsManager
@@ -35,6 +40,11 @@ func _build_lane_key_rows():
 		btn.text = keycode_to_string(SettingsManager.lane_keys[i])
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.connect("pressed", Callable(self, "_on_rebind_pressed").bind(i))
+		# Add hover effects to keybind buttons
+		btn.connect("mouse_entered", Callable(self, "_on_button_hover_enter").bind(btn))
+		btn.connect("mouse_exited", Callable(self, "_on_button_hover_exit").bind(btn))
+		await get_tree().process_frame  # Wait for size to be set
+		btn.pivot_offset = btn.size / 2.0
 		h.add_child(btn)
 		lane_box.add_child(h)
 
@@ -107,3 +117,19 @@ func _on_reset():
 func _on_back():
 	SettingsManager.save_settings()
 	SceneSwitcher.pop_scene()
+
+func _add_hover_effects(button: Button):
+	if button:
+		button.connect("mouse_entered", Callable(self, "_on_button_hover_enter").bind(button))
+		button.connect("mouse_exited", Callable(self, "_on_button_hover_exit").bind(button))
+		button.pivot_offset = button.size / 2.0
+
+func _on_button_hover_enter(button: Button):
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.2)
+	tween.tween_property(button, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.2)
+
+func _on_button_hover_exit(button: Button):
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
+	tween.tween_property(button, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.2)

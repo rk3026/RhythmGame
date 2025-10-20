@@ -220,9 +220,11 @@ func add_song_to_ui(song_info: Dictionary):
 	var song_button = Button.new()
 	song_button.custom_minimum_size = Vector2(0, 50)
 	song_button.flat = true
+	song_button.pivot_offset = Vector2(0, 25)  # Center pivot for scaling
 	
 	# Create the background panel with semi-transparent style
 	var panel = Panel.new()
+	panel.name = "Panel"
 	panel.layout_mode = 1
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 1.0
@@ -308,6 +310,10 @@ func add_song_to_ui(song_info: Dictionary):
 	
 	# Connect button press to update song info panel
 	song_button.connect("pressed", Callable(self, "_on_song_selected").bind(song_info))
+	
+	# Connect hover events for scale and highlight effects
+	song_button.connect("mouse_entered", Callable(self, "_on_song_button_hover_enter").bind(song_button))
+	song_button.connect("mouse_exited", Callable(self, "_on_song_button_hover_exit").bind(song_button))
 	
 	song_list_container.add_child(song_button)
 
@@ -462,3 +468,29 @@ func _notification(what):
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
 		if not visible and audio_player.playing:
 			audio_player.stop()
+
+func _on_song_button_hover_enter(button: Button):
+	# Animate scale up and brighten background
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.2)
+	
+	# Brighten the panel background
+	var panel = button.get_node("Panel")
+	tween.tween_method(func(value): 
+		var style = panel.get_theme_stylebox("panel").duplicate()
+		style.bg_color = Color(0.9, 0.9, 0.9, 0.4).lerp(Color(1.0, 1.0, 1.0, 0.5), value)
+		panel.add_theme_stylebox_override("panel", style)
+	, 0.0, 1.0, 0.2)
+
+func _on_song_button_hover_exit(button: Button):
+	# Animate scale back to normal and dim background
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
+	
+	# Dim the panel background back to original
+	var panel = button.get_node("Panel")
+	tween.tween_method(func(value): 
+		var style = panel.get_theme_stylebox("panel").duplicate()
+		style.bg_color = Color(1.0, 1.0, 1.0, 0.5).lerp(Color(0.7647059, 0.7647059, 0.7647059, 0.2509804), value)
+		panel.add_theme_stylebox_override("panel", style)
+	, 0.0, 1.0, 0.2)

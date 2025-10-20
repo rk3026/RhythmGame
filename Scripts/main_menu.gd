@@ -18,6 +18,12 @@ func _ready():
 		var btn = get_node_or_null(node_path)
 		if btn:
 			btn.connect("pressed", Callable(self, mapping[btn_name]))
+			# Add hover effects
+			btn.connect("mouse_entered", Callable(self, "_on_button_hover_enter").bind(btn))
+			btn.connect("mouse_exited", Callable(self, "_on_button_hover_exit").bind(btn))
+			# Set pivot for center scaling
+			if btn is Button:
+				btn.pivot_offset = btn.size / 2.0
 		else:
 			push_warning("MainMenu: button not found: %s" % node_path)
 
@@ -42,3 +48,19 @@ func _on_settings():
 
 func _on_quit():
 	get_tree().quit()
+
+func _on_button_hover_enter(button: Button):
+	# Animate scale up and brighten
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.2)
+	
+	# Brighten button (modulate makes it lighter)
+	tween.tween_property(button, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.2)
+
+func _on_button_hover_exit(button: Button):
+	# Animate back to normal
+	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
+	
+	# Reset brightness
+	tween.tween_property(button, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.2)

@@ -16,6 +16,30 @@ Updated `Scripts/song_select.gd` to correctly display colored charter text by:
 
 This makes entries like `charter = <color=#a5002c>M</color>...` render with colors in the UI.
 ---
+### Prompt
+Can we modify the song select tscn and gdscript to make the labels for the song name and artist automatically scroll for the longer song names and artists to be seen? (See <attachments> above for file contents. You may not need to search or read the file again.)
+### Response
+Added an `AutoScrollLabel` component and updated `Scripts/song_select.gd` to use it for the artist and song title rows in the song list. The component scrolls the text horizontally within its slot when the text is wider than the viewport. Also adjusted the scene `Scenes/song_select.tscn` sample labels to use scrolling overrun behavior for preview. This makes long song names and artists readable.
+---
+### Prompt
+I want to change the UI so that when I hover over a song in the list, it gets larger and highlights. Can you modify the UI so that it does this.
+### Response
+Updated `Scripts/song_select.gd` to add hover effects on song list buttons. When hovering:
+- Button scales up to 1.05x with smooth cubic easing (0.2s)
+- Background panel brightens from semi-transparent gray to brighter white
+- On mouse exit, both effects smoothly reverse
+Added pivot_offset to buttons and named the Panel child for reliable tween targeting. Connected mouse_entered/mouse_exited signals to new hover handler methods.
+---
+### Prompt
+Do that to the main menu elements as well.
+### Response
+Extended hover effects to all menu buttons across the game:
+- `Scripts/main_menu.gd`: Added scale and brightness animations to Quickplay, Online, Practice, News, Settings, and Quit buttons
+- `Scripts/settings.gd`: Added hover effects to Back, Save, and Reset buttons, plus all dynamically created keybind buttons
+- `Scripts/results_screen.gd`: Added hover effects to Retry and Menu buttons
+All buttons now scale to 1.05x and brighten (modulate 1.2) on hover with smooth cubic easing, creating a consistent polished UI feel throughout the game.
+---
+---
 # Godot Rhythm Game
 
 ## Description
