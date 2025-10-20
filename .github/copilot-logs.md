@@ -53,6 +53,35 @@ Now the complete navigation works correctly:
 
 All scene transitions now properly push and pop on the stack without duplicates or orphaned scenes. The key insight was recognizing that the loading screen's `replace_scene_instance` approach should also be used when retrying gameplay from results.
 
+---
+
+### Prompt
+Another bug i want to fix is, in the gameplay scene, the player can pause during the countdown to song start. If they pause during countdown, it continues to play the song (although the notes are stopped). To fix, do not allow pausing during the countdown.
+
+### Response
+Fixed the bug where players could pause during the countdown, causing the audio to play while notes remained frozen. The issue was that the pause button had no restriction during countdown, and pausing with `get_tree().paused = true` would freeze the game tree but the countdown timer callback would still trigger audio playback.
+
+**The Fix:**
+Added a `countdown_active` flag to track when the countdown is running and prevent pausing during that time.
+
+**Changes made:**
+1. Added `countdown_active: bool = false` variable to gameplay.gd (line 21)
+2. Modified `start_countdown()` to set `countdown_active = true` at the start and `false` after "Go!" completes
+3. Modified `_on_pause_button_pressed()` to return early if `countdown_active` is true, preventing pause during countdown
+
+**How it works:**
+- When countdown starts (3... 2... 1... Go!), `countdown_active` is set to `true`
+- Any pause button presses during this time are ignored
+- After the countdown completes and the callback fires, `countdown_active` is set to `false`
+- Normal pause functionality then works as expected during gameplay
+
+This ensures the audio and notes stay synchronized and players can only pause once actual gameplay has started.
+
+---
+| Settings → Back | `[main_menu, settings]` | `[main_menu]` | ✓ (pop) |
+
+All scene transitions now properly push and pop on the stack without duplicates or orphaned scenes. The key insight was recognizing that the loading screen's `replace_scene_instance` approach should also be used when retrying gameplay from results.
+
 --- progress callbacks to the ChartParser! Now the loading bar shows real-time progress during actual parsing operations instead of arbitrary percentages.
 
 **Major Changes:**

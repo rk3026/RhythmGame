@@ -20,6 +20,7 @@ var preloaded_data: Dictionary = {}
 var current_tween = null
 var audio_player: AudioStreamPlayer
 var song_finished: bool = false
+var countdown_active: bool = false
 var settings_manager
 var animation_director: Node = null
 var chart_offset: float = 0.0
@@ -40,6 +41,7 @@ func find_audio_file(folder_path: String) -> String:
 	return ""
 
 func start_countdown(callback: Callable):
+	countdown_active = true
 	var label = $UI/JudgementLabel
 	for i in range(3, 0, -1):
 		label.text = str(i)
@@ -49,6 +51,7 @@ func start_countdown(callback: Callable):
 	label.text = "Go!"
 	await get_tree().create_timer(0.5).timeout
 	label.text = ""
+	countdown_active = false
 	callback.call()
 
 var parser_factory: ParserFactory
@@ -409,6 +412,9 @@ func _on_score_changed(score):
 		input_handler.setup_lane_keys(num_lanes)
 
 func _on_pause_button_pressed():
+	# Don't allow pausing during countdown
+	if countdown_active:
+		return
 	if not get_tree().paused:
 		get_tree().paused = true
 		$UI/PauseMenu.visible = true
