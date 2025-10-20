@@ -1,34 +1,281 @@
-[gd_scene load_steps=2 format=3 uid="uid://54winj8i144m"]
+[gd_scene load_steps=3 format=3 uid="uid://54winj8i144m"]
 
 [ext_resource type="Script" uid="uid://cgg3b65kydfva" path="res://Scripts/main_menu.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_28flt"]
+bg_color = Color(0.14406255, 0.14406255, 0.14406249, 1)
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1")
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
-layout_mode = 0
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer"]
+[node name="MainLayout" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="CenterContainer/VBox"]
+[node name="TopSection" type="HBoxContainer" parent="MarginContainer/MainLayout"]
 layout_mode = 2
-text = "Rhythm Game"
 
-[node name="PlayButton" type="Button" parent="CenterContainer/VBox"]
+[node name="Control" type="Control" parent="MarginContainer/MainLayout/TopSection"]
 layout_mode = 2
-text = "Play"
+size_flags_horizontal = 3
 
-[node name="SettingsButton" type="Button" parent="CenterContainer/VBox"]
+[node name="FeaturedSong" type="PanelContainer" parent="MarginContainer/MainLayout/TopSection"]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
-text = "Settings"
 
-[node name="QuitButton" type="Button" parent="CenterContainer/VBox"]
+[node name="FeaturedContent" type="VBoxContainer" parent="MarginContainer/MainLayout/TopSection/FeaturedSong"]
 layout_mode = 2
-text = "Quit"
+
+[node name="FeaturedHeader" type="HBoxContainer" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent"]
+layout_mode = 2
+
+[node name="AlbumArt" type="ColorRect" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent/FeaturedHeader"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+color = Color(0.2, 0.2, 0.2, 1)
+
+[node name="SongInfo" type="VBoxContainer" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent/FeaturedHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SongTitle" type="Label" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent/FeaturedHeader/SongInfo"]
+layout_mode = 2
+text = "Through the Fire and the Flames"
+
+[node name="Artist" type="Label" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent/FeaturedHeader/SongInfo"]
+layout_mode = 2
+text = "DragonForce"
+
+[node name="Year" type="Label" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent/FeaturedHeader/SongInfo"]
+layout_mode = 2
+text = "2006"
+
+[node name="SelectPrompt" type="Label" parent="MarginContainer/MainLayout/TopSection/FeaturedSong/FeaturedContent"]
+layout_mode = 2
+text = "PRESS    SELECT    TO PLAY"
+horizontal_alignment = 2
+
+[node name="MiddleSection" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftSidebar" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="QuickplayButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "QUICKPLAY"
+alignment = 0
+
+[node name="OnlineButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "ONLINE"
+alignment = 0
+
+[node name="PracticeButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "PRACTICE"
+alignment = 0
+
+[node name="NewsButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "NEWS"
+alignment = 0
+
+[node name="SettingsButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SETTINGS"
+alignment = 0
+
+[node name="QuitButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "QUIT"
+alignment = 0
+
+[node name="CenterSection" type="CenterContainer" parent="MarginContainer/MainLayout/MiddleSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="LogoContainer" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/CenterSection"]
+layout_mode = 2
+
+[node name="GameTitle" type="Label" parent="MarginContainer/MainLayout/MiddleSection/CenterSection/LogoContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "RHYTHM
+GAME"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="MarginContainer/MainLayout/MiddleSection/CenterSection/LogoContainer"]
+layout_mode = 2
+text = "Godot 4 3D Rhythm Game"
+horizontal_alignment = 1
+
+[node name="RightSidebar" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="NewsContent" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar"]
+layout_mode = 2
+
+[node name="NewsHeader" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_28flt")
+text = "NEWS"
+horizontal_alignment = 1
+
+[node name="NewsItem1" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
+layout_mode = 2
+
+[node name="Item1Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem1"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem1/Item1Content"]
+layout_mode = 2
+text = "DEVBLOG #3"
+
+[node name="Description" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem1/Item1Content"]
+layout_mode = 2
+text = "ExileLord Rants"
+
+[node name="NewsItem2" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
+layout_mode = 2
+
+[node name="Item2Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem2"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem2/Item2Content"]
+layout_mode = 2
+text = "DEVBLOG #2"
+
+[node name="Description" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem2/Item2Content"]
+layout_mode = 2
+text = "Where's the news!?"
+
+[node name="NewsItem3" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
+layout_mode = 2
+
+[node name="Item3Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem3"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem3/Item3Content"]
+layout_mode = 2
+text = "DEVBLOG #1"
+
+[node name="Description" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem3/Item3Content"]
+layout_mode = 2
+text = "A new Hope"
+
+[node name="NewsItem4" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
+layout_mode = 2
+
+[node name="Item4Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem4"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem4/Item4Content"]
+layout_mode = 2
+text = "DEVBLOG #0"
+
+[node name="Description" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem4/Item4Content"]
+layout_mode = 2
+text = "This is a Test Devblog"
+
+[node name="Control" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="Control" type="Control" parent="MarginContainer/MainLayout/Control"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VersionLabel" type="Label" parent="MarginContainer/MainLayout/Control"]
+layout_mode = 2
+text = "ALPHA V.23"
+horizontal_alignment = 2
+
+[node name="BottomSection" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="Player1Slot" type="PanelContainer" parent="MarginContainer/MainLayout/BottomSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Player1Content" type="VBoxContainer" parent="MarginContainer/MainLayout/BottomSection/Player1Slot"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer/MainLayout/BottomSection/Player1Slot/Player1Content"]
+layout_mode = 2
+text = "PRESS START"
+horizontal_alignment = 1
+
+[node name="Player2Slot" type="PanelContainer" parent="MarginContainer/MainLayout/BottomSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Player2Content" type="VBoxContainer" parent="MarginContainer/MainLayout/BottomSection/Player2Slot"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer/MainLayout/BottomSection/Player2Slot/Player2Content"]
+layout_mode = 2
+text = "PRESS START"
+horizontal_alignment = 1
+
+[node name="Player3Slot" type="PanelContainer" parent="MarginContainer/MainLayout/BottomSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Player3Content" type="VBoxContainer" parent="MarginContainer/MainLayout/BottomSection/Player3Slot"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer/MainLayout/BottomSection/Player3Slot/Player3Content"]
+layout_mode = 2
+text = "PRESS START"
+horizontal_alignment = 1
+
+[node name="Player4Slot" type="PanelContainer" parent="MarginContainer/MainLayout/BottomSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Player4Content" type="VBoxContainer" parent="MarginContainer/MainLayout/BottomSection/Player4Slot"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer/MainLayout/BottomSection/Player4Slot/Player4Content"]
+layout_mode = 2
+text = "PRESS START"
+horizontal_alignment = 1

@@ -34,12 +34,12 @@
 		<div class="report-container">
 			<h1>Testsuite Report</h1>
 			<div>
-				<span class="label">res://test/test_chart_parser.gd</span>
+				<span class="label">res://test/test_input_handler.gd</span>
 			</div>
 			<div class="summary">
 				<div class="summary-item">
 					<span class="label">Tests</span>
-					<span class="value">17</span>
+					<span class="value">7</span>
 				</div>
 				<div class="summary-item">
 					<span class="label">Skipped</span>
@@ -51,18 +51,18 @@
 				</div>
 				<div class="summary-item">
 					<span class="label">Failures</span>
-					<span class="value">0</span>
+					<span class="value">4</span>
 				</div>
 				<div class="summary-item">
 					<span class="label">Orphans</span>
-					<span class="value">0</span>
+					<span class="value">8</span>
 				</div>
 				<div class="summary-item">
 					<span class="label">Duration</span>
-					<span class="value">642ms</span>
+					<span class="value">1s 164ms</span>
 				</div>
 				<div class="success-rate">
-					<div class="check-icon status-passed">✓</div>
+					<div class="check-icon status-error">✓</div>
 					<div class="rate-text">
 						<span class="label">Success Rate</span>
 						<span class="value">100%</span>
@@ -73,7 +73,7 @@
 		<div class="breadcrumb">
 			<a href="../index.html"><span>All</span></a>
 			<a href="../path/test.html"><span>test</span></a>
-			<a class="active" href="#"><span>test_chart_parser</span></a>
+			<a class="active" href="#"><span>test_input_handler</span></a>
 		</div>
 	</header>
 
@@ -93,12 +93,26 @@
 					</thead>
 					<tbody>
 						
+								<tr class="error">
+									<td>TestSuite hooks</td>
+									<td>n/a</td>
+									<td>8</td>
+									<td>1s 164ms</td>
+									<td class="report-column">
+										<pre>
+line 1: WARNING:
+ Detected <4> orphan nodes during test suite setup stage! Check before() and after()!
+										</pre>
+									</td>
+								</tr>
+
+
 								<tr class="testcase-group">
-									<td>test_get_resolution_valid</td>
+									<td>test_configure</td>
 									<td><span class="status status-passed">PASSED</span></td>
 									<td>0</td>
 									<td>0</td>
-									<td>21ms</td>
+									<td>39ms</td>
 									<td class="report-column">
 										<pre>
 
@@ -108,11 +122,11 @@
 
 
 								<tr class="testcase-group">
-									<td>test_get_resolution_default</td>
+									<td>test_setup_lane_keys_default</td>
 									<td><span class="status status-passed">PASSED</span></td>
 									<td>0</td>
 									<td>0</td>
-									<td>22ms</td>
+									<td>43ms</td>
 									<td class="report-column">
 										<pre>
 
@@ -122,11 +136,11 @@
 
 
 								<tr class="testcase-group">
-									<td>test_get_resolution_invalid</td>
+									<td>test_setup_lane_keys_from_settings</td>
 									<td><span class="status status-passed">PASSED</span></td>
 									<td>0</td>
 									<td>0</td>
-									<td>36ms</td>
+									<td>294ms</td>
 									<td class="report-column">
 										<pre>
 
@@ -136,13 +150,20 @@
 
 
 								<tr class="testcase-group">
-									<td>test_get_offset_valid</td>
-									<td><span class="status status-passed">PASSED</span></td>
+									<td>test_check_hit_no_notes</td>
+									<td><span class="status status-error">ERROR</span></td>
 									<td>0</td>
-									<td>0</td>
-									<td>20ms</td>
+									<td>1</td>
+									<td>207ms</td>
 									<td class="report-column">
 										<pre>
+line 1: WARNING:
+ Detected <1> orphan nodes during test setup! Check before_test() and after_test()!
+line 40: Godot Runtime Error !
+	'at: TestInputHandler.test_check_hit_no_notes (res://test/test_input_handler.gd:40)'
+Error: 'Invalid call. Nonexistent function 'returns' in base 'Nil'.'
+line 34: WARNING:
+ Detected <1> orphan nodes during test execution!
 
 										</pre>
 									</td>
@@ -150,13 +171,20 @@
 
 
 								<tr class="testcase-group">
-									<td>test_get_offset_default</td>
-									<td><span class="status status-passed">PASSED</span></td>
+									<td>test_check_hit_with_note</td>
+									<td><span class="status status-error">ERROR</span></td>
 									<td>0</td>
-									<td>0</td>
-									<td>34ms</td>
+									<td>1</td>
+									<td>180ms</td>
 									<td class="report-column">
 										<pre>
+line 1: WARNING:
+ Detected <1> orphan nodes during test setup! Check before_test() and after_test()!
+line 57: Godot Runtime Error !
+	'at: TestInputHandler.test_check_hit_with_note (res://test/test_input_handler.gd:57)'
+Error: 'Invalid call. Nonexistent function 'returns' in base 'Nil'.'
+line 50: WARNING:
+ Detected <1> orphan nodes during test execution!
 
 										</pre>
 									</td>
@@ -164,13 +192,20 @@
 
 
 								<tr class="testcase-group">
-									<td>test_get_music_stream_valid</td>
-									<td><span class="status status-passed">PASSED</span></td>
+									<td>test_has_sustain_held</td>
+									<td><span class="status status-error">ERROR</span></td>
 									<td>0</td>
-									<td>0</td>
-									<td>21ms</td>
+									<td>1</td>
+									<td>180ms</td>
 									<td class="report-column">
 										<pre>
+line 1: WARNING:
+ Detected <1> orphan nodes during test setup! Check before_test() and after_test()!
+line 83: Godot Runtime Error !
+	'at: TestInputHandler.test_has_sustain_held (res://test/test_input_handler.gd:83)'
+Error: 'Invalid call. Nonexistent function 'returns' in base 'Nil'.'
+line 76: WARNING:
+ Detected <1> orphan nodes during test execution!
 
 										</pre>
 									</td>
@@ -178,153 +213,20 @@
 
 
 								<tr class="testcase-group">
-									<td>test_get_music_stream_absolute_path</td>
-									<td><span class="status status-passed">PASSED</span></td>
+									<td>test_has_sustain_held_no_sustain</td>
+									<td><span class="status status-error">ERROR</span></td>
 									<td>0</td>
-									<td>0</td>
-									<td>23ms</td>
+									<td>1</td>
+									<td>177ms</td>
 									<td class="report-column">
 										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_tempo_events</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>21ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_notes_basic</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>20ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_notes_with_sustain</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>20ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_notes_open_note</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>21ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_notes_hopo_special</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>23ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_note_times</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>22ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_note_times_with_tempo_change</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>21ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_get_available_instruments</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>34ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_has_notes_in_section_true</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>21ms</td>
-									<td class="report-column">
-										<pre>
-
-										</pre>
-									</td>
-								</tr>
-
-
-								<tr class="testcase-group">
-									<td>test_has_notes_in_section_false</td>
-									<td><span class="status status-passed">PASSED</span></td>
-									<td>0</td>
-									<td>0</td>
-									<td>36ms</td>
-									<td class="report-column">
-										<pre>
+line 1: WARNING:
+ Detected <1> orphan nodes during test setup! Check before_test() and after_test()!
+line 102: Godot Runtime Error !
+	'at: TestInputHandler.test_has_sustain_held_no_sustain (res://test/test_input_handler.gd:102)'
+Error: 'Invalid call. Nonexistent function 'returns' in base 'Nil'.'
+line 95: WARNING:
+ Detected <1> orphan nodes during test execution!
 
 										</pre>
 									</td>
@@ -341,7 +243,7 @@
 	</main>
 
 	<footer>
-		<p>Generated by <a href="https://github.com/MikeSchulze/gdUnit4">GdUnit4</a> at 2025-10-20 01:56:02</p>
+		<p>Generated by <a href="https://github.com/MikeSchulze/gdUnit4">GdUnit4</a> at 2025-10-20 01:56:14</p>
 		<div class="status-legend">
 			<span class="status-legend-item">
 				<span class="status-box status-skipped"></span> Skipped

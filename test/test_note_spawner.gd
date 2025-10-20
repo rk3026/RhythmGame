@@ -49,7 +49,7 @@ func test_get_note_times():
 	var result = spawner.get_note_times(notes, 192, tempo_events)
 	assert_int(result.size()).is_equal(2)
 	assert_float(result[0]).is_equal(0.0)
-	assert_float(result[1]).is_equal(1.0)
+	assert_float(result[1]).is_equal(0.5)
 
 func test_get_current_bpm():
 	var spawner = auto_free(NoteSpawnerScript.new())

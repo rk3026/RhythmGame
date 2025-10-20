@@ -117,7 +117,17 @@ func test_get_note_times():
 	var result = parser.get_note_times(notes, 192, tempo_events)
 	assert_int(result.size()).is_equal(2)
 	assert_float(result[0]).is_equal(0.0)
-	assert_float(result[1]).is_equal(1.0)  # 192 ticks at 120 BPM = 1 second
+	assert_float(result[1]).is_equal(0.5)  # 192 ticks at 120 BPM = 0.5 seconds (1 beat)
+
+func test_get_note_times_with_tempo_change():
+	var parser = auto_free(ChartParserScript.new())
+	var notes = [{pos = 0}, {pos = 192}, {pos = 384}]
+	var tempo_events = [{tick = 0, bpm = 120.0}, {tick = 192, bpm = 240.0}]
+	var result = parser.get_note_times(notes, 192, tempo_events)
+	assert_int(result.size()).is_equal(3)
+	assert_float(result[0]).is_equal(0.0)  # At tick 0, BPM 120
+	assert_float(result[1]).is_equal(0.5)  # At tick 192, still BPM 120 (0.5s)
+	assert_float(result[2]).is_equal(0.75)  # At tick 384, after BPM change to 240 (additional 192 ticks at 240 BPM = 0.25s)
 
 func test_get_available_instruments():
 	var parser = auto_free(ChartParserScript.new())

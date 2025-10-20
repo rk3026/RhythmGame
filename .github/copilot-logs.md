@@ -633,6 +633,75 @@ The documentation is now portfolio-ready and clearly demonstrates your technical
 
 ---
 
+### Prompt
+I want to upgrade UI of the main menu for my game. I have this png image of clone hero's Main Menu UI. I would like to follow the design of that. Can you please change the main menu of my game to be similar to the image. It's fine if certain buttons don't have functionality right now, just make sure to follow the design. The basics of the UI should be having 3 main sections. The left side of the screen has buttons for quick play, online, practice, settings, news, quit. The middle of the screen is a logo for the game. The right side of the screen has news. The top right has a featured song information. On the bottom of the screen, there is a section for players. There are 4 player slots. Please make my main menu tscn follow this layout. Use hboxcontainers and vboxcontainers, and good layout elements.
+
+### Response
+I've successfully upgraded your main menu UI to follow the Clone Hero design layout with three main sections and proper container organization.
+
+**Changes Made:**
+
+1. **Scene Structure** (`main_menu.tscn`):
+   - **Top Section (HBoxContainer)**: Main content area split into three columns
+     - **Left Sidebar (VBoxContainer, 300px width)**: Menu buttons with consistent spacing
+       - Title: "MAIN MENU"
+       - Buttons: QUICKPLAY, ONLINE, PRACTICE, NEWS, SETTINGS, QUIT
+       - Uses spacers for proper vertical distribution
+     
+     - **Center Section (CenterContainer)**: Game branding
+       - Large title: "RHYTHM HERO" (64pt font size)
+       - Tagline: "Everything You Never Wanted"
+       - Centered and prominent
+     
+     - **Right Sidebar (VBoxContainer, 350px width)**: Featured content and news
+       - **Featured Song Panel**: Album art placeholder (60x60 ColorRect), song info (Through the Fire and the Flames - DragonForce - 2006), "PRESS SELECT TO PLAY" prompt
+       - **News Section (scrollable)**: 4 devblog entries with titles and descriptions matching Clone Hero's news items
+       - **Version Label**: "ALPHA V.23" aligned right
+   
+   - **Bottom Section (HBoxContainer, 120px height)**: Player slots
+     - 4 equal-width PanelContainers
+     - Each displays "PRESS START" centered
+     - Ready for player join functionality
+
+2. **Script Updates** (`main_menu.gd`):
+   - Updated all button connections to match new hierarchy
+   - Quickplay → Goes to song select (main gameplay entry)
+   - Online → Placeholder (prints "not yet implemented")
+   - Practice → Placeholder (could enable practice mode flag)
+   - News → Placeholder (could show detailed news view)
+   - Settings → Opens settings scene (functional)
+   - Quit → Exits game (functional)
+
+**Layout Architecture:**
+- Uses proper Godot layout containers (VBoxContainer, HBoxContainer, CenterContainer, PanelContainer)
+- Responsive design with `size_flags_horizontal/vertical = 3` for proper stretching
+- Custom minimum sizes for consistent dimensions
+- Proper anchoring and layout modes for full-screen coverage
+
+**Functional Features:**
+- Quickplay and Settings buttons work immediately
+- Other buttons have placeholder implementations ready for future features
+- Scene transitions use existing SceneSwitcher
+- Clean separation of concerns with proper node paths
+
+**Visual Hierarchy:**
+- Left: Navigation (vertical button stack)
+- Center: Branding (large centered logo)
+- Right: Information (featured song + news feed)
+- Bottom: Multiplayer slots (4 player panels)
+
+The UI now follows Clone Hero's design philosophy while maintaining your project's GDScript patterns and scene management. The layout is fully modular - you can easily add functionality to placeholder buttons, customize colors/fonts via theme overrides, or replace the ColorRect album art with actual textures when ready.
+
+---
+
+
+````
+
+
+`````
+
+---
+
 
 ````
 
