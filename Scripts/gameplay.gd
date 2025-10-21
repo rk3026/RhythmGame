@@ -325,6 +325,9 @@ func _show_results():
 	results_scene.total_notes = counts.perfect + counts.great + counts.good + counts.bad + counts.miss
 	results_scene.song_title = song_info.get("name", "Unknown Title")
 	results_scene.difficulty = instrument
+	# NEW: Pass chart path and instrument for score history tracking
+	results_scene.chart_path = chart_path
+	results_scene.instrument = instrument
 	ProjectSettings.set_setting("application/run/last_chart_path", chart_path)
 	ProjectSettings.set_setting("application/run/last_instrument", instrument)
 	# Hide UI elements

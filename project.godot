@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 SceneSwitcher="*res://Scripts/SceneSwitcher.gd"
 SettingsManager="*res://Scripts/settings_manager.gd"
 ResourceCache="*res://Scripts/ResourceCache.gd"
+ScoreHistoryManager="*res://Scripts/ScoreHistoryManager.gd"
 
 [dotnet]
 

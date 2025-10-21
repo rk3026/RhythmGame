@@ -296,17 +296,20 @@ func add_song_to_ui(song_info: Dictionary):
 	
 	# Score label (placeholder for future high score tracking)
 	var score_label = Label.new()
-	score_label.text = ""  # Will be populated when score tracking is implemented
+	score_label.text = ""  # Will be populated below
 	score_label.label_settings = label_settings
 	score_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(score_label)
 	
 	# Percent label (placeholder for future completion tracking)
 	var percent_label = Label.new()
-	percent_label.text = ""  # Will be populated when completion tracking is implemented
+	percent_label.text = ""  # Will be populated below
 	percent_label.label_settings = label_settings
 	percent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(percent_label)
+	
+	# NEW: Populate score and accuracy from history
+	_populate_score_labels(song_info, score_label, percent_label)
 	
 	# Connect button press to update song info panel
 	song_button.connect("pressed", Callable(self, "_on_song_selected").bind(song_info))
@@ -494,3 +497,72 @@ func _on_song_button_hover_exit(button: Button):
 		style.bg_color = Color(1.0, 1.0, 1.0, 0.5).lerp(Color(0.7647059, 0.7647059, 0.7647059, 0.2509804), value)
 		panel.add_theme_stylebox_override("panel", style)
 	, 0.0, 1.0, 0.2)
+
+# ============================================================================
+# Score History Integration
+# ============================================================================
+
+func _populate_score_labels(song_info: Dictionary, score_label: Label, percent_label: Label):
+	"""Populate score and accuracy labels from score history."""
+	# Get best score across all difficulties for this song
+	var best_overall = _get_best_score_for_song(song_info)
+	
+	if best_overall.is_empty():
+		# Never played
+		score_label.text = "---"
+		percent_label.text = "---"
+	else:
+		# Show best score and accuracy
+		score_label.text = _format_score(best_overall.high_score)
+		percent_label.text = _format_accuracy(best_overall.best_accuracy)
+		
+		# Color-code by accuracy tier
+		percent_label.modulate = _get_accuracy_color(best_overall.best_accuracy)
+
+func _get_best_score_for_song(song_info: Dictionary) -> Dictionary:
+	"""Find the best score across all difficulties for this song."""
+	var best = {}
+	var max_score = 0
+	
+	# Check all available difficulties
+	for instrument in song_info.instruments.keys():
+		for difficulty in song_info.instruments[instrument]:
+			var key = difficulty + instrument
+			var data = ScoreHistoryManager.get_score_data(song_info.chart_path, key)
+			
+			if not data.is_empty() and data.high_score > max_score:
+				max_score = data.high_score
+				best = data
+	
+	return best
+
+func _format_score(score: int) -> String:
+	"""Format score with commas for readability (e.g., 123456 → 123,456)."""
+	var score_str = str(score)
+	var formatted = ""
+	var count = 0
+	
+	for i in range(score_str.length() - 1, -1, -1):
+		if count > 0 and count % 3 == 0:
+			formatted = "," + formatted
+		formatted = score_str[i] + formatted
+		count += 1
+	
+	return formatted
+
+func _format_accuracy(accuracy: float) -> String:
+	"""Format accuracy as percentage with one decimal place."""
+	return ("%.1f" % accuracy) + "%"
+
+func _get_accuracy_color(accuracy: float) -> Color:
+	"""Get color for accuracy tier (gold/silver/bronze/etc.)."""
+	if accuracy >= 99.0:
+		return Color.GOLD
+	elif accuracy >= 95.0:
+		return Color(0.75, 0.75, 0.75)  # Silver
+	elif accuracy >= 90.0:
+		return Color(0.8, 0.5, 0.2)     # Bronze
+	elif accuracy >= 80.0:
+		return Color(0.5, 0.7, 1.0)     # Light blue
+	else:
+		return Color.WHITE
