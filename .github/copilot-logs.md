@@ -132,6 +132,53 @@ The system is fully functional and ready for testing. All code follows your proj
 
 ---
 
+### Prompt
+Modify the song select so that when a song is clicked, it is set as the currently selected song, and the preview of the song is played.
+
+### Response
+Modified the song select screen to automatically play song previews when a song is clicked. 
+
+**Changes made:**
+- Updated `_on_song_selected()` in `Scripts/song_select.gd` to call `_on_preview(song_info)` immediately after setting the selected song
+- This triggers the existing preview functionality which:
+  - Stops any currently playing preview
+  - Loads the song's audio stream
+  - Seeks to the preview start time (from song.ini or 1/3 through the song)
+  - Plays for 10 seconds before stopping
+
+**User experience:**
+- Click any song in the list → song info updates + preview starts playing automatically
+- Click another song → previous preview stops, new preview begins
+- Seamless preview switching without manual action
+- Maintains existing 10-second preview duration
+
+This creates a more intuitive song browsing experience similar to Clone Hero and other rhythm games where clicking a song immediately lets you hear a preview to help with selection.
+
+---
+
+### Prompt
+Make it play the whole preview, or loop it so it keeps playing the preview, and doesn't just stop.
+
+### Response
+Modified the preview function to play continuously instead of stopping after 10 seconds.
+
+**Changes made:**
+- Removed the `await get_tree().create_timer(10.0).timeout` and `audio_player.stop()` lines from `_on_preview()` in `Scripts/song_select.gd`
+- The audio now plays from the preview start time and continues until:
+  - User clicks a different song (which stops the current preview and starts the new one)
+  - User navigates away from the song select screen (handled by existing `_notification` cleanup)
+  - User clicks a difficulty button to start playing (handled by existing `_on_play` cleanup)
+
+**User experience:**
+- Click a song → preview starts and plays continuously (either to the end or loops if the AudioStreamPlayer has looping enabled)
+- Browse multiple songs → each preview seamlessly transitions as you click
+- No abrupt cutoffs after arbitrary time limits
+- More natural listening experience while deciding what to play
+
+This matches the behavior of modern music players and rhythm games where previews play fully until the user takes another action.
+
+---
+
 
 ````
 

@@ -35,30 +35,19 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_mbyrm")
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="Top" type="Control" parent="MarginContainer/VBoxContainer"]
+[node name="Top" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/Top"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -100.0
-offset_top = 20.0
-offset_right = 100.0
-offset_bottom = 65.0
-grow_horizontal = 2
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Song Library"
 horizontal_alignment = 1
 
 [node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Top"]
-layout_mode = 1
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 220.0
-offset_bottom = 70.0
+layout_mode = 2
+size_flags_horizontal = 0
 text = "Back to Main Menu"
 
 [node name="Middle" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]

@@ -323,6 +323,9 @@ func add_song_to_ui(song_info: Dictionary):
 func _on_song_selected(song_info: Dictionary):
 	selected_song_info = song_info
 	
+	# Play preview of selected song
+	_on_preview(song_info)
+	
 	# Update album art
 	var album_art = song_info_panel.get_node("AlbumArt")
 	if song_info.image_path and FileAccess.file_exists(song_info.image_path):
@@ -423,9 +426,6 @@ func _on_preview(song_info: Dictionary):
 			print("Preview start time: ", preview_start)
 			audio_player.play()
 			audio_player.seek(preview_start)
-			# Stop after 10 seconds
-			await get_tree().create_timer(10.0).timeout
-			audio_player.stop()
 		else:
 			print("Failed to load audio stream: ", music_path)
 	else:
