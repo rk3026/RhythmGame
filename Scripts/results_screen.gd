@@ -152,43 +152,20 @@ func _show_comparison(previous: Dictionary, current: Dictionary):
 	var acc_diff = current_acc - previous.best_accuracy
 	var combo_diff = current.max_combo - previous.best_max_combo
 	
-	# Update score label with difference
+	# Update score label with difference (plain text, no BBCode for Label nodes)
 	if score_diff > 0:
-		$VBox/StatsContainer/StatsVBox/ScoreLabel.text += " [color=green](+" + _format_number(score_diff) + ") ↑[/color]"
-		$VBox/StatsContainer/StatsVBox/ScoreLabel.bbcode_enabled = true
+		$VBox/StatsContainer/StatsVBox/ScoreLabel.text += " (+" + StringFormatter.format_score(score_diff) + ") ↑"
 	elif score_diff < 0:
-		$VBox/StatsContainer/StatsVBox/ScoreLabel.text += " [color=gray](" + _format_number(score_diff) + ") ↓[/color]"
-		$VBox/StatsContainer/StatsVBox/ScoreLabel.bbcode_enabled = true
+		$VBox/StatsContainer/StatsVBox/ScoreLabel.text += " (" + StringFormatter.format_score(score_diff) + ") ↓"
 	
 	# Update accuracy label with difference
 	if acc_diff > 0.05:  # Only show if meaningful difference (>0.05%)
-		$VBox/StatsContainer/StatsVBox/AccuracyLabel.text += " [color=green](+" + ("%.1f" % acc_diff) + "%) ↑[/color]"
-		$VBox/StatsContainer/StatsVBox/AccuracyLabel.bbcode_enabled = true
+		$VBox/StatsContainer/StatsVBox/AccuracyLabel.text += " (+" + ("%.1f" % acc_diff) + "%) ↑"
 	elif acc_diff < -0.05:
-		$VBox/StatsContainer/StatsVBox/AccuracyLabel.text += " [color=gray](" + ("%.1f" % acc_diff) + "%) ↓[/color]"
-		$VBox/StatsContainer/StatsVBox/AccuracyLabel.bbcode_enabled = true
+		$VBox/StatsContainer/StatsVBox/AccuracyLabel.text += " (" + ("%.1f" % acc_diff) + "%) ↓"
 	
 	# Update combo label with difference
 	if combo_diff > 0:
-		$VBox/StatsContainer/StatsVBox/ComboLabel.text += " [color=green](+" + str(combo_diff) + ") ↑[/color]"
-		$VBox/StatsContainer/StatsVBox/ComboLabel.bbcode_enabled = true
+		$VBox/StatsContainer/StatsVBox/ComboLabel.text += " (+" + str(combo_diff) + ") ↑"
 	elif combo_diff < 0:
-		$VBox/StatsContainer/StatsVBox/ComboLabel.text += " [color=gray](" + str(combo_diff) + ") ↓[/color]"
-		$VBox/StatsContainer/StatsVBox/ComboLabel.bbcode_enabled = true
-
-func _format_number(num: int) -> String:
-	"""Format number with commas for readability."""
-	var num_str = str(abs(num))
-	var formatted = ""
-	var count = 0
-	
-	for i in range(num_str.length() - 1, -1, -1):
-		if count > 0 and count % 3 == 0:
-			formatted = "," + formatted
-		formatted = num_str[i] + formatted
-		count += 1
-	
-	if num < 0:
-		formatted = "-" + formatted
-	
-	return formatted
+		$VBox/StatsContainer/StatsVBox/ComboLabel.text += " (" + str(combo_diff) + ") ↓"

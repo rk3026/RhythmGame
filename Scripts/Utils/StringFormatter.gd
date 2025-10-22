@@ -5,10 +5,11 @@ extends RefCounted
 ## Eliminates duplicate formatting code across UI scripts
 
 ## Format an integer score with comma separators for readability
-## @param score: The score value to format (e.g., 123456)
-## @return: Formatted string with commas (e.g., "123,456")
+## Handles both positive and negative numbers
+## @param score: The score value to format (e.g., 123456 or -1234)
+## @return: Formatted string with commas (e.g., "123,456" or "-1,234")
 static func format_score(score: int) -> String:
-	var score_str = str(score)
+	var score_str = str(abs(score))
 	var formatted = ""
 	var count = 0
 	
@@ -17,6 +18,9 @@ static func format_score(score: int) -> String:
 			formatted = "," + formatted
 		formatted = score_str[i] + formatted
 		count += 1
+	
+	if score < 0:
+		formatted = "-" + formatted
 	
 	return formatted
 

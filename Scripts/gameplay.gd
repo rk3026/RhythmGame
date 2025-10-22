@@ -39,45 +39,37 @@ func start_countdown(callback: Callable):
 	countdown_active = false
 	callback.call()
 
-var parser_factory: ParserFactory
+var chart_loading_service: ChartLoadingService
 
 func _ready():
-	parser_factory = load("res://Scripts/Parsers/ParserFactory.gd").new()
-	
-	var sections
-	var resolution
-	var offset
-	var tempo_events
-	var notes
-	var parser
+	# Load chart data
+	var chart_data: ChartLoadingService.ChartData
 	
 	if preloaded_data.is_empty():
-		# Original loading logic
-		parser = parser_factory.create_parser_for_file(chart_path)
-		if not parser:
-			push_error("Failed to create parser for: " + chart_path)
+		# Load chart using service
+		chart_loading_service = ChartLoadingService.new()
+		chart_data = chart_loading_service.load_chart_data_sync(chart_path, instrument)
+		if not chart_data:
+			push_error("Failed to load chart: " + chart_path)
 			return
-		
-		sections = parser.load_chart(chart_path)
-		resolution = parser.get_resolution(sections)
-		offset = parser.get_offset(sections)
-		chart_offset = offset
-		tempo_events = parser.get_tempo_events(sections)
-		notes = parser.get_notes(sections, instrument, resolution)
 	else:
 		# Use preloaded data
-		sections = preloaded_data.sections
-		resolution = preloaded_data.resolution
-		offset = preloaded_data.offset
-		chart_offset = offset
-		tempo_events = preloaded_data.tempo_events
-		notes = preloaded_data.notes
-		parser = preloaded_data.parser
+		chart_data = ChartLoadingService.chart_data_from_preloaded(preloaded_data)
+		if not chart_data:
+			push_error("Invalid preloaded data")
+			return
 	
-	var max_type = 0
-	for note in notes:
-		max_type = max(max_type, note.fret)
-	num_lanes = max(5, max_type + 1)
+	# Extract chart data
+	var _sections = chart_data.sections  # Available if needed for future features
+	var resolution = chart_data.resolution
+	var offset = chart_data.offset
+	chart_offset = offset
+	var tempo_events = chart_data.tempo_events
+	var notes = chart_data.notes
+	var _parser = chart_data.parser  # Available if needed for future features
+	
+	# Calculate number of lanes needed
+	num_lanes = ChartLoadingService.calculate_num_lanes(notes)
 	
 	runway.set_script(load("res://Scripts/board_renderer.gd"))
 	runway.num_lanes = num_lanes
@@ -131,14 +123,8 @@ func _ready():
 	_on_combo_changed(0)
 	_on_score_changed(0)
 	
-	var music_stream
-	if preloaded_data.is_empty():
-		music_stream = parser.get_music_stream(sections)
-		if not music_stream:
-			var ini_parser = parser_factory.create_metadata_parser()
-			music_stream = ini_parser.get_music_stream_from_ini(chart_path)
-	else:
-		music_stream = preloaded_data.music_stream
+	# Get music stream from chart data
+	var music_stream = chart_data.music_stream
 	
 	var folder = chart_path.get_base_dir()
 	var audio_path = ""
@@ -298,7 +284,10 @@ func _get_song_time() -> float:
 	return Time.get_ticks_msec() / 1000.0 - note_spawner.song_start_time
 
 func _show_results():
-	var ini_parser = parser_factory.create_metadata_parser()
+	# Get song info for results screen
+	if not chart_loading_service:
+		chart_loading_service = ChartLoadingService.new()
+	var ini_parser = chart_loading_service.parser_factory.create_metadata_parser()
 	var song_info = ini_parser.get_song_info_from_ini(chart_path)
 	var results_scene = load("res://Scenes/results_screen.tscn").instantiate()
 	# Collect stats
