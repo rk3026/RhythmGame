@@ -2,6 +2,8 @@ extends Node3D
 
 class_name GameCoordinator
 
+const FileSystemHelper = preload("res://Scripts/Utils/FileSystemHelper.gd")
+
 @onready var runway: MeshInstance3D = $Runway
 @onready var input_handler = $InputHandler
 @onready var score_manager = $ScoreManager
@@ -25,22 +27,6 @@ var chart_offset: float = 0.0
 var audio_manager
 var ui_manager
 var timeline_controller: Node = null
-
-func find_audio_file(folder_path: String) -> String:
-	var dir = DirAccess.open(folder_path)
-	if not dir:
-		return ""
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".ogg"):
-			dir.list_dir_end()
-			return folder_path + "/" + file_name
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return ""
-
 var parser_factory: ParserFactory
 
 func _ready():
@@ -150,7 +136,7 @@ func _ready():
 	if music_stream:
 		audio_path = folder + "/" + music_stream
 	else:
-		audio_path = find_audio_file(folder)
+		audio_path = FileSystemHelper.find_audio_file(folder)
 	
 	audio_manager.load_audio(audio_path, offset)
 	audio_manager.connect("countdown_finished", Callable(self, "_on_countdown_finished"))

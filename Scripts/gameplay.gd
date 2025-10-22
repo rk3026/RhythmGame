@@ -1,5 +1,7 @@
 extends Node3D
 
+const FileSystemHelper = preload("res://Scripts/Utils/FileSystemHelper.gd")
+
 @onready var runway: MeshInstance3D = $Runway
 @onready var note_scene = preload("res://Scenes/note.tscn")
 @onready var input_handler = $InputHandler
@@ -24,21 +26,6 @@ var countdown_active: bool = false
 var settings_manager
 var animation_director: Node = null
 var chart_offset: float = 0.0
-
-func find_audio_file(folder_path: String) -> String:
-	var dir = DirAccess.open(folder_path)
-	if not dir:
-		return ""
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".ogg"):
-			dir.list_dir_end()
-			return folder_path + "/" + file_name
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return ""
 
 func start_countdown(callback: Callable):
 	countdown_active = true
@@ -161,7 +148,7 @@ func _ready():
 		audio_path = folder + "/" + music_stream
 	else:
 		# Scan for any .ogg file in the folder
-		audio_path = find_audio_file(folder)
+		audio_path = FileSystemHelper.find_audio_file(folder)
 	
 	if audio_path and FileAccess.file_exists(audio_path):
 		audio_player = AudioStreamPlayer.new()

@@ -1,5 +1,7 @@
 extends Control
 
+const FileSystemHelper = preload("res://Scripts/Utils/FileSystemHelper.gd")
+
 @onready var song_list_container = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer
 @onready var song_info_panel = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer
 @onready var audio_player = $AudioStreamPlayer
@@ -43,7 +45,7 @@ func parse_song_info(folder_name: String) -> Dictionary:
 	var folder_path = "res://Assets/Tracks/" + folder_name + "/"
 	
 	# Try to find chart file (could be .chart or .mid/.midi)
-	var chart_path = find_chart_file(folder_path)
+	var chart_path = FileSystemHelper.find_chart_file(folder_path)
 	if not chart_path:
 		return {}
 	
@@ -63,8 +65,8 @@ func parse_song_info(folder_name: String) -> Dictionary:
 	if charter == "" and result:
 		charter = result.get_string(3).strip_edges()
 	
-	var image_path = find_image(folder_path)
-	var audio_path = folder_path + music_stream if music_stream else find_audio(folder_path)
+	var image_path = FileSystemHelper.find_image_file(folder_path)
+	var audio_path = folder_path + music_stream if music_stream else FileSystemHelper.find_audio_file(folder_path)
 	
 	# Use song length from INI if available; avoid loading audio here to keep UI snappy
 	var length_str = ini_song_info.get("song_length_formatted", "")
@@ -89,50 +91,7 @@ func parse_song_info(folder_name: String) -> Dictionary:
 		"playlist_track": ini_song_info.get("playlist_track", "")
 	}
 
-func find_image(folder_path: String) -> String:
-	var dir = DirAccess.open(folder_path)
-	if not dir:
-		return ""
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".png") or file_name.ends_with(".jpg"):
-			dir.list_dir_end()
-			return folder_path + file_name
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return ""
 
-func find_audio(folder_path: String) -> String:
-	var dir = DirAccess.open(folder_path)
-	if not dir:
-		return ""
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".ogg"):
-			dir.list_dir_end()
-			return folder_path + file_name
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return ""
-
-func find_chart_file(folder_path: String) -> String:
-	var dir = DirAccess.open(folder_path)
-	if not dir:
-		return ""
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if parser_factory.is_supported_file(file_name):
-			dir.list_dir_end()
-			return folder_path + file_name
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return ""
 
 func _scan_instruments(chart_path: String) -> Dictionary:
 	var extension = chart_path.get_extension().to_lower()
