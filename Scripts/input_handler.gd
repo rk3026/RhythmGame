@@ -118,12 +118,9 @@ func check_hit(lane_index: int):
 		if not is_instance_valid(note) or note.was_hit:
 			continue
 		if abs(note.position.x - lane_x) < 0.1:
-			var diff = current_time - note.expected_hit_time
-			if diff > 0:  # Early press - miss
-				continue
-			var abs_diff = -diff  # Make positive for grading
-			if abs_diff <= good_window and abs_diff < best_diff:
-				best_diff = abs_diff
+			var diff = abs(current_time - note.expected_hit_time)
+			if diff <= good_window and diff < best_diff:
+				best_diff = diff
 				best_note = note
 
 	if best_note:
