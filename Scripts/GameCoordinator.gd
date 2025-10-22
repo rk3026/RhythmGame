@@ -2,8 +2,6 @@ extends Node3D
 
 class_name GameCoordinator
 
-const FileSystemHelper = preload("res://Scripts/Utils/FileSystemHelper.gd")
-
 @onready var runway: MeshInstance3D = $Runway
 @onready var input_handler = $InputHandler
 @onready var score_manager = $ScoreManager

@@ -1,7 +1,5 @@
 extends Node3D
 
-const FileSystemHelper = preload("res://Scripts/Utils/FileSystemHelper.gd")
-
 @onready var runway: MeshInstance3D = $Runway
 @onready var note_scene = preload("res://Scenes/note.tscn")
 @onready var input_handler = $InputHandler

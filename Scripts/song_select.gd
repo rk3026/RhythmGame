@@ -1,7 +1,5 @@
 extends Control
 
-const FileSystemHelper = preload("res://Scripts/Utils/FileSystemHelper.gd")
-
 @onready var song_list_container = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer
 @onready var song_info_panel = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer
 @onready var audio_player = $AudioStreamPlayer
@@ -315,47 +313,47 @@ func _on_song_selected(song_info: Dictionary):
 	var song_title = song_info_panel.get_node("SongTitle")
 	song_title.bbcode_enabled = true
 	song_title.clear()
-	song_title.append_text(_convert_color_tags_to_bbcode(song_info.title))
+	song_title.append_text(StringFormatter.convert_color_tags_to_bbcode(song_info.title))
 	
 	# Update artist
 	var artist = song_info_panel.get_node("Artist")
 	artist.bbcode_enabled = true
 	artist.clear()
-	artist.append_text(_convert_color_tags_to_bbcode("Artist: " + song_info.artist))
+	artist.append_text(StringFormatter.convert_color_tags_to_bbcode("Artist: " + song_info.artist))
 	
 	# Update album
 	var album = song_info_panel.get_node("Album")
 	album.bbcode_enabled = true
 	album.clear()
-	album.append_text(_convert_color_tags_to_bbcode("Album: " + (song_info.album if song_info.album else "Unknown")))
+	album.append_text(StringFormatter.convert_color_tags_to_bbcode("Album: " + (song_info.album if song_info.album else "Unknown")))
 	album.visible = true
 	
 	# Update year
 	var year = song_info_panel.get_node("Year")
 	year.bbcode_enabled = true
 	year.clear()
-	year.append_text(_convert_color_tags_to_bbcode("Year: " + (song_info.year if song_info.year else "Unknown")))
+	year.append_text(StringFormatter.convert_color_tags_to_bbcode("Year: " + (song_info.year if song_info.year else "Unknown")))
 	year.visible = true
 	
 	# Update genre
 	var genre = song_info_panel.get_node("Genre")
 	genre.bbcode_enabled = true
 	genre.clear()
-	genre.append_text(_convert_color_tags_to_bbcode("Genre: " + (song_info.genre if song_info.genre else "Unknown")))
+	genre.append_text(StringFormatter.convert_color_tags_to_bbcode("Genre: " + (song_info.genre if song_info.genre else "Unknown")))
 	genre.visible = true
 	
 	# Update length
 	var length = song_info_panel.get_node("Length")
 	length.bbcode_enabled = true
 	length.clear()
-	length.append_text(_convert_color_tags_to_bbcode("Length: " + (song_info.length if song_info.length else "Unknown")))
+	length.append_text(StringFormatter.convert_color_tags_to_bbcode("Length: " + (song_info.length if song_info.length else "Unknown")))
 	length.visible = true
 	
 	# Update charter (convert HTML-style color tags to BBCode)
 	var charter = song_info_panel.get_node("Charter")
 	charter.bbcode_enabled = true
 	charter.clear()
-	charter.append_text(_convert_color_tags_to_bbcode("Charter: " + song_info.charter))
+	charter.append_text(StringFormatter.convert_color_tags_to_bbcode("Charter: " + song_info.charter))
 	
 	# Update difficulty buttons
 	var difficulty_container = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer
@@ -404,29 +402,6 @@ func _on_back_button_pressed():
 		audio_player.stop()
 	SceneSwitcher.pop_scene()
 
-func _convert_color_tags_to_bbcode(text: String) -> String:
-	# Convert HTML-like <color=#HEX> tags (as found in some song.ini files)
-	# to Godot RichTextLabel BBCode: [color=#HEX]. Also normalize missing '#'.
-	var result := text
-
-	# 1) Convert open tags: <color=#aabbcc> or <color=aabbcc>
-	var re_open := RegEx.new()
-	# Capture any value up to '>' allowing optional '#'
-	re_open.compile("<color=([^>]+)>")
-	result = re_open.sub(result, "[color=$1]", true)
-
-	# 2) Convert close tags: </color>
-	var re_close := RegEx.new()
-	re_close.compile("</color>")
-	result = re_close.sub(result, "[/color]", true)
-
-	# 3) Ensure [color=HEX] has a leading '#'
-	var re_missing_hash := RegEx.new()
-	re_missing_hash.compile("\\[color=([0-9a-fA-F]{3,8})\\]")
-	result = re_missing_hash.sub(result, "[color=#$1]", true)
-
-	return result
-
 func _notification(what):
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
 		if not visible and audio_player.playing:
@@ -469,8 +444,8 @@ func _populate_score_labels(song_info: Dictionary, score_label: Label, percent_l
 		percent_label.text = "---"
 	else:
 		# Show best score and accuracy
-		score_label.text = _format_score(best_overall.high_score)
-		percent_label.text = _format_accuracy(best_overall.best_accuracy)
+		score_label.text = StringFormatter.format_score(best_overall.high_score)
+		percent_label.text = StringFormatter.format_accuracy(best_overall.best_accuracy)
 		
 		# Color-code by accuracy tier
 		percent_label.modulate = _get_accuracy_color(best_overall.best_accuracy)
@@ -491,24 +466,6 @@ func _get_best_score_for_song(song_info: Dictionary) -> Dictionary:
 				best = data
 	
 	return best
-
-func _format_score(score: int) -> String:
-	"""Format score with commas for readability (e.g., 123456 → 123,456)."""
-	var score_str = str(score)
-	var formatted = ""
-	var count = 0
-	
-	for i in range(score_str.length() - 1, -1, -1):
-		if count > 0 and count % 3 == 0:
-			formatted = "," + formatted
-		formatted = score_str[i] + formatted
-		count += 1
-	
-	return formatted
-
-func _format_accuracy(accuracy: float) -> String:
-	"""Format accuracy as percentage with one decimal place."""
-	return ("%.1f" % accuracy) + "%"
 
 func _get_accuracy_color(accuracy: float) -> Color:
 	"""Get color for accuracy tier (gold/silver/bronze/etc.)."""
