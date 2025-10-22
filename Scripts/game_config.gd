@@ -4,7 +4,6 @@ enum HitGrade {
 	PERFECT,
 	GREAT,
 	GOOD,
-	BAD,
 	MISS
 }
 

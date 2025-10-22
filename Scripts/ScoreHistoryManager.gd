@@ -80,7 +80,7 @@ func update_score(chart_path: String, instrument: String, stats: Dictionary) -> 
 		stats: Dictionary with keys:
 			- score: int
 			- max_combo: int
-			- grade_counts: Dictionary {perfect, great, good, bad, miss}
+			- grade_counts: Dictionary {perfect, great, good, miss}
 			- total_notes: int
 			- completed: bool (optional, defaults to true)
 	
@@ -189,7 +189,6 @@ func _calculate_accuracy(grade_counts: Dictionary, total_notes: int) -> float:
 	
 	var hit_total = grade_counts.get("perfect", 0) + \
 					grade_counts.get("great", 0) + \
-					grade_counts.get("good", 0) + \
-					grade_counts.get("bad", 0)
+					grade_counts.get("good", 0)
 	
 	return (float(hit_total) / float(total_notes)) * 100.0

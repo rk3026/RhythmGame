@@ -6,7 +6,7 @@ signal score_changed(score)
 var combo = 0
 var score = 0
 var max_combo = 0
-var grade_counts := {"perfect":0, "great":0, "good":0, "bad":0, "miss":0}
+var grade_counts := {"perfect":0, "great":0, "good":0, "miss":0}
 
 func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR):
 	combo += 1
@@ -22,9 +22,6 @@ func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR):
 	elif grade == SettingsManager.HitGrade.GOOD:
 		base_score = 5
 		grade_counts.good += 1
-	elif grade == SettingsManager.HitGrade.BAD:
-		base_score = 3
-		grade_counts.bad += 1
 	var type_multiplier = get_type_multiplier(note_type)
 	score += base_score * combo * type_multiplier
 	emit_signal("combo_changed", combo)
@@ -55,8 +52,6 @@ func remove_hit(grade: int, _note_type: NoteType.Type, prev_combo: int, score_de
 			grade_counts.great = max(0, grade_counts.great - 1)
 		SettingsManager.HitGrade.GOOD:
 			grade_counts.good = max(0, grade_counts.good - 1)
-		SettingsManager.HitGrade.BAD:
-			grade_counts.bad = max(0, grade_counts.bad - 1)
 	emit_signal("combo_changed", combo)
 	emit_signal("score_changed", score)
 

@@ -96,7 +96,6 @@ func check_hit(lane_index: int):
 	var hit_grade_perfect = 0
 	var hit_grade_great = 1
 	var hit_grade_good = 2
-	var hit_grade_bad = 3
 	
 	# Use SettingsManager if available
 	if is_instance_valid(SettingsManager):
@@ -106,7 +105,6 @@ func check_hit(lane_index: int):
 		hit_grade_perfect = SettingsManager.HitGrade.PERFECT
 		hit_grade_great = SettingsManager.HitGrade.GREAT
 		hit_grade_good = SettingsManager.HitGrade.GOOD
-		hit_grade_bad = SettingsManager.HitGrade.BAD
 	
 	# Collect candidate notes in this lane within the largest timing window
 	var lane_x = lanes[lane_index]
@@ -120,19 +118,20 @@ func check_hit(lane_index: int):
 		if not is_instance_valid(note) or note.was_hit:
 			continue
 		if abs(note.position.x - lane_x) < 0.1:
-			var diff = abs(current_time - note.expected_hit_time)
-			if diff <= good_window and diff < best_diff:
-				best_diff = diff
+			var diff = current_time - note.expected_hit_time
+			if diff > 0:  # Early press - miss
+				continue
+			var abs_diff = -diff  # Make positive for grading
+			if abs_diff <= good_window and abs_diff < best_diff:
+				best_diff = abs_diff
 				best_note = note
 
 	if best_note:
-		var grade = hit_grade_bad
+		var grade = hit_grade_good
 		if best_diff <= perfect_window:
 			grade = hit_grade_perfect
 		elif best_diff <= great_window:
 			grade = hit_grade_great
-		elif best_diff <= good_window:
-			grade = hit_grade_good
 		emit_signal("note_hit", best_note, grade)
 		best_note.was_hit = true
 

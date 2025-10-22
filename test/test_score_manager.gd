@@ -28,12 +28,6 @@ func test_add_hit_good():
 	assert_int(score_manager.score).is_equal(5)
 	assert_int(score_manager.combo).is_equal(1)
 
-func test_add_hit_bad():
-	var score_manager = auto_free(ScoreManagerScript.new())
-	score_manager.add_hit(SettingsManager.HitGrade.BAD)
-	assert_int(score_manager.score).is_equal(3)
-	assert_int(score_manager.combo).is_equal(1)
-
 func test_combo_multiplier():
 	var score_manager = auto_free(ScoreManagerScript.new())
 	score_manager.add_hit(SettingsManager.HitGrade.PERFECT)

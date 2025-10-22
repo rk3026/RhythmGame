@@ -3,7 +3,7 @@ extends Control
 @export var score: int = 0
 @export var max_combo: int = 0
 @export var total_notes: int = 0
-@export var hits_per_grade := {"perfect":0, "great":0, "good":0, "bad":0, "miss":0}
+@export var hits_per_grade := {"perfect":0, "great":0, "good":0, "miss":0}
 @export var song_title: String = ""
 @export var difficulty: String = ""
 @export var chart_path: String = ""  # NEW: For score history
@@ -29,17 +29,16 @@ func _ready():
 	_add_hover_effects($VBox/Buttons/ButtonsHBox/MenuButton)
 
 func calculate_accuracy() -> float:
-	var hit_total = hits_per_grade.perfect + hits_per_grade.great + hits_per_grade.good + hits_per_grade.bad
+	var hit_total = hits_per_grade.perfect + hits_per_grade.great + hits_per_grade.good
 	if total_notes == 0:
 		return 0.0
 	return round((float(hit_total) / float(total_notes)) * 1000.0) / 10.0
 
 func breakdown_text() -> String:
-	return "Perfect: %d\nGreat: %d\nGood: %d\nBad: %d\nMiss: %d" % [
+	return "Perfect: %d\nGreat: %d\nGood: %d\nMiss: %d" % [
 		hits_per_grade.perfect,
 		hits_per_grade.great,
 		hits_per_grade.good,
-		hits_per_grade.bad,
 		hits_per_grade.miss
 	]
 

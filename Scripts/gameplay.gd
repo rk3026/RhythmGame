@@ -296,7 +296,7 @@ func _show_results():
 	# Total notes = all grades including misses
 	var counts = score_manager.grade_counts
 	results_scene.hits_per_grade = counts.duplicate()
-	results_scene.total_notes = counts.perfect + counts.great + counts.good + counts.bad + counts.miss
+	results_scene.total_notes = counts.perfect + counts.great + counts.good + counts.miss
 	results_scene.song_title = song_info.get("name", "Unknown Title")
 	results_scene.difficulty = instrument
 	# NEW: Pass chart path and instrument for score history tracking
@@ -323,8 +323,12 @@ func _on_note_hit(note, grade: int):
 	elif grade == SettingsManager.HitGrade.GOOD:
 		grade_str = "Good"
 		label.modulate = Color.ORANGE
+	elif grade == SettingsManager.HitGrade.MISS:
+		grade_str = "Miss"
+		label.modulate = Color.RED
 	else:
-		grade_str = "Bad"
+		push_error("Unknown grade: " + str(grade))
+		grade_str = "Miss"
 		label.modulate = Color.RED
 	label.text = grade_str
 	# Use command pattern for reversible scoring (only during replay/scrubbing)
@@ -362,8 +366,8 @@ func _on_note_miss(_note):
 	else:
 		score_manager.add_miss()
 	if animation_director:
-		# Use BAD grade constant for consistent size difference
-		animation_director.animate_judgement_label(label, SettingsManager.HitGrade.BAD)
+		# Use MISS grade constant for consistent size difference
+		animation_director.animate_judgement_label(label, SettingsManager.HitGrade.MISS)
 	# Fade out
 	current_tween = create_tween()
 	current_tween.tween_property(label, "modulate:a", 0, 1.0)
