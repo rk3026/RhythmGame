@@ -36,6 +36,7 @@ var line_color: Color = Color.BLACK
 var perfect_window: float = 0.025
 var great_window: float = 0.05
 var good_window: float = 0.1
+var miss_window: float = 0.7
 
 func _ready():
 	load_settings()

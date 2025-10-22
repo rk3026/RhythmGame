@@ -10,6 +10,7 @@ var was_hit: bool = false:
 		was_hit = value
 		if tail_instance:
 			tail_instance.was_hit = value
+var was_missed: bool = false  # Tracks if note was actively or passively missed
 var note_type: NoteType.Type = NoteType.Type.REGULAR
 var is_sustain: bool = false
 var sustain_length: float = 0.0  # in seconds
@@ -29,6 +30,7 @@ func reset():
 	spawn_time = 0.0
 	expected_hit_time = 0.0
 	was_hit = false
+	was_missed = false
 	note_type = NoteType.Type.REGULAR
 	is_sustain = false
 	sustain_length = 0.0
@@ -103,12 +105,13 @@ func _process(delta: float):
 	var dir = -1.0 if reverse_mode else 1.0
 	position.z += SettingsManager.note_speed * delta * dir
 
-	if position.z >= 5 and not was_hit and not reverse_mode:
+	# Passive miss: note passed the hit zone without being hit
+	if position.z >= 5 and not was_hit and not was_missed and not reverse_mode:
+		was_missed = true
 		emit_signal("note_miss", self)
-		was_hit = true
 		visible = false
 		if tail_instance:
-			tail_instance.was_hit = true
+			tail_instance.visible = false
 
 func _on_tail_finished(_tail):
 	emit_signal("note_finished", self)

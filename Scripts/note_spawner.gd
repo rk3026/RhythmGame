@@ -177,16 +177,28 @@ func _on_note_finished(note):
 	_spawn_hit_effect(note, true)
 
 func _on_note_miss(note):
-	# Miss effect: dull gray or red flash
+	# Handle note miss: spawn visual effect, notify gameplay for scoring, and remove note
 	var gameplay = get_parent()
-	if not gameplay or not gameplay.has_node("HitEffectPool"):
-		return
-	var pool = gameplay.get_node("HitEffectPool")
-	var eff = pool.get_effect()
-	gameplay.add_child(eff)
-	eff.global_transform.origin = Vector3(note.position.x, 0.2, 0.0)
-	if eff.has_method("play"):
-		eff.play(Color(0.3,0.3,0.3), 0.9)
+	
+	# Spawn miss effect
+	if gameplay and gameplay.has_node("HitEffectPool"):
+		var pool = gameplay.get_node("HitEffectPool")
+		var eff = pool.get_effect()
+		gameplay.add_child(eff)
+		eff.global_transform.origin = Vector3(note.position.x, 0.2, 0.0)
+		if eff.has_method("play"):
+			eff.play(Color(0.3,0.3,0.3), 0.9)
+	
+	# Notify gameplay to update score and show miss label
+	if gameplay and gameplay.has_method("_on_note_miss"):
+		gameplay._on_note_miss(note)
+	
+	# Remove the note from active notes (it's already hidden by was_missed flag)
+	if not note.is_sustain:
+		var removal_time = timeline_controller.current_time if timeline_controller else note.expected_hit_time
+		_release_note(note, removal_time)
+		active_notes.erase(note)
+		note_pool.return_note(note)
 
 func _spawn_hit_effect(note, sustain_end: bool):
 	var gameplay = get_parent()
