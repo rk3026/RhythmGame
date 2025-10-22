@@ -1,135 +1,124 @@
 extends Control
 
+@onready var _note_speed_slider: HSlider = $Margin/VBox/Scroll/Options/NoteSpeedProgress/Slider
+@onready var _note_speed_label: Label = $Margin/VBox/Scroll/Options/NoteSpeedProgress/ValueLabel
+@onready var _volume_slider: HSlider = $Margin/VBox/Scroll/Options/MasterVolumeProgress/Slider
+@onready var _volume_label: Label = $Margin/VBox/Scroll/Options/MasterVolumeProgress/ValueLabel
+
 var waiting_for_key_index: int = -1
 
 func _ready():
-	_build_lane_key_rows()
 	_load_values_into_ui()
-	# Connections
-	$Margin/VBox/BackButton.connect("pressed", Callable(self, "_on_back"))
-	$Margin/VBox/ButtonsHBox/SaveButton.connect("pressed", Callable(self, "_on_save"))
-	$Margin/VBox/ButtonsHBox/ResetButton.connect("pressed", Callable(self, "_on_reset"))
-	$Margin/VBox/Scroll/Options/NoteSpeedHBox/NoteSpeedSlider.connect("value_changed", Callable(self, "_on_note_speed_changed"))
-	$Margin/VBox/Scroll/Options/MasterVolHBox/MasterSlider.connect("value_changed", Callable(self, "_on_master_changed"))
-	$Margin/VBox/Scroll/Options/TimingOffsetHBox/TimingOffsetSpin.connect("value_changed", Callable(self, "_on_offset_changed"))
+	_connect_signals()
+
+func _connect_signals():
+	# Connect note speed slider
+	_note_speed_slider.value_changed.connect(_on_note_speed_changed)
 	
-	# Add hover effects to buttons
-	_add_hover_effects($Margin/VBox/BackButton)
-	_add_hover_effects($Margin/VBox/ButtonsHBox/SaveButton)
-	_add_hover_effects($Margin/VBox/ButtonsHBox/ResetButton)
+	# Connect volume slider
+	_volume_slider.value_changed.connect(_on_volume_changed)
+	
+	# Connect timing offset spinbox
+	$Margin/VBox/Scroll/Options/TimingOffsetHBox/TimingOffsetSpin.value_changed.connect(_on_offset_changed)
+	
+	# Connect lane key buttons
+	var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+	for i in range(lane_keys_container.get_child_count()):
+		var lane_row = lane_keys_container.get_child(i)
+		var keybind_display = lane_row.get_node("KeybindDisplay")
+		keybind_display.keybind_changed.connect(_start_rebind.bind(i))
+	
+	# Connect back button
+	$Margin/VBox/BackButton.pressed.connect(_on_back)
 
 func get_settings_manager():
 	return SettingsManager
 
-func _build_lane_key_rows():
-	var lane_box = $Margin/VBox/Scroll/Options/LaneKeys
-	# Remove existing children (VBoxContainer has no clear())
-	for child in lane_box.get_children():
-		lane_box.remove_child(child)
-		child.queue_free()
-	for i in range(SettingsManager.lane_keys.size()):
-		var h = HBoxContainer.new()
-		h.name = "LaneRow" + str(i)
-		h.custom_minimum_size = Vector2(0, 28)
-		var lbl = Label.new()
-		lbl.text = "Lane %d" % (i + 1)
-		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		h.add_child(lbl)
-		var btn = Button.new()
-		btn.name = "KeyButton" + str(i)
-		btn.text = keycode_to_string(SettingsManager.lane_keys[i])
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.connect("pressed", Callable(self, "_on_rebind_pressed").bind(i))
-		# Add hover effects to keybind buttons
-		btn.connect("mouse_entered", Callable(self, "_on_button_hover_enter").bind(btn))
-		btn.connect("mouse_exited", Callable(self, "_on_button_hover_exit").bind(btn))
-		await get_tree().process_frame  # Wait for size to be set
-		btn.pivot_offset = btn.size / 2.0
-		h.add_child(btn)
-		lane_box.add_child(h)
-
-func keycode_to_string(code: int) -> String:
-	return OS.get_keycode_string(code)
-
 func _load_values_into_ui():
-	$Margin/VBox/Scroll/Options/NoteSpeedHBox/NoteSpeedSlider.value = SettingsManager.note_speed
-	$Margin/VBox/Scroll/Options/NoteSpeedHBox/NoteSpeedValue.text = str(int(SettingsManager.note_speed))
-	$Margin/VBox/Scroll/Options/MasterVolHBox/MasterSlider.value = SettingsManager.master_volume
-	$Margin/VBox/Scroll/Options/MasterVolHBox/MasterValue.text = str(int(SettingsManager.master_volume * 100)) + "%"
+	# Load note speed
+	_note_speed_slider.value = SettingsManager.note_speed
+	_note_speed_label.text = str(int(SettingsManager.note_speed))
+	
+	# Load master volume
+	_volume_slider.value = SettingsManager.master_volume
+	_volume_label.text = str(int(SettingsManager.master_volume * 100)) + "%"
+	
+	# Load timing offset
 	$Margin/VBox/Scroll/Options/TimingOffsetHBox/TimingOffsetSpin.value = int(SettingsManager.timing_offset * 1000.0)
+	
+	# Load lane keys
+	var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+	for i in range(min(lane_keys_container.get_child_count(), SettingsManager.lane_keys.size())):
+		var lane_row = lane_keys_container.get_child(i)
+		var keybind_display = lane_row.get_node("KeybindDisplay")
+		keybind_display.key_text = OS.get_keycode_string(SettingsManager.lane_keys[i])
 
-func _on_note_speed_changed(value):
-	SettingsManager.set_note_speed(value)
-	$Margin/VBox/Scroll/Options/NoteSpeedHBox/NoteSpeedValue.text = str(int(value))
+func _on_note_speed_changed(value: float):
+	SettingsManager.note_speed = value
+	_note_speed_label.text = str(int(value))
+	SettingsManager.save_settings()
 
-func _on_master_changed(value):
-	SettingsManager.set_master_volume(value)
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(value))
-	$Margin/VBox/Scroll/Options/MasterVolHBox/MasterValue.text = str(int(value * 100)) + "%"
+func _on_volume_changed(value: float):
+	SettingsManager.master_volume = value
+	_volume_label.text = str(int(value * 100)) + "%"
+	SettingsManager.save_settings()
 
 func _on_offset_changed(value):
 	# store in seconds internally
 	SettingsManager.set_timing_offset(float(value) / 1000.0)
 
-func _on_rebind_pressed(index: int):
+func _on_keybind_gui_input(event: InputEvent, lane_index: int):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_start_rebind(lane_index)
+
+func _start_rebind(index: int):
 	waiting_for_key_index = index
-	var btn = _get_key_button(index)
-	btn.text = "Press a key..."
-	btn.disabled = true
+	var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+	var lane_row = lane_keys_container.get_child(index)
+	var keybind_display = lane_row.get_node("KeybindDisplay")
+	keybind_display.key_text = "Press a key..."
+	keybind_display.set_state(keybind_display.KeyState.WAITING)
 	set_process_input(true)
 
 func _input(event):
 	if waiting_for_key_index >= 0 and event is InputEventKey and event.pressed and not event.echo:
 		# ESC cancels rebind
 		if event.keycode == KEY_ESCAPE:
-			var cancel_btn = _get_key_button(waiting_for_key_index)
-			if cancel_btn:
-				cancel_btn.text = keycode_to_string(SettingsManager.get_lane_key(waiting_for_key_index))
-				cancel_btn.disabled = false
-			waiting_for_key_index = -1
-			set_process_input(false)
+			_cancel_rebind()
 			return
+		
+		# Update the keybind
 		SettingsManager.set_lane_key(waiting_for_key_index, event.keycode)
-		var btn = _get_key_button(waiting_for_key_index)
-		if btn:
-			btn.text = keycode_to_string(event.keycode)
-			btn.disabled = false
+		
+		var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+		var lane_row = lane_keys_container.get_child(waiting_for_key_index)
+		var keybind_display = lane_row.get_node("KeybindDisplay")
+		keybind_display.key_text = OS.get_keycode_string(event.keycode)
+		keybind_display.set_state(keybind_display.KeyState.NORMAL)
+		
 		waiting_for_key_index = -1
 		set_process_input(false)
+		
 		# Immediately save and apply the change
 		SettingsManager.save_settings()
 
-func _get_key_button(index: int) -> Button:
-	for row in $Margin/VBox/Scroll/Options/LaneKeys.get_children():
-		var btn = row.get_node_or_null("KeyButton" + str(index))
-		if btn:
-			return btn
-	return null
+func _cancel_rebind():
+	if waiting_for_key_index >= 0:
+		var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+		var lane_row = lane_keys_container.get_child(waiting_for_key_index)
+		var keybind_display = lane_row.get_node("KeybindDisplay")
+		keybind_display.key_text = OS.get_keycode_string(SettingsManager.get_lane_key(waiting_for_key_index))
+		keybind_display.set_state(keybind_display.KeyState.NORMAL)
+		waiting_for_key_index = -1
+		set_process_input(false)
 
 func _on_save():
 	SettingsManager.save_settings()
 
 func _on_reset():
 	SettingsManager.reset_defaults()
-	_build_lane_key_rows()
 	_load_values_into_ui()
 
 func _on_back():
 	SettingsManager.save_settings()
 	SceneSwitcher.pop_scene()
-
-func _add_hover_effects(button: Button):
-	if button:
-		button.connect("mouse_entered", Callable(self, "_on_button_hover_enter").bind(button))
-		button.connect("mouse_exited", Callable(self, "_on_button_hover_exit").bind(button))
-		button.pivot_offset = button.size / 2.0
-
-func _on_button_hover_enter(button: Button):
-	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.2)
-	tween.tween_property(button, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.2)
-
-func _on_button_hover_exit(button: Button):
-	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
-	tween.tween_property(button, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.2)

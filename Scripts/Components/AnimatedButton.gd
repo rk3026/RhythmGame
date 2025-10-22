@@ -29,9 +29,10 @@ func _ready() -> void:
 	_original_modulate = modulate
 	pivot_offset = size / 2.0
 	
-	# Create audio player for sound effects
-	_audio_player = AudioStreamPlayer.new()
-	add_child(_audio_player)
+	# Get audio player from scene tree
+	_audio_player = get_node_or_null("AudioStreamPlayer")
+	if not _audio_player:
+		push_warning("AnimatedButton: AudioStreamPlayer not found in scene tree")
 	
 	# Connect signals
 	connect("mouse_entered", Callable(self, "_on_mouse_entered"))

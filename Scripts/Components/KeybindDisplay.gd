@@ -7,6 +7,7 @@ class_name KeybindDisplay
 
 signal key_pressed
 signal key_released
+signal keybind_changed
 
 enum InputDeviceType {
 	KEYBOARD,
@@ -180,11 +181,9 @@ func _get_gamepad_button_name(button_index: int) -> String:
 		JOY_BUTTON_BACK: return "Select"
 		_: return "Btn %d" % button_index
 
-func pulse() -> void:
-	"""Play a pulse animation to draw attention"""
-	var tween = create_tween()
-	tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.2)
-	tween.tween_property(self, "scale", _original_scale, 0.2)
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		keybind_changed.emit()
 
 func shake() -> void:
 	"""Play shake animation (for invalid input)"""

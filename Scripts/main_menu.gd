@@ -1,7 +1,6 @@
 
 extends Control
 
-# Reference to notification banner (should be defined in .tscn)
 @onready var notification_banner: Node = $NotificationBanner
 
 func _ready():
@@ -9,7 +8,6 @@ func _ready():
 	_show_welcome_notification()
 
 func _connect_buttons():
-	# Connect button signals - buttons should be defined with AnimatedButton script in .tscn
 	var left_base := "MarginContainer/MainLayout/MiddleSection/LeftSidebar"
 	
 	var quickplay_btn = get_node_or_null(left_base + "/QuickplayButton")
