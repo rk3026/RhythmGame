@@ -1,4 +1,4 @@
-extends CanvasLayer
+extends Control
 
 # NotificationBanner: Slide-in notification system with queue support
 # Shows temporary messages with icons and color theming
@@ -10,11 +10,6 @@ enum NotificationType {
 	ERROR,
 	CUSTOM
 }
-
-@export_group("Appearance")
-@export var banner_position: String = "top"  # "top", "bottom"
-@export var banner_width: float = 400.0
-@export var banner_height: float = 80.0
 
 @export_group("Behavior")
 @export var auto_dismiss_duration: float = 3.0
@@ -39,9 +34,6 @@ const TYPE_ICONS = {
 var _notification_queue: Array = []
 var _active_banner: PanelContainer = null
 var _is_showing: bool = false
-
-func _ready() -> void:
-	layer = 100  # Top layer
 
 # Show a notification
 func show_notification(message: String, type: NotificationType = NotificationType.INFO, duration: float = 0.0, icon: String = "") -> void:
@@ -84,8 +76,9 @@ func _create_banner(notif_data: Dictionary) -> void:
 	
 	# Create panel container
 	_active_banner = PanelContainer.new()
-	_active_banner.custom_minimum_size = Vector2(banner_width, banner_height)
-	_active_banner.z_index = 1000
+	_active_banner.size = size  # Fill parent size
+	_active_banner.position = Vector2.ZERO  # Position at top-left of parent
+	_active_banner.modulate.a = 0.0  # Start invisible
 	
 	# Style
 	var style = StyleBoxFlat.new()
@@ -113,6 +106,7 @@ func _create_banner(notif_data: Dictionary) -> void:
 	icon_label.text = notif_data.icon
 	icon_label.add_theme_font_size_override("font_size", 32)
 	icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon_label.add_theme_color_override("font_color", Color.WHITE)
 	hbox.add_child(icon_label)
 	
 	# Message
@@ -122,6 +116,7 @@ func _create_banner(notif_data: Dictionary) -> void:
 	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	message_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	message_label.add_theme_color_override("font_color", Color.WHITE)
 	hbox.add_child(message_label)
 	
 	# Close button
@@ -129,51 +124,28 @@ func _create_banner(notif_data: Dictionary) -> void:
 	close_button.text = "✕"
 	close_button.flat = true
 	close_button.custom_minimum_size = Vector2(30, 30)
+	close_button.add_theme_color_override("font_color", Color.WHITE)
 	close_button.pressed.connect(_on_close_pressed)
 	hbox.add_child(close_button)
 	
 	add_child(_active_banner)
-	
-	# Position off-screen initially
-	_position_banner(true)
-
-func _position_banner(off_screen: bool = false) -> void:
-	if not _active_banner:
-		return
-	
-	var viewport_size = get_viewport().get_visible_rect().size
-	var x = (viewport_size.x - banner_width) / 2.0
-	var y = 0.0
-	
-	if banner_position == "top":
-		y = 20.0 if not off_screen else -banner_height - 20.0
-	else:  # bottom
-		y = viewport_size.y - banner_height - 20.0 if not off_screen else viewport_size.y + 20.0
-	
-	_active_banner.position = Vector2(x, y)
 
 func _animate_in() -> void:
 	if not _active_banner:
 		return
 	
-	var viewport_size = get_viewport().get_visible_rect().size
-	var target_y = 20.0 if banner_position == "top" else viewport_size.y - banner_height - 20.0
-	
-	var tween = create_tween().set_parallel(true)
-	tween.tween_property(_active_banner, "position:y", target_y, slide_duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	tween.tween_property(_active_banner, "modulate:a", 1.0, slide_duration * 0.5)
+	# Simple fade in animation
+	var tween = create_tween()
+	tween.tween_property(_active_banner, "modulate:a", 1.0, slide_duration).set_ease(Tween.EASE_OUT)
 
 func _animate_out() -> void:
 	if not _active_banner:
 		_show_next()
 		return
 	
-	var viewport_size = get_viewport().get_visible_rect().size
-	var target_y = -banner_height - 20.0 if banner_position == "top" else viewport_size.y + 20.0
-	
-	var tween = create_tween().set_parallel(true)
-	tween.tween_property(_active_banner, "position:y", target_y, slide_duration).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
-	tween.tween_property(_active_banner, "modulate:a", 0.0, slide_duration * 0.5)
+	# Simple fade out animation
+	var tween = create_tween()
+	tween.tween_property(_active_banner, "modulate:a", 0.0, slide_duration).set_ease(Tween.EASE_IN)
 	
 	await tween.finished
 	
@@ -205,7 +177,7 @@ func clear_queue() -> void:
 		_animate_out()
 
 # Singleton access helper
-static func get_instance() -> CanvasLayer:
+static func get_instance() -> Control:
 	# Look for existing NotificationBanner in scene tree
 	var root = Engine.get_main_loop().root
 	for child in root.get_children():

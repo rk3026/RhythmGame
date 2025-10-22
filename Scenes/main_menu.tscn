@@ -1,6 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://54winj8i144m"]
+[gd_scene load_steps=7 format=3 uid="uid://54winj8i144m"]
 
 [ext_resource type="Script" uid="uid://cgg3b65kydfva" path="res://Scripts/main_menu.gd" id="1"]
+[ext_resource type="Script" uid="uid://bp75o8pwlbycx" path="res://Scripts/Components/AnimatedButton.gd" id="2"]
+[ext_resource type="Script" uid="uid://bmp5ssaogmhfr" path="res://Scripts/Components/FancyHeader.gd" id="3"]
+[ext_resource type="Script" uid="uid://bp15alsqv5u0e" path="res://Scripts/Components/MenuCardPanel.gd" id="4"]
+[ext_resource type="Script" uid="uid://byai3arlj3iwc" path="res://Scripts/Components/NotificationBanner.gd" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_28flt"]
 bg_color = Color(0.14406255, 0.14406255, 0.14406249, 1)
@@ -39,6 +43,11 @@ size_flags_horizontal = 3
 [node name="FeaturedSong" type="PanelContainer" parent="MarginContainer/MainLayout/TopSection"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
+script = ExtResource("4")
+card_color = Color(0.2, 0.15, 0.25, 0.9)
+hover_color = Color(0.25, 0.2, 0.3, 0.95)
+enable_hover_lift = true
+lift_distance = 3.0
 
 [node name="FeaturedContent" type="VBoxContainer" parent="MarginContainer/MainLayout/TopSection/FeaturedSong"]
 layout_mode = 2
@@ -88,36 +97,60 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "QUICKPLAY"
 alignment = 0
+script = ExtResource("2")
+hover_scale = Vector2(1.08, 1.08)
+press_scale = Vector2(0.95, 0.95)
+animation_duration = 0.15
 
 [node name="OnlineButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "ONLINE"
 alignment = 0
+script = ExtResource("2")
+hover_scale = Vector2(1.08, 1.08)
+press_scale = Vector2(0.95, 0.95)
+animation_duration = 0.15
 
 [node name="PracticeButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "PRACTICE"
 alignment = 0
+script = ExtResource("2")
+hover_scale = Vector2(1.08, 1.08)
+press_scale = Vector2(0.95, 0.95)
+animation_duration = 0.15
 
 [node name="NewsButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "NEWS"
 alignment = 0
+script = ExtResource("2")
+hover_scale = Vector2(1.08, 1.08)
+press_scale = Vector2(0.95, 0.95)
+animation_duration = 0.15
 
 [node name="SettingsButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "SETTINGS"
 alignment = 0
+script = ExtResource("2")
+hover_scale = Vector2(1.08, 1.08)
+press_scale = Vector2(0.95, 0.95)
+animation_duration = 0.15
 
 [node name="QuitButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "QUIT"
 alignment = 0
+script = ExtResource("2")
+hover_scale = Vector2(1.08, 1.08)
+press_scale = Vector2(0.95, 0.95)
+animation_duration = 0.15
 
 [node name="CenterSection" type="CenterContainer" parent="MarginContainer/MainLayout/MiddleSection"]
 layout_mode = 2
@@ -149,14 +182,24 @@ alignment = 1
 [node name="NewsContent" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar"]
 layout_mode = 2
 
-[node name="NewsHeader" type="Label" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
+[node name="NewsHeader" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_28flt")
-text = "NEWS"
-horizontal_alignment = 1
+script = ExtResource("3")
+header_text = "📰 LATEST NEWS"
+header_font_size = 20
+show_underline = true
+underline_thickness = 2
+text_color = Color(1, 1, 1, 1)
+underline_color = Color(0.3, 0.6, 1, 1)
+slide_in_direction = "left"
 
 [node name="NewsItem1" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
 layout_mode = 2
+script = ExtResource("4")
+card_color = Color(0.15, 0.15, 0.15, 0.9)
+hover_color = Color(0.2, 0.2, 0.2, 0.95)
+enable_hover_lift = true
+lift_distance = 3.0
 
 [node name="Item1Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem1"]
 layout_mode = 2
@@ -171,6 +214,11 @@ text = "ExileLord Rants"
 
 [node name="NewsItem2" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
 layout_mode = 2
+script = ExtResource("4")
+card_color = Color(0.15, 0.15, 0.15, 0.9)
+hover_color = Color(0.2, 0.2, 0.2, 0.95)
+enable_hover_lift = true
+lift_distance = 3.0
 
 [node name="Item2Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem2"]
 layout_mode = 2
@@ -185,6 +233,11 @@ text = "Where's the news!?"
 
 [node name="NewsItem3" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
 layout_mode = 2
+script = ExtResource("4")
+card_color = Color(0.15, 0.15, 0.15, 0.9)
+hover_color = Color(0.2, 0.2, 0.2, 0.95)
+enable_hover_lift = true
+lift_distance = 3.0
 
 [node name="Item3Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem3"]
 layout_mode = 2
@@ -199,6 +252,11 @@ text = "A new Hope"
 
 [node name="NewsItem4" type="PanelContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent"]
 layout_mode = 2
+script = ExtResource("4")
+card_color = Color(0.15, 0.15, 0.15, 0.9)
+hover_color = Color(0.2, 0.2, 0.2, 0.95)
+enable_hover_lift = true
+lift_distance = 3.0
 
 [node name="Item4Content" type="VBoxContainer" parent="MarginContainer/MainLayout/MiddleSection/RightSidebar/NewsContent/NewsItem4"]
 layout_mode = 2
@@ -279,3 +337,11 @@ alignment = 1
 layout_mode = 2
 text = "PRESS START"
 horizontal_alignment = 1
+
+[node name="NotificationBanner" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 100.0
+grow_horizontal = 2
+script = ExtResource("5")

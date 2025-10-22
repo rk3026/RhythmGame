@@ -31,7 +31,6 @@ extends PanelContainer
 var _style_normal: StyleBoxFlat
 var _style_hover: StyleBoxFlat
 var _tween: Tween
-var _original_position: Vector2
 var _badge_label: Label
 var _icon_rect: TextureRect
 
@@ -39,9 +38,6 @@ func _ready() -> void:
 	_setup_styles()
 	_setup_badge()
 	_setup_icon()
-	
-	# Store original position for lift animation
-	_original_position = position
 	
 	# Connect mouse events
 	mouse_entered.connect(_on_mouse_entered)
@@ -134,12 +130,12 @@ func _on_mouse_entered() -> void:
 	# Change style to hover
 	add_theme_stylebox_override("panel", _style_hover)
 	
-	# Lift animation
+	# Simple scale effect instead of position change (more reliable with layouts)
 	if enable_hover_lift:
-		_tween.tween_property(self, "position:y", _original_position.y + lift_distance, animation_duration)
+		_tween.tween_property(self, "scale", Vector2(1.02, 1.02), animation_duration)
 	
-	# Scale slightly
-	_tween.tween_property(self, "modulate", Color(1.05, 1.05, 1.05, 1.0), animation_duration)
+	# Brightness increase
+	_tween.tween_property(self, "modulate", Color(1.1, 1.1, 1.1, 1.0), animation_duration)
 
 func _on_mouse_exited() -> void:
 	_cancel_tween()
@@ -148,9 +144,9 @@ func _on_mouse_exited() -> void:
 	# Change style to normal
 	add_theme_stylebox_override("panel", _style_normal)
 	
-	# Return to original position
+	# Return to normal scale
 	if enable_hover_lift:
-		_tween.tween_property(self, "position:y", _original_position.y, animation_duration)
+		_tween.tween_property(self, "scale", Vector2.ONE, animation_duration)
 	
 	# Return to normal modulate
 	_tween.tween_property(self, "modulate", Color.WHITE, animation_duration)
