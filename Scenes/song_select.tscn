@@ -36,7 +36,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_mbyrm")
 layout_mode = 2
 
 [node name="Top" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/Top"]
@@ -50,32 +49,31 @@ layout_mode = 2
 size_flags_horizontal = 0
 text = "Back to Main Menu"
 
-[node name="Middle" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="Middle" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 3
-
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/Middle"]
-layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_right = 20
 
-[node name="SongList" type="ScrollContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SongList" type="ScrollContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 10
 
-[node name="SampleSong1" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong1" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -84,7 +82,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -94,13 +92,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -115,13 +113,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -135,22 +133,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong1/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong2" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong2" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -159,7 +157,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -169,13 +167,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -190,13 +188,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -210,22 +208,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong2/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong3" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong3" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -234,7 +232,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -244,13 +242,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -265,13 +263,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -285,22 +283,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong3/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong4" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong4" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -309,7 +307,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -319,88 +317,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer/ArtistContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 18
-text = "DRAGONFORCE"
-label_settings = SubResource("LabelSettings_mbyrm")
-horizontal_alignment = 2
-vertical_alignment = 1
-clip_text = true
-text_overrun_behavior = 2
-
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer/SongContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 18
-text = "Through the Fire and Flames"
-label_settings = SubResource("LabelSettings_mbyrm")
-vertical_alignment = 1
-clip_text = true
-text_overrun_behavior = 2
-
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
-layout_mode = 2
-text = "7★"
-label_settings = SubResource("LabelSettings_mbyrm")
-
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
-layout_mode = 2
-text = "99%"
-label_settings = SubResource("LabelSettings_mbyrm")
-
-[node name="SampleSong5" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-flat = true
-
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
-
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/separation = 20
-
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -415,13 +338,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -435,22 +358,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong4/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong6" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong5" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -459,7 +382,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -469,13 +392,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -490,13 +413,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -510,22 +433,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 2
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong5/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong7" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong6" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -534,7 +457,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -544,13 +467,88 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer/ArtistContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+text = "DRAGONFORCE"
+label_settings = SubResource("LabelSettings_mbyrm")
+horizontal_alignment = 2
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 2
+
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer/SongContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+text = "Through the Fire and Flames"
+label_settings = SubResource("LabelSettings_mbyrm")
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 2
+
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+layout_mode = 2
+text = "7★"
+label_settings = SubResource("LabelSettings_mbyrm")
+
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong6/HBoxContainer"]
+layout_mode = 2
+text = "99%"
+label_settings = SubResource("LabelSettings_mbyrm")
+
+[node name="SampleSong7" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+flat = true
+
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 20
+
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -565,13 +563,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -585,22 +583,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong7/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong8" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong8" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -609,7 +607,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -619,13 +617,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -640,13 +638,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -660,22 +658,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong8/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong9" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong9" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -684,7 +682,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -694,13 +692,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -715,13 +713,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -735,22 +733,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong9/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong10" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong10" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -759,7 +757,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -769,13 +767,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -790,13 +788,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -810,22 +808,22 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong10/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SampleSong11" type="Button" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer"]
+[node name="SampleSong11" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 flat = true
 
-[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11"]
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -834,7 +832,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xvarq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -844,13 +842,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
+[node name="ArtistContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer/ArtistContainer"]
+[node name="ArtistLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer/ArtistContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -865,13 +863,13 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
+[node name="SongContainer" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer/SongContainer"]
+[node name="SongLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer/SongContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -885,117 +883,135 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
 layout_mode = 2
 text = "7★"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
+[node name="PercentLabel" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer/SampleSong11/HBoxContainer"]
 layout_mode = 2
 text = "99%"
 label_settings = SubResource("LabelSettings_mbyrm")
 
-[node name="SongSelection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle"]
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="SongSelection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer"]
 custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
 
-[node name="SongInfo" type="MarginContainer" parent="MarginContainer/VBoxContainer/Middle/SongSelection"]
+[node name="SongInfo" type="MarginContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo"]
 layout_mode = 2
 
-[node name="AlbumArt" type="ColorRect" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="AlbumArt" type="ColorRect" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
 custom_minimum_size = Vector2(250, 250)
 layout_mode = 2
 size_flags_horizontal = 4
 color = Color(0.3, 0.3, 0.4, 1)
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
 layout_mode = 2
 
-[node name="SongTitle" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="SongTitle" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Through the Fire and Flames"
-fit_content = true
+scroll_active = false
 
-[node name="Artist" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="Artist" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Artist: DragonForce"
-fit_content = true
+scroll_active = false
 
-[node name="Album" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="Album" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Album: Inhuman Rampage"
-fit_content = true
+scroll_active = false
 
-[node name="Year" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="Year" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Year: 2006"
-fit_content = true
+scroll_active = false
 
-[node name="Genre" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="Genre" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Genre: Power Metal"
-fit_content = true
+scroll_active = false
 
-[node name="Length" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="Length" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Length: 7:21"
-fit_content = true
+scroll_active = false
 
-[node name="Charter" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="Charter" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "Charter: Miscellany"
-fit_content = true
+scroll_active = false
 
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer"]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
 layout_mode = 2
 
-[node name="Difficulty" type="MarginContainer" parent="MarginContainer/VBoxContainer/Middle/SongSelection"]
+[node name="Difficulty" type="MarginContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer"]
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer"]
 layout_mode = 2
 text = "Difficulty"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
+[node name="Button" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
 text = "Easy"
 
-[node name="Button2" type="Button" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
+[node name="Button2" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
 text = "Medium"
 
-[node name="Button3" type="Button" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
+[node name="Button3" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
 text = "Hard"
 
-[node name="Button4" type="Button" parent="MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
+[node name="Button4" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
 text = "Expert"
 
 [node name="Bottom" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]

@@ -1,11 +1,8 @@
 
 extends Control
 
-@onready var notification_banner: Node = $NotificationBanner
-
 func _ready():
 	_connect_buttons()
-	_show_welcome_notification()
 
 func _connect_buttons():
 	var left_base := "MarginContainer/MainLayout/MiddleSection/LeftSidebar"
@@ -33,15 +30,6 @@ func _connect_buttons():
 	var quit_btn = get_node_or_null(left_base + "/QuitButton")
 	if quit_btn:
 		quit_btn.pressed.connect(_on_quit)
-
-func _show_welcome_notification():
-	if notification_banner:
-		# Show welcome message after a short delay
-		await get_tree().create_timer(0.5).timeout
-		notification_banner.show_notification(
-			"💡 Tip: Check out the Settings to customize controls and note speed!",
-			notification_banner.NotificationType.INFO
-		)
 
 # Navigation handlers
 func _on_quickplay():

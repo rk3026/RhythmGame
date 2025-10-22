@@ -1,7 +1,7 @@
 extends Control
 
-@onready var song_list_container = $MarginContainer/VBoxContainer/Middle/MarginContainer/SongList/VBoxContainer
-@onready var song_info_panel = $MarginContainer/VBoxContainer/Middle/SongSelection/SongInfo/VBoxContainer
+@onready var song_list_container = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer
+@onready var song_info_panel = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer
 @onready var audio_player = $AudioStreamPlayer
 @onready var back_button = $MarginContainer/VBoxContainer/Top/BackButton
 
@@ -216,11 +216,12 @@ func _scan_midi_instruments(chart_path: String) -> Dictionary:
 	return instruments
 
 func add_song_to_ui(song_info: Dictionary):
-	# Create the song button (flat style, 50px height)
-	var song_button = Button.new()
+	# Create the song button using AnimatedButton component (flat style, 50px height)
+	var animated_button_script = load("res://Scripts/Components/AnimatedButton.gd")
+	var song_button = animated_button_script.new()
 	song_button.custom_minimum_size = Vector2(0, 50)
 	song_button.flat = true
-	song_button.pivot_offset = Vector2(0, 25)  # Center pivot for scaling
+	# AnimatedButton handles pivot_offset automatically in _ready()
 	
 	# Create the background panel with semi-transparent style
 	var panel = Panel.new()
@@ -314,7 +315,7 @@ func add_song_to_ui(song_info: Dictionary):
 	# Connect button press to update song info panel
 	song_button.connect("pressed", Callable(self, "_on_song_selected").bind(song_info))
 	
-	# Connect hover events for scale and highlight effects
+	# AnimatedButton handles hover effects automatically, but we still want panel brightening
 	song_button.connect("mouse_entered", Callable(self, "_on_song_button_hover_enter").bind(song_button))
 	song_button.connect("mouse_exited", Callable(self, "_on_song_button_hover_exit").bind(song_button))
 	
@@ -398,7 +399,7 @@ func _on_song_selected(song_info: Dictionary):
 	charter.append_text(_convert_color_tags_to_bbcode("Charter: " + song_info.charter))
 	
 	# Update difficulty buttons
-	var difficulty_container = $MarginContainer/VBoxContainer/Middle/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer
+	var difficulty_container = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer
 	for child in difficulty_container.get_children():
 		child.queue_free()
 	
@@ -473,12 +474,10 @@ func _notification(what):
 			audio_player.stop()
 
 func _on_song_button_hover_enter(button: Button):
-	# Animate scale up and brighten background
-	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.2)
-	
-	# Brighten the panel background
+	# AnimatedButton handles scale animation automatically
+	# We only need to brighten the panel background
 	var panel = button.get_node("Panel")
+	var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_method(func(value): 
 		var style = panel.get_theme_stylebox("panel").duplicate()
 		style.bg_color = Color(0.9, 0.9, 0.9, 0.4).lerp(Color(1.0, 1.0, 1.0, 0.5), value)
@@ -486,12 +485,10 @@ func _on_song_button_hover_enter(button: Button):
 	, 0.0, 1.0, 0.2)
 
 func _on_song_button_hover_exit(button: Button):
-	# Animate scale back to normal and dim background
-	var tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
-	
-	# Dim the panel background back to original
+	# AnimatedButton handles scale animation automatically
+	# We only need to dim the panel background
 	var panel = button.get_node("Panel")
+	var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_method(func(value): 
 		var style = panel.get_theme_stylebox("panel").duplicate()
 		style.bg_color = Color(1.0, 1.0, 1.0, 0.5).lerp(Color(0.7647059, 0.7647059, 0.7647059, 0.2509804), value)

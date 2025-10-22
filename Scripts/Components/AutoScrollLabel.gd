@@ -43,6 +43,13 @@ func set_label_settings(settings: LabelSettings) -> void:
 func set_horizontal_alignment(align: int) -> void:
 	_ensure_label()
 	_label.horizontal_alignment = align as HorizontalAlignment
+	# Adjust size flags based on alignment for proper positioning
+	if align == HORIZONTAL_ALIGNMENT_LEFT:
+		_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	elif align == HORIZONTAL_ALIGNMENT_CENTER:
+		_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	elif align == HORIZONTAL_ALIGNMENT_RIGHT:
+		_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if is_inside_tree():
 		_update_scroll()
 	else:
@@ -101,7 +108,6 @@ func _ensure_label() -> void:
 	_label = Label.new()
 	_label.clip_text = false
 	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_label.size_flags_vertical = Control.SIZE_FILL
-	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# size_flags_horizontal will be set by set_horizontal_alignment()
 	add_child(_label)
