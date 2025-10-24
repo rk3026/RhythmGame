@@ -161,9 +161,7 @@ func _on_back_pressed():
 
 func _on_edit_pressed():
 	"""Open profile editor."""
-	# TODO: Implement when profile_editor.tscn is created (Step 8)
-	print("Profile editor not yet implemented")
-	# SceneSwitcher.push_scene("res://Scenes/profile_editor.tscn")
+	SceneSwitcher.push_scene("res://Scenes/profile_editor.tscn")
 
 func _on_profile_updated(_stat_name: String, _new_value: Variant):
 	"""Handle profile updates."""
