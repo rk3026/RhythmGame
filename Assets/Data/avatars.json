@@ -1,0 +1,100 @@
+{
+  "avatars": [
+    {
+      "avatar_id": "avatar_default",
+      "name": "Default Avatar",
+      "description": "The standard profile avatar",
+      "icon_path": "res://Assets/Profiles/Avatars/default.png",
+      "unlock_requirement": "default",
+      "category": "default"
+    },
+    {
+      "avatar_id": "avatar_guitar",
+      "name": "Guitar Hero",
+      "description": "For true guitar masters",
+      "icon_path": "res://Assets/Profiles/Avatars/guitar.png",
+      "unlock_requirement": "achievement_combo_master",
+      "category": "instrument"
+    },
+    {
+      "avatar_id": "avatar_drum",
+      "name": "Drum Master",
+      "description": "Beat the rhythm",
+      "icon_path": "res://Assets/Profiles/Avatars/drum.png",
+      "unlock_requirement": "achievement_rhythm_master",
+      "category": "instrument"
+    },
+    {
+      "avatar_id": "avatar_mic",
+      "name": "Vocal Star",
+      "description": "Sing your heart out",
+      "icon_path": "res://Assets/Profiles/Avatars/mic.png",
+      "unlock_requirement": "achievement_perfectionist",
+      "category": "instrument"
+    },
+    {
+      "avatar_id": "avatar_bass",
+      "name": "Bass Legend",
+      "description": "Groove master",
+      "icon_path": "res://Assets/Profiles/Avatars/bass.png",
+      "unlock_requirement": "achievement_note_expert",
+      "category": "instrument"
+    },
+    {
+      "avatar_id": "avatar_star_bronze",
+      "name": "Bronze Star",
+      "description": "Rising star on the scene",
+      "icon_path": "res://Assets/Profiles/Avatars/star_bronze.png",
+      "unlock_requirement": "achievement_getting_started",
+      "category": "progression"
+    },
+    {
+      "avatar_id": "avatar_star_silver",
+      "name": "Silver Star",
+      "description": "Shining performer",
+      "icon_path": "res://Assets/Profiles/Avatars/star_silver.png",
+      "unlock_requirement": "achievement_rhythm_enthusiast",
+      "category": "progression"
+    },
+    {
+      "avatar_id": "avatar_star_gold",
+      "name": "Gold Star",
+      "description": "Elite performer",
+      "icon_path": "res://Assets/Profiles/Avatars/star_gold.png",
+      "unlock_requirement": "achievement_rhythm_master",
+      "category": "progression"
+    },
+    {
+      "avatar_id": "avatar_flame",
+      "name": "On Fire",
+      "description": "You're burning up the stage!",
+      "icon_path": "res://Assets/Profiles/Avatars/flame.png",
+      "unlock_requirement": "achievement_combo_legend",
+      "category": "special"
+    },
+    {
+      "avatar_id": "avatar_lightning",
+      "name": "Lightning Strike",
+      "description": "Fast and precise",
+      "icon_path": "res://Assets/Profiles/Avatars/lightning.png",
+      "unlock_requirement": "achievement_perfect_precision",
+      "category": "special"
+    },
+    {
+      "avatar_id": "avatar_crown",
+      "name": "Rhythm Royalty",
+      "description": "You reign supreme",
+      "icon_path": "res://Assets/Profiles/Avatars/crown.png",
+      "unlock_requirement": "achievement_note_legend",
+      "category": "special"
+    },
+    {
+      "avatar_id": "avatar_mystery",
+      "name": "Mystery Avatar",
+      "description": "How did you find this?",
+      "icon_path": "res://Assets/Profiles/Avatars/mystery.png",
+      "unlock_requirement": "achievement_secret_rhythm",
+      "category": "secret"
+    }
+  ]
+}

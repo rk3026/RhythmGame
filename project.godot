@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="RhythmGame"
-run/main_scene="res://Scenes/main_menu.tscn"
+run/main_scene="res://Scenes/profile_select.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -21,6 +21,8 @@ SceneSwitcher="*res://Scripts/SceneSwitcher.gd"
 SettingsManager="*res://Scripts/settings_manager.gd"
 ResourceCache="*res://Scripts/ResourceCache.gd"
 ScoreHistoryManager="*res://Scripts/ScoreHistoryManager.gd"
+ProfileManager="*res://Scripts/ProfileManager.gd"
+AchievementManager="*res://Scripts/AchievementManager.gd"
 
 [dotnet]
 

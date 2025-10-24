@@ -1,0 +1,345 @@
+{
+  "version": "1.0",
+  "achievements": [
+    {
+      "achievement_id": "first_steps",
+      "name": "First Steps",
+      "description": "Complete your first song",
+      "icon": "res://Assets/Achievements/first_steps.png",
+      "category": "completion",
+      "requirement": {
+        "type": "total",
+        "target": 1,
+        "stat": "total_songs_completed"
+      },
+      "reward": {
+        "xp": 100,
+        "unlocks": []
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "getting_started",
+      "name": "Getting Started",
+      "description": "Complete 10 songs",
+      "icon": "res://Assets/Achievements/getting_started.png",
+      "category": "completion",
+      "requirement": {
+        "type": "total",
+        "target": 10,
+        "stat": "total_songs_completed"
+      },
+      "reward": {
+        "xp": 250,
+        "unlocks": ["avatar_guitar"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "rhythm_enthusiast",
+      "name": "Rhythm Enthusiast",
+      "description": "Complete 50 songs",
+      "icon": "res://Assets/Achievements/enthusiast.png",
+      "category": "completion",
+      "requirement": {
+        "type": "total",
+        "target": 50,
+        "stat": "total_songs_completed"
+      },
+      "reward": {
+        "xp": 1000,
+        "unlocks": ["avatar_drums", "title_enthusiast"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "rhythm_master",
+      "name": "Rhythm Master",
+      "description": "Complete 100 songs",
+      "icon": "res://Assets/Achievements/master.png",
+      "category": "completion",
+      "requirement": {
+        "type": "total",
+        "target": 100,
+        "stat": "total_songs_completed"
+      },
+      "reward": {
+        "xp": 2500,
+        "unlocks": ["avatar_star", "title_master", "theme_gold"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "combo_starter",
+      "name": "Combo Starter",
+      "description": "Achieve a 50 note combo",
+      "icon": "res://Assets/Achievements/combo_50.png",
+      "category": "combo",
+      "requirement": {
+        "type": "single",
+        "target": 50,
+        "stat": "highest_combo"
+      },
+      "reward": {
+        "xp": 150,
+        "unlocks": []
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "combo_expert",
+      "name": "Combo Expert",
+      "description": "Achieve a 250 note combo",
+      "icon": "res://Assets/Achievements/combo_250.png",
+      "category": "combo",
+      "requirement": {
+        "type": "single",
+        "target": 250,
+        "stat": "highest_combo"
+      },
+      "reward": {
+        "xp": 500,
+        "unlocks": ["avatar_lightning"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "combo_master",
+      "name": "Combo Master",
+      "description": "Achieve a 500 note combo",
+      "icon": "res://Assets/Achievements/combo_500.png",
+      "category": "combo",
+      "requirement": {
+        "type": "single",
+        "target": 500,
+        "stat": "highest_combo"
+      },
+      "reward": {
+        "xp": 1000,
+        "unlocks": ["title_combo_master", "theme_lightning"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "combo_legend",
+      "name": "Combo Legend",
+      "description": "Achieve a 1000 note combo",
+      "icon": "res://Assets/Achievements/combo_1000.png",
+      "category": "combo",
+      "requirement": {
+        "type": "single",
+        "target": 1000,
+        "stat": "highest_combo"
+      },
+      "reward": {
+        "xp": 2000,
+        "unlocks": ["title_legend", "avatar_legendary"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "perfect_precision",
+      "name": "Perfect Precision",
+      "description": "Hit 100 perfect notes",
+      "icon": "res://Assets/Achievements/perfect_100.png",
+      "category": "accuracy",
+      "requirement": {
+        "type": "total",
+        "target": 100,
+        "stat": "total_perfect"
+      },
+      "reward": {
+        "xp": 200,
+        "unlocks": []
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "perfectionist",
+      "name": "Perfectionist",
+      "description": "Hit 1000 perfect notes",
+      "icon": "res://Assets/Achievements/perfect_1000.png",
+      "category": "accuracy",
+      "requirement": {
+        "type": "total",
+        "target": 1000,
+        "stat": "total_perfect"
+      },
+      "reward": {
+        "xp": 1500,
+        "unlocks": ["avatar_perfect", "title_perfectionist"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "note_novice",
+      "name": "Note Novice",
+      "description": "Hit 1,000 total notes",
+      "icon": "res://Assets/Achievements/notes_1k.png",
+      "category": "score",
+      "requirement": {
+        "type": "total",
+        "target": 1000,
+        "stat": "total_notes_hit"
+      },
+      "reward": {
+        "xp": 150,
+        "unlocks": []
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "note_expert",
+      "name": "Note Expert",
+      "description": "Hit 10,000 total notes",
+      "icon": "res://Assets/Achievements/notes_10k.png",
+      "category": "score",
+      "requirement": {
+        "type": "total",
+        "target": 10000,
+        "stat": "total_notes_hit"
+      },
+      "reward": {
+        "xp": 500,
+        "unlocks": ["avatar_notes"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "note_legend",
+      "name": "Note Legend",
+      "description": "Hit 100,000 total notes",
+      "icon": "res://Assets/Achievements/notes_100k.png",
+      "category": "score",
+      "requirement": {
+        "type": "total",
+        "target": 100000,
+        "stat": "total_notes_hit"
+      },
+      "reward": {
+        "xp": 3000,
+        "unlocks": ["title_note_legend", "theme_platinum"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "dedication",
+      "name": "Dedication",
+      "description": "Play for 5 days in a row",
+      "icon": "res://Assets/Achievements/streak_5.png",
+      "category": "special",
+      "requirement": {
+        "type": "single",
+        "target": 5,
+        "stat": "play_streak_current"
+      },
+      "reward": {
+        "xp": 300,
+        "unlocks": []
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "commitment",
+      "name": "Commitment",
+      "description": "Play for 30 days in a row",
+      "icon": "res://Assets/Achievements/streak_30.png",
+      "category": "special",
+      "requirement": {
+        "type": "single",
+        "target": 30,
+        "stat": "play_streak_current"
+      },
+      "reward": {
+        "xp": 2000,
+        "unlocks": ["avatar_dedicated", "title_dedicated"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "easy_rider",
+      "name": "Easy Rider",
+      "description": "Complete 10 songs on Easy difficulty",
+      "icon": "res://Assets/Achievements/easy_10.png",
+      "category": "completion",
+      "requirement": {
+        "type": "difficulty",
+        "target": 10,
+        "stat": "Easy"
+      },
+      "reward": {
+        "xp": 100,
+        "unlocks": []
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "medium_mastery",
+      "name": "Medium Mastery",
+      "description": "Complete 25 songs on Medium difficulty",
+      "icon": "res://Assets/Achievements/medium_25.png",
+      "category": "completion",
+      "requirement": {
+        "type": "difficulty",
+        "target": 25,
+        "stat": "Medium"
+      },
+      "reward": {
+        "xp": 500,
+        "unlocks": ["avatar_medium"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "hard_hitter",
+      "name": "Hard Hitter",
+      "description": "Complete 25 songs on Hard difficulty",
+      "icon": "res://Assets/Achievements/hard_25.png",
+      "category": "completion",
+      "requirement": {
+        "type": "difficulty",
+        "target": 25,
+        "stat": "Hard"
+      },
+      "reward": {
+        "xp": 1000,
+        "unlocks": ["avatar_hard", "title_hard_hitter"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "expert_elite",
+      "name": "Expert Elite",
+      "description": "Complete 50 songs on Expert difficulty",
+      "icon": "res://Assets/Achievements/expert_50.png",
+      "category": "completion",
+      "requirement": {
+        "type": "difficulty",
+        "target": 50,
+        "stat": "Expert"
+      },
+      "reward": {
+        "xp": 3000,
+        "unlocks": ["avatar_expert", "title_expert_elite", "theme_expert"]
+      },
+      "hidden": false
+    },
+    {
+      "achievement_id": "secret_rhythm",
+      "name": "Secret Rhythm",
+      "description": "Discover the hidden groove",
+      "icon": "res://Assets/Achievements/secret.png",
+      "category": "special",
+      "requirement": {
+        "type": "condition",
+        "target": 1,
+        "stat": "secret_found"
+      },
+      "reward": {
+        "xp": 500,
+        "unlocks": ["avatar_secret", "title_secret_keeper"]
+      },
+      "hidden": true
+    }
+  ]
+}
