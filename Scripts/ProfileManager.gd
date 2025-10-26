@@ -182,6 +182,12 @@ func load_profile(profile_id: String) -> bool:
 	# Load profile-specific score history (UPDATED: use ScoreHistoryManager)
 	ScoreHistoryManager.set_profile(profile_id)
 	
+	# Load profile-specific achievements
+	AchievementManager.load_profile_achievements(profile_id)
+	
+	# Load profile-specific settings (NEW: per-profile settings support)
+	SettingsManager.set_profile(profile_id)
+	
 	print("ProfileManager: Loaded profile: ", profile.username, " (", profile_id, ")")
 	emit_signal("profile_loaded", profile_id)
 	
@@ -941,3 +947,590 @@ func _backfill_stats_from_scores(profile_id: String):
 	save_profile()
 	
 	print("ProfileManager: Backfilled stats - Plays: ", total_plays, ", XP: ", backfill_xp, ", Level: ", current_profile.level)
+
+# ============================================================================
+# Profile Export/Import
+# ============================================================================
+
+func export_profile(profile_id: String, options: Dictionary = {}) -> Dictionary:
+	"""
+	Export a profile to a .rgprofile package file.
+	
+	Args:
+		profile_id: UUID of the profile to export
+		options: Export options {
+			"include_scores": bool (default: true),
+			"include_achievements": bool (default: true),
+			"include_settings": bool (default: true),
+			"destination": String (default: "user://") - directory path only,
+			"full_path": String (default: "") - complete path including filename (overrides destination)
+		}
+	
+	Returns:
+		Dictionary {
+			"success": bool,
+			"path": String (full path to exported file),
+			"error": String (if success = false)
+		}
+	"""
+	# Validate profile exists
+	if not _profile_exists(profile_id):
+		return {"success": false, "error": "Profile not found: " + profile_id}
+	
+	# Load profile data
+	var profile_cfg = ConfigFile.new()
+	var err = profile_cfg.load(PROFILES_DIR + profile_id + "/profile.cfg")
+	if err != OK:
+		return {"success": false, "error": "Failed to load profile.cfg: " + str(err)}
+	
+	var username = profile_cfg.get_value("profile", "username", "Unknown")
+	
+	# Parse options
+	var include_scores = options.get("include_scores", true)
+	var include_achievements = options.get("include_achievements", true)
+	var include_settings = options.get("include_settings", true)
+	var destination = options.get("destination", "user://")
+	var full_path = options.get("full_path", "")  # Full path including filename if specified
+	
+	# Create temporary export directory
+	var timestamp = Time.get_unix_time_from_system()
+	var temp_dir = "user://temp/export_" + str(timestamp) + "/"
+	var dir = DirAccess.open("user://")
+	dir.make_dir_recursive(temp_dir)
+	
+	# Copy profile files to temp directory
+	var files_to_package: Array[String] = []
+	
+	# Always include profile.cfg
+	if _copy_file(PROFILES_DIR + profile_id + "/profile.cfg", temp_dir + "profile.cfg"):
+		files_to_package.append("profile.cfg")
+	else:
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Failed to copy profile.cfg"}
+	
+	# Optionally include scores.cfg
+	if include_scores:
+		var scores_path = PROFILES_DIR + profile_id + "/scores.cfg"
+		if FileAccess.file_exists(scores_path):
+			if _copy_file(scores_path, temp_dir + "scores.cfg"):
+				files_to_package.append("scores.cfg")
+	
+	# Optionally include achievements.cfg
+	if include_achievements:
+		var achievements_path = PROFILES_DIR + profile_id + "/achievements.cfg"
+		if FileAccess.file_exists(achievements_path):
+			if _copy_file(achievements_path, temp_dir + "achievements.cfg"):
+				files_to_package.append("achievements.cfg")
+	
+	# Optionally include settings.cfg
+	if include_settings:
+		var settings_path = PROFILES_DIR + profile_id + "/settings.cfg"
+		if FileAccess.file_exists(settings_path):
+			if _copy_file(settings_path, temp_dir + "settings.cfg"):
+				files_to_package.append("settings.cfg")
+	
+	# Generate metadata
+	var metadata = {
+		"format_version": "1.0",
+		"game_version": ProjectSettings.get_setting("application/config/version", "0.5.0"),
+		"export_date": Time.get_datetime_string_from_system(),
+		"profile_username": username,
+		"profile_id": profile_id,
+		"export_type": "full",
+		"includes": {
+			"profile_data": true,
+			"scores": include_scores and files_to_package.has("scores.cfg"),
+			"achievements": include_achievements and files_to_package.has("achievements.cfg"),
+			"settings": include_settings and files_to_package.has("settings.cfg")
+		},
+		"checksums": {}
+	}
+	
+	# Calculate checksums for all files
+	for file_name in files_to_package:
+		var checksum = _calculate_file_checksum(temp_dir + file_name)
+		metadata.checksums[file_name] = checksum
+	
+	# Save metadata.json
+	var metadata_json = JSON.stringify(metadata, "\t")
+	var metadata_file = FileAccess.open(temp_dir + "metadata.json", FileAccess.WRITE)
+	if metadata_file == null:
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Failed to create metadata.json"}
+	metadata_file.store_string(metadata_json)
+	metadata_file.close()
+	files_to_package.append("metadata.json")
+	
+	# Create ZIP archive (.rgprofile)
+	# Use full_path if provided, otherwise construct from destination and username
+	var export_path: String
+	if full_path.is_empty():
+		var export_filename = username + ".rgprofile"
+		export_path = destination + export_filename
+	else:
+		# Ensure the full path has .rgprofile extension
+		export_path = full_path if full_path.ends_with(".rgprofile") else full_path + ".rgprofile"
+	
+	if not _create_zip_archive(temp_dir, files_to_package, export_path):
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Failed to create .rgprofile archive"}
+	
+	# Cleanup temp directory
+	_cleanup_temp_dir(temp_dir)
+	
+	print("ProfileManager: Exported profile to " + export_path)
+	return {"success": true, "path": export_path, "error": ""}
+
+func import_profile(file_path: String, options: Dictionary = {}) -> Dictionary:
+	"""
+	Import a profile from a .rgprofile package file.
+	
+	Args:
+		file_path: Path to the .rgprofile file
+		options: Import options {
+			"on_conflict": String ("rename", "replace", "skip") (default: "rename"),
+			"new_username": String (custom name if renaming)
+		}
+	
+	Returns:
+		Dictionary {
+			"success": bool,
+			"profile_id": String (new profile UUID),
+			"error": String (if success = false),
+			"conflict": bool (if username conflict detected),
+			"conflict_with": String (existing username)
+		}
+	"""
+	# Validate file exists
+	if not FileAccess.file_exists(file_path):
+		return {"success": false, "error": "File not found: " + file_path, "conflict": false}
+	
+	# Create temporary import directory
+	var timestamp = Time.get_unix_time_from_system()
+	var temp_dir = "user://temp/import_" + str(timestamp) + "/"
+	var dir = DirAccess.open("user://")
+	dir.make_dir_recursive(temp_dir)
+	
+	# Extract/decompress the .rgprofile package
+	if not _extract_profile_package(file_path, temp_dir):
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Failed to extract profile package", "conflict": false}
+	
+	# Validate package structure
+	if not FileAccess.file_exists(temp_dir + "metadata.json"):
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Invalid package: metadata.json missing", "conflict": false}
+	
+	if not FileAccess.file_exists(temp_dir + "profile.cfg"):
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Invalid package: profile.cfg missing", "conflict": false}
+	
+	# Load and validate metadata
+	var metadata_file = FileAccess.open(temp_dir + "metadata.json", FileAccess.READ)
+	if metadata_file == null:
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Failed to read metadata.json", "conflict": false}
+	
+	var metadata_json = metadata_file.get_as_text()
+	metadata_file.close()
+	
+	var json = JSON.new()
+	var parse_result = json.parse(metadata_json)
+	if parse_result != OK:
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Invalid metadata.json format", "conflict": false}
+	
+	var metadata = json.data
+	
+	# Validate format version
+	if metadata.get("format_version", "") != "1.0":
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Unsupported format version: " + str(metadata.get("format_version", "unknown")), "conflict": false}
+	
+	# Validate game version compatibility
+	var export_game_version = metadata.get("game_version", "0.0.0")
+	if not _is_compatible_version(export_game_version):
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Incompatible game version: " + export_game_version, "conflict": false}
+	
+	# Verify checksums
+	var checksums = metadata.get("checksums", {})
+	for file_name in checksums.keys():
+		if not FileAccess.file_exists(temp_dir + file_name):
+			continue
+		
+		var calculated_checksum = _calculate_file_checksum(temp_dir + file_name)
+		var expected_checksum = checksums[file_name]
+		
+		if calculated_checksum != expected_checksum:
+			_cleanup_temp_dir(temp_dir)
+			return {"success": false, "error": "Checksum mismatch for " + file_name + " (file may be corrupted)", "conflict": false}
+	
+	# Load profile data to check for username conflict
+	var profile_cfg = ConfigFile.new()
+	var err = profile_cfg.load(temp_dir + "profile.cfg")
+	if err != OK:
+		_cleanup_temp_dir(temp_dir)
+		return {"success": false, "error": "Failed to load profile.cfg from package", "conflict": false}
+	
+	var username = profile_cfg.get_value("profile", "username", "Unknown")
+	
+	# Check for username conflict
+	var conflict_profile_id = _find_profile_by_username(username)
+	var on_conflict = options.get("on_conflict", "rename")
+	
+	if conflict_profile_id != "":
+		if on_conflict == "skip":
+			_cleanup_temp_dir(temp_dir)
+			return {"success": false, "error": "Username conflict: " + username, "conflict": true, "conflict_with": username}
+		elif on_conflict == "replace":
+			# Delete existing profile
+			delete_profile(conflict_profile_id)
+		elif on_conflict == "rename":
+			# Rename imported profile
+			var new_username = options.get("new_username", username + "_imported")
+			username = new_username
+			profile_cfg.set_value("profile", "username", username)
+			profile_cfg.save(temp_dir + "profile.cfg")
+	
+	# Generate new profile ID
+	var new_profile_id = _generate_profile_id()
+	var new_profile_dir = PROFILES_DIR + new_profile_id + "/"
+	
+	# Create profile directory
+	dir.make_dir_recursive(new_profile_dir)
+	
+	# Copy files from temp to new profile directory
+	var files_to_copy = ["profile.cfg"]
+	if FileAccess.file_exists(temp_dir + "scores.cfg"):
+		files_to_copy.append("scores.cfg")
+	if FileAccess.file_exists(temp_dir + "achievements.cfg"):
+		files_to_copy.append("achievements.cfg")
+	if FileAccess.file_exists(temp_dir + "settings.cfg"):
+		files_to_copy.append("settings.cfg")
+	
+	for file_name in files_to_copy:
+		if not _copy_file(temp_dir + file_name, new_profile_dir + file_name):
+			_cleanup_temp_dir(temp_dir)
+			# Cleanup failed import
+			_delete_profile_directory(new_profile_id)
+			return {"success": false, "error": "Failed to copy " + file_name, "conflict": false}
+	
+	# Add profile to profiles list
+	var last_played = Time.get_datetime_string_from_system()
+	profiles.append({
+		"profile_id": new_profile_id,
+		"username": username,
+		"last_played": last_played
+	})
+	_save_profile_list()
+	
+	# Cleanup temp directory
+	_cleanup_temp_dir(temp_dir)
+	
+	print("ProfileManager: Imported profile: " + username + " (" + new_profile_id + ")")
+	emit_signal("profile_created", new_profile_id)
+	
+	return {"success": true, "profile_id": new_profile_id, "error": "", "conflict": false}
+
+func validate_profile_package(file_path: String) -> Dictionary:
+	"""
+	Validate a .rgprofile package without importing it.
+	
+	Args:
+		file_path: Path to the .rgprofile file
+	
+	Returns:
+		Dictionary {
+			"valid": bool,
+			"format_version": String,
+			"game_version": String,
+			"username": String,
+			"errors": Array[String]
+		}
+	"""
+	var result = {
+		"valid": false,
+		"format_version": "",
+		"game_version": "",
+		"username": "",
+		"errors": []
+	}
+	
+	# Check file exists
+	if not FileAccess.file_exists(file_path):
+		result.errors.append("File not found")
+		return result
+	
+	# Create temporary directory for validation
+	var timestamp = Time.get_unix_time_from_system()
+	var temp_dir = "user://temp/validate_" + str(timestamp) + "/"
+	var dir = DirAccess.open("user://")
+	dir.make_dir_recursive(temp_dir)
+	
+	# Extract package
+	if not _extract_profile_package(file_path, temp_dir):
+		result.errors.append("Failed to extract package")
+		_cleanup_temp_dir(temp_dir)
+		return result
+	
+	# Check for required files
+	if not FileAccess.file_exists(temp_dir + "metadata.json"):
+		result.errors.append("metadata.json missing")
+	if not FileAccess.file_exists(temp_dir + "profile.cfg"):
+		result.errors.append("profile.cfg missing")
+	
+	if result.errors.size() > 0:
+		_cleanup_temp_dir(temp_dir)
+		return result
+	
+	# Load metadata
+	var metadata_file = FileAccess.open(temp_dir + "metadata.json", FileAccess.READ)
+	if metadata_file == null:
+		result.errors.append("Failed to read metadata.json")
+		_cleanup_temp_dir(temp_dir)
+		return result
+	
+	var metadata_json = metadata_file.get_as_text()
+	metadata_file.close()
+	
+	var json = JSON.new()
+	var parse_result = json.parse(metadata_json)
+	if parse_result != OK:
+		result.errors.append("Invalid JSON in metadata.json")
+		_cleanup_temp_dir(temp_dir)
+		return result
+	
+	var metadata = json.data
+	result.format_version = metadata.get("format_version", "")
+	result.game_version = metadata.get("game_version", "")
+	
+	# Load profile username
+	var profile_cfg = ConfigFile.new()
+	var err = profile_cfg.load(temp_dir + "profile.cfg")
+	if err == OK:
+		result.username = profile_cfg.get_value("profile", "username", "")
+	else:
+		result.errors.append("Failed to load profile.cfg")
+	
+	# Validate checksums
+	var checksums = metadata.get("checksums", {})
+	for file_name in checksums.keys():
+		if not FileAccess.file_exists(temp_dir + file_name):
+			continue
+		
+		var calculated = _calculate_file_checksum(temp_dir + file_name)
+		var expected = checksums[file_name]
+		if calculated != expected:
+			result.errors.append("Checksum mismatch: " + file_name)
+	
+	_cleanup_temp_dir(temp_dir)
+	
+	result.valid = result.errors.size() == 0
+	return result
+
+# ============================================================================
+# Export/Import Helper Functions
+# ============================================================================
+
+func _profile_exists(profile_id: String) -> bool:
+	"""Check if a profile directory exists."""
+	return DirAccess.dir_exists_absolute(PROFILES_DIR + profile_id)
+
+func _copy_file(source: String, destination: String) -> bool:
+	"""Copy a file from source to destination."""
+	var source_file = FileAccess.open(source, FileAccess.READ)
+	if source_file == null:
+		push_error("Failed to open source file: " + source)
+		return false
+	
+	var content = source_file.get_buffer(source_file.get_length())
+	source_file.close()
+	
+	var dest_file = FileAccess.open(destination, FileAccess.WRITE)
+	if dest_file == null:
+		push_error("Failed to open destination file: " + destination)
+		return false
+	
+	dest_file.store_buffer(content)
+	dest_file.close()
+	return true
+
+func _calculate_file_checksum(file_path: String) -> String:
+	"""Calculate SHA-256 checksum of a file."""
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		return ""
+	
+	var content = file.get_buffer(file.get_length())
+	file.close()
+	
+	var ctx = HashingContext.new()
+	ctx.start(HashingContext.HASH_SHA256)
+	ctx.update(content)
+	var hash_bytes = ctx.finish()
+	
+	# Convert to hex string
+	var hex_string = ""
+	for byte in hash_bytes:
+		hex_string += "%02x" % byte
+	
+	return hex_string
+
+func _create_zip_archive(source_dir: String, files: Array[String], output_path: String) -> bool:
+	"""
+	Create a ZIP archive from files in source_dir.
+	Note: Godot doesn't have built-in ZIP creation, so we'll use a workaround.
+	For now, we'll create a simple packaged file format using Godot's compression.
+	"""
+	# Create a PackedByteArray to store all files
+	var package_data = {}
+	
+	for file_name in files:
+		var file_path = source_dir + file_name
+		var file = FileAccess.open(file_path, FileAccess.READ)
+		if file == null:
+			push_error("Failed to read file for packaging: " + file_path)
+			return false
+		
+		package_data[file_name] = file.get_buffer(file.get_length())
+		file.close()
+	
+	# Serialize the package data
+	var serialized = var_to_bytes(package_data)
+	
+	# Compress the data
+	var compressed = serialized.compress(FileAccess.COMPRESSION_GZIP)
+	
+	# Write to output file
+	var output_file = FileAccess.open(output_path, FileAccess.WRITE)
+	if output_file == null:
+		push_error("Failed to create output file: " + output_path)
+		return false
+	
+	output_file.store_buffer(compressed)
+	output_file.close()
+	
+	return true
+
+func _extract_profile_package(package_path: String, destination_dir: String) -> bool:
+	"""Extract a .rgprofile package to destination directory."""
+	var package_file = FileAccess.open(package_path, FileAccess.READ)
+	if package_file == null:
+		push_error("Failed to open package file: " + package_path)
+		return false
+	
+	# Read compressed data
+	var compressed = package_file.get_buffer(package_file.get_length())
+	package_file.close()
+	
+	# Decompress
+	var decompressed = compressed.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
+	if decompressed.size() == 0:
+		push_error("Failed to decompress package")
+		return false
+	
+	# Deserialize package data
+	var package_data = bytes_to_var(decompressed)
+	if typeof(package_data) != TYPE_DICTIONARY:
+		push_error("Invalid package data format")
+		return false
+	
+	# Extract all files
+	for file_name in package_data.keys():
+		var file_data = package_data[file_name]
+		var output_path = destination_dir + file_name
+		
+		var output_file = FileAccess.open(output_path, FileAccess.WRITE)
+		if output_file == null:
+			push_error("Failed to write extracted file: " + output_path)
+			return false
+		
+		output_file.store_buffer(file_data)
+		output_file.close()
+	
+	return true
+
+func _is_compatible_version(export_game_version: String) -> bool:
+	"""Check if an exported profile's game version is compatible with current version."""
+	var current_version = ProjectSettings.get_setting("application/config/version", "0.5.0")
+	
+	# Parse versions: "0.5.0" → ["0", "5", "0"]
+	var export_parts = export_game_version.split(".")
+	var current_parts = current_version.split(".")
+	
+	# Ensure we have at least major.minor
+	if export_parts.size() < 2 or current_parts.size() < 2:
+		return false
+	
+	# Major version must match (breaking changes)
+	if export_parts[0] != current_parts[0]:
+		return false
+	
+	# Minor version can be different (feature additions are backward compatible)
+	# Patch version doesn't matter (bug fixes)
+	return true
+
+func _find_profile_by_username(username: String) -> String:
+	"""Find a profile ID by username. Returns empty string if not found."""
+	for profile in profiles:
+		if profile.username == username:
+			return profile.profile_id
+	return ""
+
+func _generate_profile_id() -> String:
+	"""Generate a new unique profile ID (UUID4-like)."""
+	# Simple UUID generation using random bytes
+	var uuid = ""
+	for i in range(32):
+		var hex = "%x" % (randi() % 16)
+		uuid += hex
+		if i == 7 or i == 11 or i == 15 or i == 19:
+			uuid += "-"
+	return uuid
+
+func _delete_profile_directory(profile_id: String):
+	"""Delete a profile directory and all its contents."""
+	var profile_dir = PROFILES_DIR + profile_id + "/"
+	var dir = DirAccess.open(profile_dir)
+	if dir == null:
+		return
+	
+	# Delete all files in directory
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir():
+			dir.remove(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	
+	# Remove the directory itself
+	var parent_dir = DirAccess.open(PROFILES_DIR)
+	if parent_dir:
+		parent_dir.remove(profile_id)
+
+func _cleanup_temp_dir(temp_dir: String):
+	"""Remove temporary directory and all its contents."""
+	var dir = DirAccess.open(temp_dir)
+	if dir == null:
+		return
+	
+	# Delete all files in directory
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir():
+			dir.remove(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	
+	# Remove the directory itself
+	var parent_dir = DirAccess.open("user://temp/")
+	if parent_dir:
+		var dir_name = temp_dir.trim_prefix("user://temp/").trim_suffix("/")
+		parent_dir.remove(dir_name)
+
+# ============================================================================
+# Migration Functions
+# ============================================================================

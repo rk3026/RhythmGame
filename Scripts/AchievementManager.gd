@@ -4,6 +4,7 @@ extends Node
 # Handles achievement definitions, unlocking, progress tracking, and notifications
 
 const ACHIEVEMENTS_DEF_PATH := "res://Assets/Data/achievements.json"
+const PROFILES_DIR := "user://profiles/"
 
 # Reference to ProfileManager autoload (initialized in _ready)
 var profile_manager: Node = null
@@ -66,7 +67,7 @@ func load_profile_achievements(profile_id: String):
 	"""
 	achievement_progress.clear()
 	
-	var achievements_path = profile_manager.PROFILES_DIR + profile_id + "/achievements.cfg"
+	var achievements_path = PROFILES_DIR + profile_id + "/achievements.cfg"
 	
 	if not FileAccess.file_exists(achievements_path):
 		# No achievements yet, initialize with defaults
@@ -108,7 +109,7 @@ func save_achievement_progress(profile_id: String) -> bool:
 	Returns:
 		true if saved successfully
 	"""
-	var achievements_path = profile_manager.PROFILES_DIR + profile_id + "/achievements.cfg"
+	var achievements_path = PROFILES_DIR + profile_id + "/achievements.cfg"
 	var cfg = ConfigFile.new()
 	
 	for achievement_id in achievement_progress.keys():

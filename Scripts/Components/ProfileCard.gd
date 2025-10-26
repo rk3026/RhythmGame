@@ -6,9 +6,12 @@ class_name ProfileCard
 
 signal card_clicked(profile_id: String)
 signal delete_requested(profile_id: String)
+signal export_requested(profile_id: String)
 
 @export var profile_id: String = ""
 @export var show_delete_button: bool = false
+@export var show_export_button: bool = false
+@export var show_active_indicator: bool = false  # NEW: Show "ACTIVE" badge
 
 # Profile data
 var username: String = ""
@@ -26,6 +29,8 @@ var level_label: Label
 var xp_bar: ProgressBar
 var last_played_label: Label
 var delete_button: Button
+var export_button: Button
+var active_badge: Label  # NEW: "ACTIVE" indicator
 
 func _ready():
 	# Build UI first if not already built
@@ -69,11 +74,25 @@ func _build_ui():
 	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_hbox.add_child(info_vbox)
 	
+	# Username row with optional active badge
+	var username_hbox = HBoxContainer.new()
+	username_hbox.add_theme_constant_override("separation", 10)
+	info_vbox.add_child(username_hbox)
+	
 	# Username
 	username_label = Label.new()
 	username_label.add_theme_font_size_override("font_size", 24)
 	username_label.add_theme_color_override("font_color", Color.WHITE)
-	info_vbox.add_child(username_label)
+	username_hbox.add_child(username_label)
+	
+	# Active badge (only shown if show_active_indicator is true)
+	if show_active_indicator:
+		active_badge = Label.new()
+		active_badge.text = "● ACTIVE"
+		active_badge.add_theme_font_size_override("font_size", 16)
+		active_badge.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))  # Bright green
+		active_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		username_hbox.add_child(active_badge)
 	
 	# Level
 	level_label = Label.new()
@@ -93,13 +112,27 @@ func _build_ui():
 	last_played_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	main_vbox.add_child(last_played_label)
 	
-	# Delete button (optional)
-	if show_delete_button:
-		delete_button = Button.new()
-		delete_button.text = "Delete"
-		delete_button.custom_minimum_size = Vector2(80, 30)
-		delete_button.pressed.connect(_on_delete_pressed)
-		main_vbox.add_child(delete_button)
+	# Button container (for delete and export buttons)
+	if show_delete_button or show_export_button:
+		var button_hbox = HBoxContainer.new()
+		button_hbox.add_theme_constant_override("separation", 10)
+		main_vbox.add_child(button_hbox)
+		
+		# Export button
+		if show_export_button:
+			export_button = Button.new()
+			export_button.text = "Export"
+			export_button.custom_minimum_size = Vector2(80, 30)
+			export_button.pressed.connect(_on_export_pressed)
+			button_hbox.add_child(export_button)
+		
+		# Delete button
+		if show_delete_button:
+			delete_button = Button.new()
+			delete_button.text = "Delete"
+			delete_button.custom_minimum_size = Vector2(80, 30)
+			delete_button.pressed.connect(_on_delete_pressed)
+			button_hbox.add_child(delete_button)
 
 func set_profile_data(data: Dictionary):
 	"""
@@ -173,12 +206,24 @@ func _format_date(date_string: String) -> String:
 func _create_panel_style() -> StyleBoxFlat:
 	"""Create the panel style for the card."""
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.2, 0.95)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.3, 0.3, 0.4, 1.0)
+	
+	# Active profile gets special highlighting
+	if show_active_indicator:
+		style.bg_color = Color(0.18, 0.22, 0.18, 0.95)  # Slight green tint
+		style.border_width_left = 3
+		style.border_width_top = 3
+		style.border_width_right = 3
+		style.border_width_bottom = 3
+		style.border_color = Color(0.4, 1.0, 0.4, 0.8)  # Green border
+	else:
+		# Normal profile card styling
+		style.bg_color = Color(0.15, 0.15, 0.2, 0.95)
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.3, 0.3, 0.4, 1.0)
+	
 	style.corner_radius_top_left = 10
 	style.corner_radius_top_right = 10
 	style.corner_radius_bottom_left = 10
@@ -200,6 +245,10 @@ func _on_gui_input(event: InputEvent):
 func _on_delete_pressed():
 	"""Handle delete button press."""
 	emit_signal("delete_requested", profile_id)
+
+func _on_export_pressed():
+	"""Handle export button press."""
+	emit_signal("export_requested", profile_id)
 
 func _on_hover_start():
 	"""Visual feedback when hovering/clicking."""
