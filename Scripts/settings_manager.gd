@@ -29,6 +29,9 @@ var current_profile_id: String = ""
 
 # Global settings (shared across all profiles)
 var master_volume: float = 1.0
+var sfx_volume: float = 1.0  # Sound effects volume
+var ui_volume: float = 1.0   # UI sounds volume
+var music_volume: float = 0.6  # Music/track volume (quieter default)
 
 # Per-profile settings (loaded based on current_profile_id)
 var lane_keys: Array = [] # current runtime keycodes for lanes
@@ -48,6 +51,8 @@ var miss_window: float = 0.7
 
 func _ready():
 	load_global_settings()
+	# Apply volume settings to SoundEffectManager
+	_apply_volume_settings()
 
 # Set the current profile and load its settings
 func set_profile(profile_id: String):
@@ -60,6 +65,9 @@ func load_global_settings():
 	var err = cfg.load(GLOBAL_CONFIG_PATH)
 	if err == OK:
 		master_volume = validate_volume(cfg.get_value("audio", "master_volume", master_volume))
+		sfx_volume = validate_volume(cfg.get_value("audio", "sfx_volume", sfx_volume))
+		ui_volume = validate_volume(cfg.get_value("audio", "ui_volume", ui_volume))
+		music_volume = validate_volume(cfg.get_value("audio", "music_volume", music_volume))
 		# Check if migration flag exists
 		var migrated = cfg.get_value("meta", "settings_migrated", false)
 		if not migrated:
@@ -67,7 +75,13 @@ func load_global_settings():
 	else:
 		# No global settings file yet, use defaults
 		master_volume = 1.0
+		sfx_volume = 1.0
+		ui_volume = 1.0
+		music_volume = 0.6  # Quieter default for background music
 		save_global_settings()
+	
+	# Apply volume settings to audio buses
+	_apply_volume_settings()
 
 # Load per-profile settings (lane_keys, note_speed, timing_offset)
 func load_profile_settings(profile_id: String):
@@ -196,6 +210,9 @@ func validate_timing_offset(offset) -> float:
 func save_global_settings():
 	var cfg = ConfigFile.new()
 	cfg.set_value("audio", "master_volume", master_volume)
+	cfg.set_value("audio", "sfx_volume", sfx_volume)
+	cfg.set_value("audio", "ui_volume", ui_volume)
+	cfg.set_value("audio", "music_volume", music_volume)
 	cfg.save(GLOBAL_CONFIG_PATH)
 
 # Save per-profile settings to user://profiles/[id]/settings.cfg
@@ -232,7 +249,11 @@ func reset_defaults():
 	
 	# Reset global settings
 	master_volume = 1.0
+	sfx_volume = 1.0
+	ui_volume = 1.0
+	music_volume = 0.6  # Quieter default for background music
 	save_global_settings()
+	_apply_volume_settings()
 
 func set_lane_key(index: int, scancode: int):
 	if index < 0 or index >= lane_keys.size():
@@ -265,6 +286,34 @@ func set_master_volume(volume: float):
 		push_warning("Volume adjusted from " + str(volume) + " to " + str(validated_volume))
 	master_volume = validated_volume
 	save_global_settings()
+	_apply_volume_settings()
+
+func set_sfx_volume(volume: float):
+	var validated_volume = validate_volume(volume)
+	if validated_volume != volume:
+		push_warning("SFX volume adjusted from " + str(volume) + " to " + str(validated_volume))
+	sfx_volume = validated_volume
+	save_global_settings()
+	if SoundEffectManager:
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_SFX, sfx_volume)
+
+func set_ui_volume(volume: float):
+	var validated_volume = validate_volume(volume)
+	if validated_volume != volume:
+		push_warning("UI volume adjusted from " + str(volume) + " to " + str(validated_volume))
+	ui_volume = validated_volume
+	save_global_settings()
+	if SoundEffectManager:
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_UI, ui_volume)
+
+func set_music_volume(volume: float):
+	var validated_volume = validate_volume(volume)
+	if validated_volume != volume:
+		push_warning("Music volume adjusted from " + str(volume) + " to " + str(validated_volume))
+	music_volume = validated_volume
+	save_global_settings()
+	if SoundEffectManager:
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_MUSIC, music_volume)
 
 func set_timing_offset(offset: float):
 	var validated_offset = validate_timing_offset(offset)
@@ -277,3 +326,18 @@ func get_lane_key(index: int) -> int:
 	if index >= 0 and index < lane_keys.size():
 		return lane_keys[index]
 	return KEY_NONE
+
+# Apply all volume settings to audio buses
+func _apply_volume_settings():
+	if SoundEffectManager:
+		# Pass linear volume (0.0-1.0), SoundEffectManager will convert to dB
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_MASTER, master_volume)
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_SFX, sfx_volume)
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_UI, ui_volume)
+		SoundEffectManager.set_bus_volume(SoundEffectManager.BUS_MUSIC, music_volume)
+
+# Convert linear volume (0.0 - 1.0) to decibels (no longer needed - SoundEffectManager handles this)
+func _volume_to_db(volume: float) -> float:
+	if volume <= 0.0:
+		return -80.0  # Effectively muted
+	return 20.0 * log(volume) / log(10.0)  # Convert to dB

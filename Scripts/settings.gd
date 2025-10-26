@@ -54,14 +54,12 @@ func _load_values_into_ui():
 		keybind_display.key_text = OS.get_keycode_string(SettingsManager.lane_keys[i])
 
 func _on_note_speed_changed(value: float):
-	SettingsManager.note_speed = value
+	SettingsManager.set_note_speed(value)
 	_note_speed_label.text = str(int(value))
-	SettingsManager.save_settings()
 
 func _on_volume_changed(value: float):
-	SettingsManager.master_volume = value
+	SettingsManager.set_master_volume(value)
 	_volume_label.text = str(int(value * 100)) + "%"
-	SettingsManager.save_settings()
 
 func _on_offset_changed(value):
 	# store in seconds internally

@@ -32,8 +32,14 @@ func start_countdown(callback: Callable):
 		label.text = str(i)
 		label.modulate = Color.WHITE
 		label.modulate.a = 1
+		# Play countdown tick sound
+		if SoundEffectManager:
+			SoundEffectManager.play_sfx("countdown_tick", SoundEffectManager.SoundCategory.COUNTDOWN)
 		await get_tree().create_timer(1.0).timeout
 	label.text = "Go!"
+	# Play countdown go sound
+	if SoundEffectManager:
+		SoundEffectManager.play_sfx("countdown_go", SoundEffectManager.SoundCategory.COUNTDOWN)
 	await get_tree().create_timer(0.5).timeout
 	label.text = ""
 	countdown_active = false
@@ -123,6 +129,12 @@ func _ready():
 	_on_combo_changed(0)
 	_on_score_changed(0)
 	
+	# Preload sound effects for gameplay
+	if SoundEffectManager:
+		SoundEffectManager.preload_category(SoundEffectManager.SoundCategory.HIT_PERFECT)
+		SoundEffectManager.preload_category(SoundEffectManager.SoundCategory.COMBO_MILESTONE)
+		SoundEffectManager.preload_category(SoundEffectManager.SoundCategory.COUNTDOWN)
+	
 	# Get music stream from chart data
 	var music_stream = chart_data.music_stream
 	
@@ -137,6 +149,7 @@ func _ready():
 	if audio_path and FileAccess.file_exists(audio_path):
 		audio_player = AudioStreamPlayer.new()
 		audio_player.stream = load(audio_path)
+		audio_player.bus = "Music"  # Route to Music bus for proper volume control
 		add_child(audio_player)
 		# Start countdown before playing
 		start_countdown(func():
@@ -331,6 +344,19 @@ func _on_note_hit(note, grade: int):
 		grade_str = "Miss"
 		label.modulate = Color.RED
 	label.text = grade_str
+	
+	# Play hit sound effect based on grade
+	if SoundEffectManager:
+		match grade:
+			SettingsManager.HitGrade.PERFECT:
+				SoundEffectManager.play_sfx_variation("perfect", 2, SoundEffectManager.SoundCategory.HIT_PERFECT)
+			SettingsManager.HitGrade.GREAT:
+				SoundEffectManager.play_sfx("great", SoundEffectManager.SoundCategory.HIT_GREAT)
+			SettingsManager.HitGrade.GOOD:
+				SoundEffectManager.play_sfx("good", SoundEffectManager.SoundCategory.HIT_GOOD)
+			SettingsManager.HitGrade.MISS:
+				SoundEffectManager.play_sfx("bad", SoundEffectManager.SoundCategory.HIT_BAD)
+	
 	# Use command pattern for reversible scoring (only during replay/scrubbing)
 	if timeline_controller and timeline_controller.direction != 1:
 		var HitNoteCommandClass = load("res://Scripts/Commands/HitNoteCommand.gd")
@@ -357,6 +383,10 @@ func _on_note_miss(_note):
 		current_tween.kill()
 	label.modulate.a = 1
 	label.text = "Miss"
+	
+	# Play miss sound effect
+	if SoundEffectManager:
+		SoundEffectManager.play_sfx("miss", SoundEffectManager.SoundCategory.MISS)
 	label.modulate = Color.RED
 	if timeline_controller and timeline_controller.direction != 1:
 		var MissNoteCommandClass = load("res://Scripts/Commands/MissNoteCommand.gd")

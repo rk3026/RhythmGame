@@ -24,6 +24,19 @@ func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR):
 		grade_counts.good += 1
 	var type_multiplier = get_type_multiplier(note_type)
 	score += base_score * combo * type_multiplier
+	
+	# Play combo milestone sounds
+	if SoundEffectManager:
+		if combo == grade_counts.perfect + grade_counts.great + grade_counts.good and combo > 0:
+			# Full combo achieved
+			var total_notes = combo
+			if total_notes > 0:
+				SoundEffectManager.play_sfx("combo_fc", SoundEffectManager.SoundCategory.COMBO_MILESTONE, 0.0, 1.0)
+		elif combo % 100 == 0:
+			SoundEffectManager.play_sfx("combo_100", SoundEffectManager.SoundCategory.COMBO_MILESTONE, 0.0, 1.0)
+		elif combo % 50 == 0:
+			SoundEffectManager.play_sfx("combo_50", SoundEffectManager.SoundCategory.COMBO_MILESTONE, 0.0, 1.0)
+	
 	emit_signal("combo_changed", combo)
 	emit_signal("score_changed", score)
 

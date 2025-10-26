@@ -212,6 +212,12 @@ func _play_audio():
 	
 	audio_player.stream = audio_stream
 	
+	# Route to Music bus for proper volume control
+	audio_player.bus = "Music"
+	
+	# Set quieter volume for preview playback (-10 dB = ~32% volume)
+	audio_player.volume_db = -10.0
+	
 	# Start from preview time if available (already in seconds from IniParser)
 	var start_time = current_song_data.get("preview_start_time", -1.0)
 	if start_time > 0.0:

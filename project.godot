@@ -23,6 +23,7 @@ ResourceCache="*res://Scripts/ResourceCache.gd"
 ScoreHistoryManager="*res://Scripts/ScoreHistoryManager.gd"
 ProfileManager="*res://Scripts/ProfileManager.gd"
 AchievementManager="*res://Scripts/AchievementManager.gd"
+SoundEffectManager="*res://Scripts/SoundEffectManager.gd"
 
 [dotnet]
 
