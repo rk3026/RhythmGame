@@ -1,0 +1,110 @@
+[gd_scene load_steps=3 format=3 uid="uid://c3svvowqpnfce"]
+
+[ext_resource type="Script" path="res://Scripts/Components/FeaturedSong.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.2, 0.15, 0.25, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.3, 0.5, 0.5)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_size = 4
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.3)
+
+[node name="FeaturedSong" type="PanelContainer"]
+custom_minimum_size = Vector2(300, 120)
+script = ExtResource("1")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ContentRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="AlbumArtContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer/ContentRow"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+
+[node name="AlbumArtBackground" type="ColorRect" parent="MarginContainer/VBoxContainer/ContentRow/AlbumArtContainer"]
+layout_mode = 2
+color = Color(0.15, 0.15, 0.15, 1)
+
+[node name="AlbumArt" type="TextureRect" parent="MarginContainer/VBoxContainer/ContentRow/AlbumArtContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SongInfoContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="FeaturedLabel" type="Label" parent="MarginContainer/VBoxContainer/ContentRow/SongInfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "FEATURED SONG"
+
+[node name="SongTitle" type="Label" parent="MarginContainer/VBoxContainer/ContentRow/SongInfoContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Song Title"
+text_overrun_behavior = 3
+clip_text = true
+
+[node name="Artist" type="Label" parent="MarginContainer/VBoxContainer/ContentRow/SongInfoContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "Artist Name"
+text_overrun_behavior = 3
+clip_text = true
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/ContentRow/SongInfoContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BottomRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="MarginContainer/VBoxContainer/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+text = "00:00 / 00:00"
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ClickHint" type="Label" parent="MarginContainer/VBoxContainer/BottomRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "Click to select"
+
+[node name="AudioPlayer" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+
