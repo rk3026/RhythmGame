@@ -9,10 +9,21 @@ signal song_selected(song_path: String)
 
 # Node references
 @onready var album_art: TextureRect = %AlbumArt
-@onready var song_title: Label = %SongTitle
-@onready var artist: Label = %Artist
+@onready var song_title: ScrollContainer = %SongTitle  # AutoScrollLabel (ScrollContainer)
+@onready var artist: ScrollContainer = %Artist  # AutoScrollLabel (ScrollContainer)
 @onready var time_label: Label = %TimeLabel
 @onready var audio_player: AudioStreamPlayer = %AudioPlayer
+
+# Visualizer bars
+var visualizer_bars: Array[ColorRect] = []
+
+# Audio analysis
+var spectrum_analyzer: AudioEffectSpectrumAnalyzerInstance
+const NUM_BARS := 8
+const MIN_FREQ := 20.0
+const MAX_FREQ := 8000.0
+const BAR_LERP_SPEED := 15.0
+var bar_heights: Array[float] = []
 
 # Reuse existing utilities
 var parser_factory: ParserFactory
@@ -32,6 +43,15 @@ func _ready():
 	parser_factory = load("res://Scripts/Parsers/ParserFactory.gd").new()
 	ini_parser = parser_factory.create_metadata_parser()
 	
+	# Configure AutoScrollLabel styling
+	_setup_scroll_labels()
+	
+	# Setup visualizer bars
+	_setup_visualizer()
+	
+	# Setup audio effect for spectrum analysis
+	_setup_spectrum_analyzer()
+	
 	_scan_song_library()
 	_play_random_song()
 	
@@ -43,10 +63,11 @@ func _ready():
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 func _process(_delta: float):
-	"""Update playback time display."""
+	"""Update playback time display and visualizer."""
 	if is_playing and audio_player and audio_player.playing:
 		playback_position = audio_player.get_playback_position()
 		_update_time_display()
+		_update_visualizer(_delta)
 
 func _gui_input(event: InputEvent):
 	"""Handle click to select/play song."""
@@ -141,16 +162,16 @@ func _update_display():
 	if current_song_data.is_empty():
 		return
 	
-	# Update text labels
-	if song_title:
-		song_title.text = current_song_data.get("name", "Unknown Title")
+	# Update text labels using AutoScrollLabel API
+	if song_title and song_title.has_method("set_text"):
+		song_title.set_text(current_song_data.get("name", "Unknown Title"))
 	
-	if artist:
+	if artist and artist.has_method("set_text"):
 		var artist_text = current_song_data.get("artist", "Unknown Artist")
 		var year = current_song_data.get("year", "")
 		if year != "":
 			artist_text += " (" + str(year) + ")"
-		artist.text = artist_text
+		artist.set_text(artist_text)
 	
 	# Load album art
 	if album_art and current_song_data.has("album_art_path"):
@@ -266,3 +287,111 @@ func stop():
 		is_playing = false
 		playback_position = 0.0
 		_update_time_display()
+
+# ============================================================================
+# Audio Visualizer
+# ============================================================================
+
+func _setup_scroll_labels():
+	"""Configure styling for AutoScrollLabel components."""
+	# Configure song title (larger font)
+	if song_title and song_title.has_method("get_label"):
+		var title_label = song_title.get_label()
+		if title_label:
+			var title_settings = LabelSettings.new()
+			title_settings.font_size = 16
+			title_label.label_settings = title_settings
+			song_title.set_horizontal_alignment(HORIZONTAL_ALIGNMENT_LEFT)
+	
+	# Configure artist (smaller font, different color)
+	if artist and artist.has_method("get_label"):
+		var artist_label = artist.get_label()
+		if artist_label:
+			var artist_settings = LabelSettings.new()
+			artist_settings.font_size = 13
+			artist_settings.font_color = Color(0.8, 0.8, 0.8, 1.0)
+			artist_label.label_settings = artist_settings
+			artist.set_horizontal_alignment(HORIZONTAL_ALIGNMENT_LEFT)
+
+func _setup_visualizer():
+	"""Initialize visualizer bars and data structures."""
+	var visualizer_container = get_node_or_null("MarginContainer/VBoxContainer/ContentRow/VisualizerContainer")
+	if not visualizer_container:
+		push_warning("FeaturedSong: Visualizer container not found")
+		return
+	
+	# Get all bar nodes
+	for i in range(NUM_BARS):
+		var bar = visualizer_container.get_node_or_null("Bar" + str(i + 1))
+		if bar and bar is ColorRect:
+			visualizer_bars.append(bar)
+			bar_heights.append(0.0)
+	
+	if visualizer_bars.size() != NUM_BARS:
+		push_warning("FeaturedSong: Expected %d bars, found %d" % [NUM_BARS, visualizer_bars.size()])
+
+func _setup_spectrum_analyzer():
+	"""Add spectrum analyzer effect to audio bus."""
+	if not audio_player:
+		return
+	
+	# Get the bus index for the audio player
+	var bus_name = audio_player.bus
+	var bus_idx = AudioServer.get_bus_index(bus_name)
+	
+	# Check if spectrum analyzer already exists
+	for i in range(AudioServer.get_bus_effect_count(bus_idx)):
+		var effect = AudioServer.get_bus_effect(bus_idx, i)
+		if effect is AudioEffectSpectrumAnalyzer:
+			spectrum_analyzer = AudioServer.get_bus_effect_instance(bus_idx, i)
+			return
+	
+	# Add new spectrum analyzer
+	var spectrum_effect = AudioEffectSpectrumAnalyzer.new()
+	spectrum_effect.buffer_length = 0.1  # Lower latency
+	spectrum_effect.fft_size = AudioEffectSpectrumAnalyzer.FFT_SIZE_1024
+	AudioServer.add_bus_effect(bus_idx, spectrum_effect)
+	
+	# Get the effect instance
+	var effect_idx = AudioServer.get_bus_effect_count(bus_idx) - 1
+	spectrum_analyzer = AudioServer.get_bus_effect_instance(bus_idx, effect_idx)
+
+func _update_visualizer(delta: float):
+	"""Update visualizer bars based on audio spectrum data."""
+	if not spectrum_analyzer or visualizer_bars.is_empty():
+		return
+	
+	# Sample frequency bands
+	for i in range(min(NUM_BARS, visualizer_bars.size())):
+		# Calculate frequency range for this bar (logarithmic distribution)
+		var freq_ratio = float(i) / float(NUM_BARS)
+		var freq_start = MIN_FREQ * pow(MAX_FREQ / MIN_FREQ, freq_ratio)
+		var freq_end = MIN_FREQ * pow(MAX_FREQ / MIN_FREQ, (freq_ratio + 1.0 / NUM_BARS))
+		
+		# Get magnitude for this frequency range
+		var magnitude = spectrum_analyzer.get_magnitude_for_frequency_range(
+			freq_start, 
+			freq_end
+		).length()
+		
+		# Convert to decibels and normalize (typical range: -60 to 0 dB)
+		var db = linear_to_db(magnitude)
+		var normalized = clamp((db + 60.0) / 60.0, 0.0, 1.0)
+		
+		# Apply smoothing
+		var target_height = normalized * 40.0  # Max 40px height for more visibility
+		bar_heights[i] = lerp(bar_heights[i], target_height, delta * BAR_LERP_SPEED)
+		
+		# Update bar visual - set both custom_minimum_size and size
+		var bar = visualizer_bars[i]
+		var new_height = max(3.0, bar_heights[i])  # Min 3px height
+		bar.custom_minimum_size.y = new_height
+		bar.size.y = new_height
+		
+		# Force the parent container to recalculate layout
+		if bar.get_parent():
+			bar.get_parent().queue_sort()
+		
+		# Optional: Color gradient based on intensity
+		var intensity = bar_heights[i] / 40.0
+		bar.color = Color(0.6 + intensity * 0.4, 0.4, 0.8, 0.8 + intensity * 0.2)
