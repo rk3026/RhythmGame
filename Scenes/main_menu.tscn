@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://54winj8i144m"]
+[gd_scene load_steps=6 format=3 uid="uid://54winj8i144m"]
 
 [ext_resource type="Script" uid="uid://cgg3b65kydfva" path="res://Scripts/main_menu.gd" id="1"]
 [ext_resource type="Script" uid="uid://bp75o8pwlbycx" path="res://Scripts/Components/AnimatedButton.gd" id="2"]
 [ext_resource type="Script" uid="uid://bmp5ssaogmhfr" path="res://Scripts/Components/FancyHeader.gd" id="3"]
 [ext_resource type="Script" uid="uid://bp15alsqv5u0e" path="res://Scripts/Components/MenuCardPanel.gd" id="4"]
+[ext_resource type="PackedScene" uid="uid://ck5w8h6yjn2dp" path="res://Scenes/Components/ProfileDisplay.tscn" id="5"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -30,6 +31,10 @@ theme_override_constants/margin_bottom = 20
 layout_mode = 2
 
 [node name="TopSection" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="ProfileDisplay" parent="MarginContainer/MainLayout/TopSection" instance=ExtResource("5")]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Control" type="Control" parent="MarginContainer/MainLayout/TopSection"]

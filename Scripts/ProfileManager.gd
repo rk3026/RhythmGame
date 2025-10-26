@@ -500,6 +500,33 @@ func add_xp(xp_amount: int) -> bool:
 # Customization
 # ============================================================================
 
+func get_avatar_path_from_id(avatar_id: String) -> String:
+	"""
+	Convert avatar ID to full path.
+	
+	Args:
+		avatar_id: Avatar identifier (e.g., "avatar_default", "guitar", "default")
+	
+	Returns:
+		Full path to avatar file
+	"""
+	# Handle legacy format where avatar_id might just be the base name
+	var base_name = avatar_id.replace("avatar_", "")
+	return "res://Assets/Profiles/Avatars/" + base_name + ".svg"
+
+func get_avatar_id_from_path(avatar_path: String) -> String:
+	"""
+	Convert avatar path to ID.
+	
+	Args:
+		avatar_path: Full path to avatar (e.g., "res://Assets/Profiles/Avatars/default.svg")
+	
+	Returns:
+		Avatar identifier
+	"""
+	var file_name = avatar_path.get_file().get_basename()
+	return file_name
+
 func set_avatar(avatar_id: String) -> bool:
 	"""
 	Set the profile avatar.
@@ -671,6 +698,9 @@ func _parse_profile_from_config(cfg: ConfigFile) -> Dictionary:
 	profile.profile_color_primary = cfg.get_value("customization", "profile_color_primary", "#FF6B6B")
 	profile.profile_color_accent = cfg.get_value("customization", "profile_color_accent", "#4ECDC4")
 	
+	# Compute avatar path from avatar_id for display purposes
+	profile.avatar = get_avatar_path_from_id(profile.avatar_id)
+	
 	# Privacy
 	profile.privacy_stats = cfg.get_value("privacy", "privacy_stats", "public")
 	profile.privacy_activity = cfg.get_value("privacy", "privacy_activity", "public")
@@ -735,8 +765,9 @@ func _load_profile_list():
 		if FileAccess.file_exists(profile_path):
 			var profile_cfg = ConfigFile.new()
 			if profile_cfg.load(profile_path) == OK:
-				profile_info.display_name = profile_cfg.get_value("profile", "display_name", username)
-				profile_info.avatar = profile_cfg.get_value("profile", "avatar", "res://Assets/Profiles/Avatars/default.svg")
+				profile_info.display_name = profile_cfg.get_value("identity", "display_name", username)
+				var avatar_id = profile_cfg.get_value("customization", "avatar_id", "default")
+				profile_info.avatar = get_avatar_path_from_id(avatar_id)
 				profile_info.level = profile_cfg.get_value("progression", "level", 1)
 				profile_info.xp = profile_cfg.get_value("progression", "xp", 0)
 				profile_info.total_xp = profile_cfg.get_value("progression", "total_xp", 0)

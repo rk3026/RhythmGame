@@ -182,7 +182,12 @@ func _on_save_pressed() -> void:
 		ProfileManager.update_profile_field("display_name", new_display_name)
 	
 	ProfileManager.update_profile_field("bio", bio_input.text.strip_edges())
-	ProfileManager.update_profile_field("avatar", selected_avatar)
+	
+	# Convert avatar path to avatar_id before saving
+	var avatar_id = ProfileManager.get_avatar_id_from_path(selected_avatar)
+	ProfileManager.update_profile_field("avatar_id", avatar_id)
+	ProfileManager.update_profile_field("avatar", selected_avatar)  # Also update the computed field
+	
 	ProfileManager.update_profile_field("profile_color_primary", primary_color_button.color.to_html())
 	ProfileManager.update_profile_field("profile_color_accent", accent_color_button.color.to_html())
 	
