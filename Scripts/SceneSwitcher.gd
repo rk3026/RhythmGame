@@ -56,3 +56,18 @@ func pop_scene():
 		var previous = scene_stack.back()
 		previous.show()
 		previous.process_mode = Node.PROCESS_MODE_INHERIT
+
+func change_scene(scene_path: String):
+	"""Clear all scenes and load a new scene from scratch (resets navigation stack)."""
+	# Clear entire stack
+	for scene in scene_stack:
+		get_tree().root.remove_child(scene)
+		scene.queue_free()
+	scene_stack.clear()
+	
+	# Load and add new scene
+	var new_scene = load(scene_path).instantiate()
+	get_tree().root.add_child(new_scene)
+	new_scene.show()
+	new_scene.process_mode = Node.PROCESS_MODE_INHERIT
+	scene_stack.append(new_scene)

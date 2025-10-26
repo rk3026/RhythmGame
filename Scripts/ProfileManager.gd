@@ -179,8 +179,8 @@ func load_profile(profile_id: String) -> bool:
 	current_profile.last_played = Time.get_datetime_string_from_system()
 	_update_profile_in_list(profile_id, current_profile.last_played)
 	
-	# Load profile-specific score history
-	_load_profile_scores(profile_id)
+	# Load profile-specific score history (UPDATED: use ScoreHistoryManager)
+	ScoreHistoryManager.set_profile(profile_id)
 	
 	print("ProfileManager: Loaded profile: ", profile.username, " (", profile_id, ")")
 	emit_signal("profile_loaded", profile_id)
@@ -941,13 +941,3 @@ func _backfill_stats_from_scores(profile_id: String):
 	save_profile()
 	
 	print("ProfileManager: Backfilled stats - Plays: ", total_plays, ", XP: ", backfill_xp, ", Level: ", current_profile.level)
-
-func _load_profile_scores(profile_id: String):
-	"""Load profile-specific score history into ScoreHistoryManager."""
-	var scores_path = PROFILES_DIR + profile_id + "/scores.cfg"
-	
-	# Tell ScoreHistoryManager to use profile-specific scores
-	# This will be implemented when we integrate the systems
-	# For now, just check if the file exists
-	if FileAccess.file_exists(scores_path):
-		print("ProfileManager: Profile-specific scores found for ", profile_id)

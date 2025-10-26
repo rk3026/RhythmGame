@@ -92,6 +92,13 @@ text = "SETTINGS"
 alignment = 0
 script = ExtResource("2")
 
+[node name="SwitchProfileButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SWITCH PROFILE"
+alignment = 0
+script = ExtResource("2")
+
 [node name="QuitButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20

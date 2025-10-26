@@ -36,6 +36,10 @@ func _connect_buttons():
 	if settings_btn:
 		settings_btn.pressed.connect(_on_settings)
 	
+	var switch_profile_btn = get_node_or_null(left_base + "/SwitchProfileButton")
+	if switch_profile_btn:
+		switch_profile_btn.pressed.connect(_on_switch_profile)
+	
 	var quit_btn = get_node_or_null(left_base + "/QuitButton")
 	if quit_btn:
 		quit_btn.pressed.connect(_on_quit)
@@ -55,6 +59,11 @@ func _on_news():
 
 func _on_settings():
 	SceneSwitcher.push_scene("res://Scenes/settings.tscn")
+
+func _on_switch_profile():
+	"""Return to profile select screen to switch profiles."""
+	# Clear the scene stack and go back to profile select
+	SceneSwitcher.change_scene("res://Scenes/profile_select.tscn")
 
 func _on_quit():
 	get_tree().quit()
