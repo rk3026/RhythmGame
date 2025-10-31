@@ -100,13 +100,13 @@ pivot_offset = Vector2(20.000015, 20)
 mouse_filter = 2
 
 [node name="VerticalCarouselContainer" parent="." node_paths=PackedStringArray("position_offset_node") instance=ExtResource("2_e253l")]
+anchors_preset = 0
 wraparound_enabled = true
 opacity_strength = 0.1
 scale_strength = 0.1
 position_offset_node = NodePath("Control")
 
 [node name="Control" type="Control" parent="VerticalCarouselContainer"]
-layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
@@ -122,15 +122,15 @@ pivot_offset = Vector2(20, 20)
 focus_mode = 2
 
 [node name="Panel2" type="Panel" parent="VerticalCarouselContainer/Control"]
-modulate = Color(1, 1, 1, 0.9)
+modulate = Color(1, 1, 1, 0.90000004)
 z_index = -1
 layout_mode = 0
 offset_left = -54.54915
-offset_top = 265.31696
+offset_top = 265.31693
 offset_right = -14.549149
 offset_bottom = 305.317
 scale = Vector2(0.9, 0.9)
-pivot_offset = Vector2(20, 20.000015)
+pivot_offset = Vector2(20, 20.00003)
 mouse_filter = 2
 
 [node name="Panel3" type="Panel" parent="VerticalCarouselContainer/Control"]
@@ -138,11 +138,11 @@ modulate = Color(1, 1, 1, 0.8)
 z_index = -2
 layout_mode = 0
 offset_left = -110.45085
-offset_top = 156.3356
+offset_top = 156.33557
 offset_right = -70.45085
-offset_bottom = 196.33554
+offset_bottom = 196.33556
 scale = Vector2(0.8, 0.8)
-pivot_offset = Vector2(20, 19.99997)
+pivot_offset = Vector2(20, 19.999992)
 mouse_filter = 2
 
 [node name="Panel4" type="Panel" parent="VerticalCarouselContainer/Control"]
@@ -162,11 +162,11 @@ modulate = Color(1, 1, 1, 0.6)
 z_index = -4
 layout_mode = 0
 offset_left = -120.0
-offset_top = -20.000004
+offset_top = -19.999998
 offset_right = -80.0
-offset_bottom = 20.000004
+offset_bottom = 19.999998
 scale = Vector2(0.6, 0.6)
-pivot_offset = Vector2(20, 20.000004)
+pivot_offset = Vector2(20, 19.999998)
 mouse_filter = 2
 
 [node name="Panel6" type="Panel" parent="VerticalCarouselContainer/Control"]
@@ -174,9 +174,9 @@ modulate = Color(1, 1, 1, 0.5)
 z_index = -5
 layout_mode = 0
 offset_left = -120.0
-offset_top = -19.999973
+offset_top = -19.999977
 offset_right = -80.0
-offset_bottom = 19.999973
+offset_bottom = 19.999977
 scale = Vector2(0.5, 0.5)
-pivot_offset = Vector2(20, 19.999973)
+pivot_offset = Vector2(20, 19.999977)
 mouse_filter = 2

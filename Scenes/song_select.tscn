@@ -899,76 +899,86 @@ custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
 [node name="SongSelection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer"]
-custom_minimum_size = Vector2(350, 0)
+custom_minimum_size = Vector2(600, 0)
 layout_mode = 2
 
 [node name="SongInfo" type="MarginContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection"]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo"]
 layout_mode = 2
 
-[node name="AlbumArt" type="ColorRect" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(250, 250)
+[node name="AlbumArt" type="TextureRect" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
+custom_minimum_size = Vector2(500, 500)
 layout_mode = 2
 size_flags_horizontal = 4
-color = Color(0.3, 0.3, 0.4, 1)
+# Texture will be assigned at runtime by the script. Configure scaling to keep aspect and fit nicely.
+expand_mode = 1 # TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+stretch_mode = 2 # TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
 layout_mode = 2
 
 [node name="SongTitle" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Through the Fire and Flames"
 scroll_active = false
 
 [node name="Artist" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Artist: DragonForce"
 scroll_active = false
 
 [node name="Album" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Album: Inhuman Rampage"
 scroll_active = false
 
 [node name="Year" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Year: 2006"
 scroll_active = false
 
 [node name="Genre" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Genre: Power Metal"
 scroll_active = false
 
 [node name="Length" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Length: 7:21"
 scroll_active = false
 
 [node name="Charter" type="RichTextLabel" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 0
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 text = "Charter: Miscellany"
 scroll_active = false
@@ -984,6 +994,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Difficulty"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer"]
@@ -997,18 +1008,22 @@ size_flags_horizontal = 3
 
 [node name="Button" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Easy"
 
 [node name="Button2" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Medium"
 
 [node name="Button3" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Hard"
 
 [node name="Button4" type="Button" parent="MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/Difficulty/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Expert"
 
 [node name="Bottom" type="MarginContainer" parent="MarginContainer/VBoxContainer"]

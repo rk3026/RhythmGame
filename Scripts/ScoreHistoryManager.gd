@@ -42,18 +42,25 @@ func set_profile(profile_id: String):
 		return
 	
 	var old_profile_id = current_profile_id
-	current_profile_id = profile_id
-	history_path = PROFILES_DIR + profile_id + "/scores.cfg"
-	
-	# Save old profile's scores if switching
+	# Preserve the old history_path so we can save the old profile's scores
+	var old_history_path = history_path
+
+	# If switching from an existing profile, save its scores first (uses old_history_path)
 	if not old_profile_id.is_empty() and old_profile_id != profile_id:
 		print("ScoreHistoryManager: Saving scores for profile: ", old_profile_id)
+		# Temporarily ensure history_path points to the old path while saving
+		var tmp = history_path
+		history_path = old_history_path
 		save_score_history()
-	
-	# Load new profile's scores
+		history_path = tmp
+
+	# Now switch to the new profile and load its scores
+	current_profile_id = profile_id
+	history_path = PROFILES_DIR + profile_id + "/scores.cfg"
+
 	print("ScoreHistoryManager: Loading scores for profile: ", profile_id)
 	load_score_history()
-	
+
 	emit_signal("profile_changed", profile_id)
 
 func get_current_profile_id() -> String:
