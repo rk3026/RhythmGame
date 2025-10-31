@@ -51,6 +51,7 @@ text = "Back to Main Menu"
 
 [node name="Middle" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_right = 20
 
@@ -1012,6 +1013,5 @@ text = "Expert"
 
 [node name="Bottom" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]

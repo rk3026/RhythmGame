@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7qy8m3n5bxkl"]
+
+[ext_resource type="Script" path="res://Scenes/Components/vertical_carousel_container.gd" id="1_vertical"]
+
+[node name="VerticalCarouselContainer" type="Control"]
+z_index = 10
+script = ExtResource("1_vertical")

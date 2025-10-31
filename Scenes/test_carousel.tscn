@@ -1,18 +1,22 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8n6i73lflw7q"]
+[gd_scene load_steps=3 format=3 uid="uid://i3hm034ajkp8"]
 
 [ext_resource type="PackedScene" uid="uid://kkp4ov7r4m2e" path="res://Scenes/Components/carousel_container.tscn" id="1_adas3"]
+[ext_resource type="PackedScene" path="res://Scenes/Components/vertical_carousel_container.tscn" id="2_e253l"]
 
 [node name="TestCarousel" type="Control"]
 layout_mode = 3
 anchors_preset = 0
 
 [node name="CarouselContainer" parent="." node_paths=PackedStringArray("position_offset_node") instance=ExtResource("1_adas3")]
+visible = false
+opacity_strength = 0.0
+scale_strength = 0.0
 position_offset_node = NodePath("Control")
 
 [node name="Control" type="Control" parent="CarouselContainer"]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 19.999998
+offset_left = 20.0
 offset_right = 60.0
 offset_bottom = 40.0
 
@@ -26,13 +30,153 @@ pivot_offset = Vector2(20, 20)
 focus_mode = 2
 
 [node name="Panel2" type="Panel" parent="CarouselContainer/Control"]
-modulate = Color(1, 1, 1, 0.65000004)
 z_index = -1
 layout_mode = 0
 offset_left = 60.0
 offset_top = -20.0
-offset_right = 100.0
+offset_right = 100.00006
 offset_bottom = 20.0
-scale = Vector2(0.75000006, 0.75000006)
+pivot_offset = Vector2(20.00003, 20)
+mouse_filter = 2
+
+[node name="Panel3" type="Panel" parent="CarouselContainer/Control"]
+z_index = -2
+layout_mode = 0
+offset_left = 120.00006
+offset_top = -20.0
+offset_right = 160.00003
+offset_bottom = 20.0
+pivot_offset = Vector2(19.999985, 20)
+mouse_filter = 2
+
+[node name="Panel4" type="Panel" parent="CarouselContainer/Control"]
+z_index = -3
+layout_mode = 0
+offset_left = 180.00003
+offset_top = -20.0
+offset_right = 220.00024
+offset_bottom = 20.0
+pivot_offset = Vector2(20.000107, 20)
+mouse_filter = 2
+
+[node name="Panel5" type="Panel" parent="CarouselContainer/Control"]
+z_index = -4
+layout_mode = 0
+offset_left = 240.00024
+offset_top = -20.0
+offset_right = 280.0005
+offset_bottom = 20.0
+pivot_offset = Vector2(20.000122, 20)
+mouse_filter = 2
+
+[node name="Panel6" type="Panel" parent="CarouselContainer/Control"]
+z_index = -5
+layout_mode = 0
+offset_left = 300.0005
+offset_top = -20.0
+offset_right = 340.00034
+offset_bottom = 20.0
+pivot_offset = Vector2(19.999924, 20)
+mouse_filter = 2
+
+[node name="Panel7" type="Panel" parent="CarouselContainer/Control"]
+z_index = -6
+layout_mode = 0
+offset_left = 360.00034
+offset_top = -20.0
+offset_right = 400.0004
+offset_bottom = 20.0
+pivot_offset = Vector2(20.00003, 20)
+mouse_filter = 2
+
+[node name="Panel8" type="Panel" parent="CarouselContainer/Control"]
+z_index = -7
+layout_mode = 0
+offset_left = 420.0004
+offset_top = -20.0
+offset_right = 460.00043
+offset_bottom = 20.0
+pivot_offset = Vector2(20.000015, 20)
+mouse_filter = 2
+
+[node name="VerticalCarouselContainer" parent="." node_paths=PackedStringArray("position_offset_node") instance=ExtResource("2_e253l")]
+wraparound_enabled = true
+opacity_strength = 0.1
+scale_strength = 0.1
+position_offset_node = NodePath("Control")
+
+[node name="Control" type="Control" parent="VerticalCarouselContainer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Panel" type="Panel" parent="VerticalCarouselContainer/Control"]
+z_index = 1
+layout_mode = 0
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
 pivot_offset = Vector2(20, 20)
+focus_mode = 2
+
+[node name="Panel2" type="Panel" parent="VerticalCarouselContainer/Control"]
+modulate = Color(1, 1, 1, 0.9)
+z_index = -1
+layout_mode = 0
+offset_left = -54.54915
+offset_top = 265.31696
+offset_right = -14.549149
+offset_bottom = 305.317
+scale = Vector2(0.9, 0.9)
+pivot_offset = Vector2(20, 20.000015)
+mouse_filter = 2
+
+[node name="Panel3" type="Panel" parent="VerticalCarouselContainer/Control"]
+modulate = Color(1, 1, 1, 0.8)
+z_index = -2
+layout_mode = 0
+offset_left = -110.45085
+offset_top = 156.3356
+offset_right = -70.45085
+offset_bottom = 196.33554
+scale = Vector2(0.8, 0.8)
+pivot_offset = Vector2(20, 19.99997)
+mouse_filter = 2
+
+[node name="Panel4" type="Panel" parent="VerticalCarouselContainer/Control"]
+modulate = Color(1, 1, 1, 0.7)
+z_index = -3
+layout_mode = 0
+offset_left = -120.0
+offset_top = -20.000038
+offset_right = -80.0
+offset_bottom = 20.000038
+scale = Vector2(0.7, 0.7)
+pivot_offset = Vector2(20, 20.000038)
+mouse_filter = 2
+
+[node name="Panel5" type="Panel" parent="VerticalCarouselContainer/Control"]
+modulate = Color(1, 1, 1, 0.6)
+z_index = -4
+layout_mode = 0
+offset_left = -120.0
+offset_top = -20.000004
+offset_right = -80.0
+offset_bottom = 20.000004
+scale = Vector2(0.6, 0.6)
+pivot_offset = Vector2(20, 20.000004)
+mouse_filter = 2
+
+[node name="Panel6" type="Panel" parent="VerticalCarouselContainer/Control"]
+modulate = Color(1, 1, 1, 0.5)
+z_index = -5
+layout_mode = 0
+offset_left = -120.0
+offset_top = -19.999973
+offset_right = -80.0
+offset_bottom = 19.999973
+scale = Vector2(0.5, 0.5)
+pivot_offset = Vector2(20, 19.999973)
 mouse_filter = 2
