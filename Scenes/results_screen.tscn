@@ -1,10 +1,10 @@
 [gd_scene load_steps=7 format=3 uid="uid://cqsvs3gg2fos7"]
 
 [ext_resource type="Script" uid="uid://e7rkus4af5ch" path="res://Scripts/results_screen.gd" id="1"]
-[ext_resource type="PackedScene" path="res://Scenes/Components/rank_display.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://Scenes/Components/stat_card.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://Scenes/Components/judgment_breakdown.tscn" id="4"]
-[ext_resource type="PackedScene" path="res://Scenes/Components/progression_display.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://c6fqy8xj3hpqv" path="res://Scenes/Components/rank_display.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://bdqj6a3vp52kk" path="res://Scenes/Components/stat_card.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://ckxwj7jb5p5xw" path="res://Scenes/Components/judgment_breakdown.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://ct7ry4x8bhmgh" path="res://Scenes/Components/progression_display.tscn" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.05, 0.05, 0.08, 0.95)
