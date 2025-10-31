@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dcpsk1fuof0al"
+path="res://.godot/imported/song.ogg-22d76f7806de6c2214daf50541fb3099.oggvorbisstr"
+
+[deps]
+
+source_file="res://Other Songs/SAWTOWNE, Hatsune Miku - M@GICAL CURE! LOVE SHOT! [Overchart] (Krazy)/song.ogg"
+dest_files=["res://.godot/imported/song.ogg-22d76f7806de6c2214daf50541fb3099.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

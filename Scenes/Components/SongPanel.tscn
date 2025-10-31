@@ -1,0 +1,87 @@
+[gd_scene load_steps=5 format=3 uid="uid://1j0fujtimml3"]
+
+[ext_resource type="Script" uid="uid://cg8ppgxv4ocni" path="res://Scenes/Components/song_panel.gd" id="1_etrtv"]
+[ext_resource type="Texture2D" uid="uid://15iemw4bf4wo" path="res://Other Songs/Yuka Iguchi - Platinum Disco (Ghostbyob)/album.jpg" id="1_t8bao"]
+[ext_resource type="Texture2D" uid="uid://ydyy4yh6uy4l" path="res://Assets/Profiles/Avatars/bass.svg" id="2_es6cc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_po1pi"]
+bg_color = Color(0, 0, 0, 1)
+
+[node name="SongPanel" type="Button"]
+custom_minimum_size = Vector2(800, 50)
+offset_right = 800.0
+offset_bottom = 164.0
+flat = true
+script = ExtResource("1_etrtv")
+
+[node name="Panel" type="Panel" parent="."]
+custom_minimum_size = Vector2(800, 50)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_po1pi")
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 20
+
+[node name="TextureRect" type="TextureRect" parent="Panel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+texture = ExtResource("1_t8bao")
+expand_mode = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SongName" type="RichTextLabel" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 30
+text = "Song Name"
+
+[node name="Artist" type="RichTextLabel" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 20
+text = "Artist"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Difficulty" type="Label" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Normal"
+
+[node name="Stars" type="Label" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "★★★★★"
+
+[node name="ClearIcon" type="TextureRect" parent="Panel"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_bottom = 40.0
+grow_horizontal = 0
+texture = ExtResource("2_es6cc")
+expand_mode = 1

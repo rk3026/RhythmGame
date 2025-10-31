@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://cqq02s3npcs1n"
+path="res://.godot/imported/song.ogg-fb085f131a1775b68b3eeed9334e27c5.oggvorbisstr"
+
+[deps]
+
+source_file="res://Other Songs/Yuka Iguchi - Platinum Disco (Ghostbyob)/song.ogg"
+dest_files=["res://.godot/imported/song.ogg-fb085f131a1775b68b3eeed9334e27c5.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

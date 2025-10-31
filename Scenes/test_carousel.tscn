@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8n6i73lflw7q"]
+
+[ext_resource type="PackedScene" uid="uid://kkp4ov7r4m2e" path="res://Scenes/Components/carousel_container.tscn" id="1_adas3"]
+
+[node name="TestCarousel" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="CarouselContainer" parent="." node_paths=PackedStringArray("position_offset_node") instance=ExtResource("1_adas3")]
+position_offset_node = NodePath("Control")
+
+[node name="Control" type="Control" parent="CarouselContainer"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 19.999998
+offset_right = 60.0
+offset_bottom = 40.0
+
+[node name="Panel" type="Panel" parent="CarouselContainer/Control"]
+z_index = 1
+layout_mode = 0
+offset_top = -20.0
+offset_right = 40.0
+offset_bottom = 20.0
+pivot_offset = Vector2(20, 20)
+focus_mode = 2
+
+[node name="Panel2" type="Panel" parent="CarouselContainer/Control"]
+modulate = Color(1, 1, 1, 0.65000004)
+z_index = -1
+layout_mode = 0
+offset_left = 60.0
+offset_top = -20.0
+offset_right = 100.0
+offset_bottom = 20.0
+scale = Vector2(0.75000006, 0.75000006)
+pivot_offset = Vector2(20, 20)
+mouse_filter = 2
