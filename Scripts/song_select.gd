@@ -173,110 +173,36 @@ func _scan_midi_instruments(chart_path: String) -> Dictionary:
 	return instruments
 
 func add_song_to_ui(song_info: Dictionary):
-	# Create the song button using AnimatedButton component (flat style, 50px height)
-	var animated_button_script = load("res://Scripts/Components/AnimatedButton.gd")
-	var song_button = animated_button_script.new()
-	song_button.custom_minimum_size = Vector2(0, 50)
-	song_button.flat = true
-	# AnimatedButton handles pivot_offset automatically in _ready()
-	
-	# Create the background panel with semi-transparent style
-	var panel = Panel.new()
-	panel.name = "Panel"
-	panel.layout_mode = 1
-	panel.anchor_right = 1.0
-	panel.anchor_bottom = 1.0
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Allow clicks to pass through to button
-	
-	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.7647059, 0.7647059, 0.7647059, 0.2509804)
-	panel.add_theme_stylebox_override("panel", panel_style)
-	song_button.add_child(panel)
-	
-	# Create HBoxContainer for labels
-	var hbox = HBoxContainer.new()
-	hbox.layout_mode = 1
-	hbox.anchor_right = 1.0
-	hbox.anchor_bottom = 1.0
-	hbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	hbox.grow_vertical = Control.GROW_DIRECTION_BOTH
-	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_theme_constant_override("separation", 20)
-	song_button.add_child(hbox)
-	
-	# Create LabelSettings for consistent styling
-	var label_settings = LabelSettings.new()
-	label_settings.font_size = 22
-	
-	# Artist container with fixed width
-	var artist_container = Control.new()
-	artist_container.custom_minimum_size = Vector2(200, 0)
-	artist_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	artist_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(artist_container)
-	
-	# Artist label (uppercase, right-aligned, auto-scroll)
-	var artist_label = load("res://Scripts/Components/AutoScrollLabel.gd").new()
-	artist_label.layout_mode = 1
-	artist_label.anchor_right = 1.0
-	artist_label.anchor_bottom = 1.0
-	artist_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	artist_label.grow_vertical = Control.GROW_DIRECTION_BOTH
-	artist_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	artist_label.set_label_settings(label_settings)
-	artist_label.set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT)
-	artist_label.set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER)
-	artist_label.set_text(song_info.artist.to_upper())
-	artist_container.add_child(artist_label)
-	
-	# Song container with fixed width
-	var song_container = Control.new()
-	song_container.custom_minimum_size = Vector2(300, 0)
-	song_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	song_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(song_container)
-	
-	# Song title label (left-aligned, auto-scroll)
-	var song_label = load("res://Scripts/Components/AutoScrollLabel.gd").new()
-	song_label.layout_mode = 1
-	song_label.anchor_right = 1.0
-	song_label.anchor_bottom = 1.0
-	song_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	song_label.grow_vertical = Control.GROW_DIRECTION_BOTH
-	song_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	song_label.set_label_settings(label_settings)
-	song_label.set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER)
-	song_label.set_horizontal_alignment(HORIZONTAL_ALIGNMENT_LEFT)
-	song_label.set_text(song_info.title)
-	song_container.add_child(song_label)
-	
-	# Score label (placeholder for future high score tracking)
-	var score_label = Label.new()
-	score_label.text = ""  # Will be populated below
-	score_label.label_settings = label_settings
-	score_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(score_label)
-	
-	# Percent label (placeholder for future completion tracking)
-	var percent_label = Label.new()
-	percent_label.text = ""  # Will be populated below
-	percent_label.label_settings = label_settings
-	percent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(percent_label)
-	
-	# NEW: Populate score and accuracy from history
-	_populate_score_labels(song_info, score_label, percent_label)
-	
-	# Connect button press to update song info panel
-	song_button.connect("pressed", Callable(self, "_on_song_selected").bind(song_info))
-	
-	# AnimatedButton handles hover effects automatically, but we still want panel brightening
-	song_button.connect("mouse_entered", Callable(self, "_on_song_button_hover_enter").bind(song_button))
-	song_button.connect("mouse_exited", Callable(self, "_on_song_button_hover_exit").bind(song_button))
-	
-	song_list_container.add_child(song_button)
+	# Use the SongPanel scene for consistent layout and to show clear/score info
+	var scene = load("res://Scenes/Components/SongPanel.tscn")
+	if not scene:
+		push_error("Failed to load SongPanel.tscn")
+		return
+	var song_panel = scene.instantiate()
+
+	# Connect button press to song selection
+	song_panel.pressed.connect(_on_song_selected.bind(song_info))
+
+	song_list_container.add_child(song_panel)
+
+	# Populate basic data on the panel
+	song_panel.set_song_data(song_info)
+
+	# Populate score/accuracy using existing history integration
+	# SongPanel exposes `score_label` and `percent_label` nodes used here
+	if song_panel.has_method("get_song_info"):
+		# Ensure labels exist and populate them
+		var s_label = null
+		var p_label = null
+		if song_panel.has_node("Panel/MarginContainer/HBoxContainer/ScoreLabel"):
+			s_label = song_panel.get_node("Panel/MarginContainer/HBoxContainer/ScoreLabel")
+		if song_panel.has_node("Panel/MarginContainer/HBoxContainer/PercentLabel"):
+			p_label = song_panel.get_node("Panel/MarginContainer/HBoxContainer/PercentLabel")
+		if s_label and p_label:
+			_populate_score_labels(song_info, s_label, p_label)
+			# Mirror formatted values back into the song_info so panel can show them later if refreshed
+			song_info["best_score_text"] = s_label.text
+			song_info["best_accuracy_text"] = p_label.text
 
 func _on_song_selected(song_info: Dictionary):
 	selected_song_info = song_info
@@ -406,28 +332,6 @@ func _notification(what):
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
 		if not visible and audio_player.playing:
 			audio_player.stop()
-
-func _on_song_button_hover_enter(button: Button):
-	# AnimatedButton handles scale animation automatically
-	# We only need to brighten the panel background
-	var panel = button.get_node("Panel")
-	var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_method(func(value): 
-		var style = panel.get_theme_stylebox("panel").duplicate()
-		style.bg_color = Color(0.9, 0.9, 0.9, 0.4).lerp(Color(1.0, 1.0, 1.0, 0.5), value)
-		panel.add_theme_stylebox_override("panel", style)
-	, 0.0, 1.0, 0.2)
-
-func _on_song_button_hover_exit(button: Button):
-	# AnimatedButton handles scale animation automatically
-	# We only need to dim the panel background
-	var panel = button.get_node("Panel")
-	var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_method(func(value): 
-		var style = panel.get_theme_stylebox("panel").duplicate()
-		style.bg_color = Color(1.0, 1.0, 1.0, 0.5).lerp(Color(0.7647059, 0.7647059, 0.7647059, 0.2509804), value)
-		panel.add_theme_stylebox_override("panel", style)
-	, 0.0, 1.0, 0.2)
 
 # ============================================================================
 # Score History Integration

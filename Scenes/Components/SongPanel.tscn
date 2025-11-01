@@ -1,10 +1,11 @@
-[gd_scene load_steps=4 format=3 uid="uid://1j0fujtimml3"]
+[gd_scene load_steps=5 format=3 uid="uid://1j0fujtimml3"]
 
 [ext_resource type="Script" uid="uid://cg8ppgxv4ocni" path="res://Scenes/Components/song_panel.gd" id="1_etrtv"]
 [ext_resource type="Texture2D" uid="uid://ydyy4yh6uy4l" path="res://Assets/Profiles/Avatars/bass.svg" id="2_es6cc"]
+[ext_resource type="Texture2D" uid="uid://i5j8xayi6kjd" path="res://icon.svg" id="2_etrtv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_po1pi"]
-bg_color = Color(0.2, 0.2, 0.2, 0.8)
+bg_color = Color(0.043039158, 0.04303915, 0.04303915, 0.8)
 
 [node name="SongPanel" type="Button"]
 custom_minimum_size = Vector2(800, 150)
@@ -14,13 +15,14 @@ flat = true
 script = ExtResource("1_etrtv")
 
 [node name="Panel" type="Panel" parent="."]
-custom_minimum_size = Vector2(800, 50)
+custom_minimum_size = Vector2(800, 150)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_po1pi")
 
 [node name="MarginContainer" type="MarginContainer" parent="Panel"]
@@ -30,6 +32,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
@@ -40,37 +43,60 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="TextureRect" type="TextureRect" parent="Panel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(130, 0)
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="Panel/MarginContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="Panel/MarginContainer/HBoxContainer/AspectRatioContainer"]
+custom_minimum_size = Vector2(130, 130)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_etrtv")
 expand_mode = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="SongName" type="RichTextLabel" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 size_flags_vertical = 3
 theme_override_font_sizes/normal_font_size = 30
 text = "Song Name"
+autowrap_mode = 0
 
 [node name="Artist" type="RichTextLabel" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 size_flags_vertical = 3
 theme_override_font_sizes/normal_font_size = 20
 text = "Artist"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Difficulty" type="Label" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 text = "Normal"
 
 [node name="Stars" type="Label" parent="Panel/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 text = "★★★★★"
+
+[node name="ScoreLabel" type="Label" parent="Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+text = "17529"
+
+[node name="PercentLabel" type="Label" parent="Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+text = "99.9%"
 
 [node name="ClearIcon" type="TextureRect" parent="Panel"]
 custom_minimum_size = Vector2(0, 40)
@@ -81,5 +107,19 @@ anchor_right = 1.0
 offset_left = -100.0
 offset_bottom = 40.0
 grow_horizontal = 0
+mouse_filter = 2
 texture = ExtResource("2_es6cc")
 expand_mode = 1
+
+[node name="ClearText" type="Label" parent="Panel"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -10.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
