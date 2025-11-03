@@ -1,0 +1,182 @@
+[gd_scene load_steps=2 format=3 uid="uid://cwu0x1wce1nep"]
+
+[ext_resource type="Script" path="res://Scripts/Editor/EditorSidePanel.gd" id="1_5b0fk"]
+
+[node name="EditorSidePanel" type="TabContainer"]
+custom_minimum_size = Vector2(250, 0)
+offset_right = 250.0
+offset_bottom = 600.0
+script = ExtResource("1_5b0fk")
+
+[node name="Metadata" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="MetadataGrid" type="GridContainer" parent="Metadata"]
+layout_mode = 2
+columns = 2
+
+[node name="TitleLabel" type="Label" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+text = "Title:"
+
+[node name="TitleEdit" type="LineEdit" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Song Title"
+
+[node name="ArtistLabel" type="Label" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+text = "Artist:"
+
+[node name="ArtistEdit" type="LineEdit" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Artist Name"
+
+[node name="AlbumLabel" type="Label" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+text = "Album:"
+
+[node name="AlbumEdit" type="LineEdit" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Album Name"
+
+[node name="CharterLabel" type="Label" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+text = "Charter:"
+
+[node name="CharterEdit" type="LineEdit" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Your Name"
+
+[node name="YearLabel" type="Label" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+text = "Year:"
+
+[node name="YearEdit" type="SpinBox" parent="Metadata/MetadataGrid"]
+layout_mode = 2
+min_value = 1900.0
+max_value = 2100.0
+value = 2024.0
+
+[node name="HSeparator" type="HSeparator" parent="Metadata"]
+layout_mode = 2
+
+[node name="AudioFileGroup" type="VBoxContainer" parent="Metadata"]
+layout_mode = 2
+
+[node name="AudioLabel" type="Label" parent="Metadata/AudioFileGroup"]
+layout_mode = 2
+text = "Audio File:"
+
+[node name="AudioFileEdit" type="LineEdit" parent="Metadata/AudioFileGroup"]
+layout_mode = 2
+editable = false
+placeholder_text = "No audio file loaded"
+
+[node name="AudioBrowseButton" type="Button" parent="Metadata/AudioFileGroup"]
+layout_mode = 2
+text = "Browse..."
+
+[node name="Difficulty" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+
+[node name="InstrumentLabel" type="Label" parent="Difficulty"]
+layout_mode = 2
+text = "Select Difficulties to Chart:"
+
+[node name="InstrumentGrid" type="GridContainer" parent="Difficulty"]
+layout_mode = 2
+columns = 5
+
+[node name="HeaderLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = " "
+
+[node name="EasyHeaderLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = "Easy"
+
+[node name="MediumHeaderLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = "Medium"
+
+[node name="HardHeaderLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = "Hard"
+
+[node name="ExpertHeaderLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = "Expert"
+
+[node name="GuitarLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = "Guitar"
+
+[node name="GuitarEasyCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="GuitarMediumCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="GuitarHardCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="GuitarExpertCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="BassLabel" type="Label" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+text = "Bass"
+
+[node name="BassEasyCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="BassMediumCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="BassHardCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="BassExpertCheck" type="CheckBox" parent="Difficulty/InstrumentGrid"]
+layout_mode = 2
+
+[node name="Properties" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+
+[node name="SelectionInfo" type="Label" parent="Properties"]
+layout_mode = 2
+text = "No notes selected"
+
+[node name="HSeparator" type="HSeparator" parent="Properties"]
+layout_mode = 2
+
+[node name="BulkEditLabel" type="Label" parent="Properties"]
+layout_mode = 2
+text = "Bulk Edit:"
+
+[node name="BulkEditGroup" type="VBoxContainer" parent="Properties"]
+layout_mode = 2
+
+[node name="NoteTypeLabel" type="Label" parent="Properties/BulkEditGroup"]
+layout_mode = 2
+text = "Note Type:"
+
+[node name="NoteTypeSelector" type="OptionButton" parent="Properties/BulkEditGroup"]
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "Normal"
+popup/item_0/id = 0
+popup/item_1/text = "HOPO"
+popup/item_1/id = 1
+popup/item_2/text = "Tap"
+popup/item_2/id = 2
+
+[node name="ApplyNoteTypeButton" type="Button" parent="Properties/BulkEditGroup"]
+layout_mode = 2
+text = "Apply to Selected"
