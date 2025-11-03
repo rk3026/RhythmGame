@@ -31,6 +31,11 @@ func _connect_buttons():
 		practice_btn.pressed.connect(_on_practice)
 		_connect_ui_sounds(practice_btn)
 	
+	var chart_editor_btn = get_node_or_null(left_base + "/ChartEditorButton")
+	if chart_editor_btn:
+		chart_editor_btn.pressed.connect(_on_chart_editor)
+		_connect_ui_sounds(chart_editor_btn)
+	
 	var news_btn = get_node_or_null(left_base + "/NewsButton")
 	if news_btn:
 		news_btn.pressed.connect(_on_news)
@@ -70,6 +75,9 @@ func _on_online():
 
 func _on_practice():
 	print("Practice mode not yet implemented")
+
+func _on_chart_editor():
+	SceneSwitcher.push_scene("res://Scenes/chart_editor.tscn")
 
 func _on_news():
 	print("News section not yet implemented")

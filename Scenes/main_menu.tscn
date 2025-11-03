@@ -78,6 +78,13 @@ text = "PRACTICE"
 alignment = 0
 script = ExtResource("2")
 
+[node name="ChartEditorButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "CHART EDITOR"
+alignment = 0
+script = ExtResource("2")
+
 [node name="NewsButton" type="Button" parent="MarginContainer/MainLayout/MiddleSection/LeftSidebar"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
