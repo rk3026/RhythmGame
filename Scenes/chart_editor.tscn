@@ -1,0 +1,754 @@
+[gd_scene load_steps=8 format=3 uid="uid://bqh5m8xlac7rn"]
+
+[ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="1_background"]
+
+[sub_resource type="GDScript" id="GDScript_editor_main"]
+script/source = "extends Node3D
+# Chart Editor Main Controller
+# Coordinates between data model, UI, and editor systems
+
+signal chart_modified()
+signal test_play_requested(start_time: float)
+
+@onready var audio_manager = $AudioManager
+@onready var timeline_controller = $TimelineController
+@onready var history_manager = $HistoryManager
+@onready var ui = $UI
+
+var chart_data  # ChartDataModel instance (to be created)
+var file_path: String = \"\"
+var is_modified: bool = false
+var editing_enabled: bool = true
+
+func _ready():
+	# Initialize components
+	_setup_connections()
+	_create_new_chart()
+
+func _setup_connections():
+	# Connect UI signals
+	if ui.has_node(\"TopMenuBar\"):
+		# Will connect menu signals when implemented
+		pass
+	
+	# Connect playback controls
+	if ui.has_node(\"PlaybackControls/PlayButton\"):
+		ui.get_node(\"PlaybackControls/PlayButton\").pressed.connect(_on_play_pressed)
+	if ui.has_node(\"PlaybackControls/PauseButton\"):
+		ui.get_node(\"PlaybackControls/PauseButton\").pressed.connect(_on_pause_pressed)
+
+func _create_new_chart():
+	# TODO: Implement ChartDataModel
+	# chart_data = ChartDataModel.new()
+	is_modified = false
+	_update_window_title()
+
+func _update_window_title():
+	var title = \"Chart Editor\"
+	if not file_path.is_empty():
+		title += \" - \" + file_path.get_file()
+	if is_modified:
+		title += \" *\"
+	# Note: DisplayServer.window_set_title() can be used here
+
+func _on_play_pressed():
+	# TODO: Start audio playback
+	pass
+
+func _on_pause_pressed():
+	# TODO: Pause audio playback
+	pass
+
+func _input(event):
+	if not editing_enabled:
+		return
+	
+	# Handle keyboard shortcuts
+	if event.is_action_pressed(\"ui_cancel\"):
+		# TODO: Exit editor or show exit dialog
+		pass
+"
+
+[sub_resource type="QuadMesh" id="QuadMesh_runway"]
+size = Vector2(10, 30)
+orientation = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_runway"]
+transparency = 1
+albedo_texture = ExtResource("1_background")
+uv1_scale = Vector3(5, 1, 5)
+
+[sub_resource type="GDScript" id="GDScript_audio_manager"]
+script/source = "extends Node
+# Editor Audio Manager
+# Handles audio playback, seeking, and speed control for the editor
+
+@onready var audio_player = $AudioStreamPlayer
+
+var current_audio_stream: AudioStream = null
+var playback_speed: float = 1.0
+var is_playing: bool = false
+
+signal playback_started()
+signal playback_stopped()
+signal playback_position_changed(position: float)
+
+func load_audio(path: String) -> bool:
+	var stream = load(path)
+	if stream is AudioStream:
+		current_audio_stream = stream
+		audio_player.stream = stream
+		return true
+	return false
+
+func play():
+	if current_audio_stream:
+		audio_player.play()
+		is_playing = true
+		emit_signal(\"playback_started\")
+
+func pause():
+	audio_player.stream_paused = true
+	is_playing = false
+	emit_signal(\"playback_stopped\")
+
+func stop():
+	audio_player.stop()
+	is_playing = false
+	emit_signal(\"playback_stopped\")
+
+func seek(time: float):
+	if current_audio_stream:
+		audio_player.seek(time)
+
+func get_playback_position() -> float:
+	return audio_player.get_playback_position()
+
+func get_stream_length() -> float:
+	if current_audio_stream:
+		return current_audio_stream.get_length()
+	return 0.0
+
+func set_playback_speed(speed: float):
+	playback_speed = clamp(speed, 0.25, 2.0)
+	audio_player.pitch_scale = playback_speed
+"
+
+[sub_resource type="GDScript" id="GDScript_timeline"]
+script/source = "extends Node
+# Editor Timeline Controller
+# Manages timeline state, snap-to-grid, and time/tick conversion
+
+var current_time: float = 0.0
+var song_duration: float = 0.0
+var playing: bool = false
+var resolution: int = 192  # Ticks per beat
+var current_bpm: float = 120.0
+
+# Snap settings
+var snap_enabled: bool = true
+var snap_division: int = 16  # 1/16 notes
+
+signal time_changed(time: float)
+signal snap_changed(enabled: bool, division: int)
+
+func _process(delta):
+	if playing:
+		# Sync with audio manager
+		var audio_manager = get_parent().get_node(\"AudioManager\")
+		if audio_manager:
+			current_time = audio_manager.get_playback_position()
+			emit_signal(\"time_changed\", current_time)
+
+func seek(time: float):
+	current_time = clamp(time, 0.0, song_duration)
+	var audio_manager = get_parent().get_node(\"AudioManager\")
+	if audio_manager:
+		audio_manager.seek(current_time)
+	emit_signal(\"time_changed\", current_time)
+
+func tick_to_time(tick: int) -> float:
+	# Simple conversion - will need tempo map support later
+	var beats = float(tick) / resolution
+	var time = beats * (60.0 / current_bpm)
+	return time
+
+func time_to_tick(time: float) -> int:
+	# Simple conversion - will need tempo map support later
+	var beats = time / (60.0 / current_bpm)
+	var tick = int(beats * resolution)
+	return tick
+
+func snap_tick(tick: int) -> int:
+	if not snap_enabled:
+		return tick
+	var snap_interval = resolution / snap_division
+	return int(round(float(tick) / snap_interval)) * snap_interval
+
+func set_snap_division(division: int):
+	snap_division = division
+	emit_signal(\"snap_changed\", snap_enabled, snap_division)
+
+func toggle_snap():
+	snap_enabled = not snap_enabled
+	emit_signal(\"snap_changed\", snap_enabled, snap_division)
+"
+
+[sub_resource type="GDScript" id="GDScript_history"]
+script/source = "extends Node
+# Editor History Manager
+# Implements undo/redo using command pattern
+
+const MAX_HISTORY_SIZE = 500
+
+var undo_stack: Array = []
+var redo_stack: Array = []
+var command_in_progress: bool = false
+
+signal history_changed(can_undo: bool, can_redo: bool)
+
+func execute_command(command):
+	if command_in_progress:
+		push_warning(\"Cannot execute command while another is in progress\")
+		return
+	
+	command_in_progress = true
+	command.execute()
+	
+	undo_stack.push_back(command)
+	redo_stack.clear()
+	
+	# Limit history size
+	if undo_stack.size() > MAX_HISTORY_SIZE:
+		undo_stack.pop_front()
+	
+	command_in_progress = false
+	emit_signal(\"history_changed\", can_undo(), can_redo())
+
+func undo():
+	if not can_undo() or command_in_progress:
+		return
+	
+	command_in_progress = true
+	var command = undo_stack.pop_back()
+	command.undo()
+	redo_stack.push_back(command)
+	command_in_progress = false
+	emit_signal(\"history_changed\", can_undo(), can_redo())
+
+func redo():
+	if not can_redo() or command_in_progress:
+		return
+	
+	command_in_progress = true
+	var command = redo_stack.pop_back()
+	command.execute()
+	undo_stack.push_back(command)
+	command_in_progress = false
+	emit_signal(\"history_changed\", can_undo(), can_redo())
+
+func can_undo() -> bool:
+	return not undo_stack.is_empty()
+
+func can_redo() -> bool:
+	return not redo_stack.is_empty()
+
+func clear_history():
+	undo_stack.clear()
+	redo_stack.clear()
+	emit_signal(\"history_changed\", false, false)
+"
+
+[node name="ChartEditor" type="Node3D"]
+script = SubResource("GDScript_editor_main")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 10)
+
+[node name="Runway" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+mesh = SubResource("QuadMesh_runway")
+surface_material_override/0 = SubResource("StandardMaterial3D_runway")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+
+[node name="AudioManager" type="Node" parent="."]
+script = SubResource("GDScript_audio_manager")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="AudioManager"]
+
+[node name="TimelineController" type="Node" parent="."]
+script = SubResource("GDScript_timeline")
+
+[node name="HistoryManager" type="Node" parent="."]
+script = SubResource("GDScript_history")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TopMenuBar" type="MenuBar" parent="UI"]
+offset_right = 1152.0
+offset_bottom = 31.0
+
+[node name="FileMenu" type="PopupMenu" parent="UI/TopMenuBar"]
+title = "File"
+item_count = 8
+item_0/text = "New Chart"
+item_0/id = 0
+item_1/text = "Open Chart..."
+item_1/id = 1
+item_2/text = ""
+item_2/separator = true
+item_2/id = 2
+item_3/text = "Save"
+item_3/id = 3
+item_4/text = "Save As..."
+item_4/id = 4
+item_5/text = ""
+item_5/separator = true
+item_5/id = 5
+item_6/text = "Import .chart..."
+item_6/id = 6
+item_7/text = "Export to .chart..."
+item_7/id = 7
+
+[node name="EditMenu" type="PopupMenu" parent="UI/TopMenuBar"]
+title = "Edit"
+item_count = 8
+item_0/text = "Undo"
+item_0/id = 0
+item_1/text = "Redo"
+item_1/id = 1
+item_2/text = ""
+item_2/separator = true
+item_2/id = 2
+item_3/text = "Cut"
+item_3/id = 3
+item_4/text = "Copy"
+item_4/id = 4
+item_5/text = "Paste"
+item_5/id = 5
+item_6/text = "Delete"
+item_6/id = 6
+item_7/text = ""
+item_7/separator = true
+item_7/id = 7
+
+[node name="ViewMenu" type="PopupMenu" parent="UI/TopMenuBar"]
+title = "View"
+item_count = 5
+item_0/text = "Zoom In"
+item_0/id = 0
+item_1/text = "Zoom Out"
+item_1/id = 1
+item_2/text = "Reset Zoom"
+item_2/id = 2
+item_3/text = ""
+item_3/separator = true
+item_3/id = 3
+item_4/text = "Toggle Grid"
+item_4/checkable = 1
+item_4/checked = true
+item_4/id = 4
+
+[node name="PlaybackMenu" type="PopupMenu" parent="UI/TopMenuBar"]
+title = "Playback"
+item_count = 3
+item_0/text = "Play/Pause"
+item_0/id = 0
+item_1/text = "Stop"
+item_1/id = 1
+item_2/text = "Test Play Chart"
+item_2/id = 2
+
+[node name="PlaybackControls" type="HBoxContainer" parent="UI"]
+offset_left = 10.0
+offset_top = 40.0
+offset_right = 1142.0
+offset_bottom = 90.0
+theme_override_constants/separation = 10
+
+[node name="PrevMeasureButton" type="Button" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+text = "◄◄"
+
+[node name="FrameBackButton" type="Button" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+text = "◄"
+
+[node name="PlayButton" type="Button" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 2
+text = "▶"
+
+[node name="PauseButton" type="Button" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 2
+text = "⏸"
+
+[node name="StopButton" type="Button" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 2
+text = "⏹"
+
+[node name="NextMeasureButton" type="Button" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+text = "▶▶"
+
+[node name="Spacer" type="Control" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "0:00.000"
+vertical_alignment = 1
+
+[node name="TimeSlider" type="HSlider" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.001
+
+[node name="DurationLabel" type="Label" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "0:00.000"
+vertical_alignment = 1
+
+[node name="Spacer2" type="Control" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="UI/PlaybackControls"]
+layout_mode = 2
+text = "Speed:"
+vertical_alignment = 1
+
+[node name="SpeedButton" type="OptionButton" parent="UI/PlaybackControls"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+item_count = 7
+selected = 3
+popup/item_0/text = "0.25x"
+popup/item_0/id = 0
+popup/item_1/text = "0.5x"
+popup/item_1/id = 1
+popup/item_2/text = "0.75x"
+popup/item_2/id = 2
+popup/item_3/text = "1.0x"
+popup/item_3/id = 3
+popup/item_4/text = "1.25x"
+popup/item_4/id = 4
+popup/item_5/text = "1.5x"
+popup/item_5/id = 5
+popup/item_6/text = "2.0x"
+popup/item_6/id = 6
+
+[node name="MainContent" type="HSplitContainer" parent="UI"]
+offset_left = 10.0
+offset_top = 100.0
+offset_right = 1142.0
+offset_bottom = 638.0
+
+[node name="EditToolbar" type="VBoxContainer" parent="UI/MainContent"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ToolsLabel" type="Label" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+text = "Tools"
+horizontal_alignment = 1
+
+[node name="Separator1" type="HSeparator" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+
+[node name="NoteButton" type="Button" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = null
+text = "Note (N)"
+
+[node name="HOPOButton" type="Button" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+toggle_mode = true
+text = "HOPO (H)"
+
+[node name="TapButton" type="Button" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+toggle_mode = true
+text = "Tap (T)"
+
+[node name="Separator2" type="HSeparator" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+
+[node name="SelectButton" type="Button" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+toggle_mode = true
+text = "Select (S)"
+
+[node name="BPMButton" type="Button" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+toggle_mode = true
+text = "BPM (B)"
+
+[node name="EventButton" type="Button" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+toggle_mode = true
+text = "Event (E)"
+
+[node name="Separator3" type="HSeparator" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+
+[node name="SnapLabel" type="Label" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+text = "Snap:"
+
+[node name="SnapButton" type="OptionButton" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+item_count = 7
+selected = 3
+popup/item_0/text = "1/4"
+popup/item_0/id = 0
+popup/item_1/text = "1/8"
+popup/item_1/id = 1
+popup/item_2/text = "1/12"
+popup/item_2/id = 2
+popup/item_3/text = "1/16"
+popup/item_3/id = 3
+popup/item_4/text = "1/24"
+popup/item_4/id = 4
+popup/item_5/text = "1/32"
+popup/item_5/id = 5
+popup/item_6/text = "1/64"
+popup/item_6/id = 6
+
+[node name="GridToggle" type="CheckButton" parent="UI/MainContent/EditToolbar"]
+layout_mode = 2
+button_pressed = true
+text = "Grid (G)"
+
+[node name="EditorViewport" type="SubViewportContainer" parent="UI/MainContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="UI/MainContent/EditorViewport"]
+handle_input_locally = false
+size = Vector2i(802, 538)
+render_target_update_mode = 4
+
+[node name="Control" type="Control" parent="UI/MainContent/EditorViewport/SubViewport"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="UI/MainContent/EditorViewport/SubViewport/Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="Label" type="Label" parent="UI/MainContent/EditorViewport/SubViewport/Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -14.0
+offset_right = 100.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Note Highway Viewport"
+horizontal_alignment = 1
+
+[node name="SidePanel" type="TabContainer" parent="UI/MainContent"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Metadata" type="VBoxContainer" parent="UI/MainContent/SidePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+metadata/_tab_index = 0
+
+[node name="TitleLabel" type="Label" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+text = "Title:"
+
+[node name="TitleEdit" type="LineEdit" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+placeholder_text = "Song Title"
+
+[node name="ArtistLabel" type="Label" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+text = "Artist:"
+
+[node name="ArtistEdit" type="LineEdit" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+placeholder_text = "Artist Name"
+
+[node name="AlbumLabel" type="Label" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+text = "Album:"
+
+[node name="AlbumEdit" type="LineEdit" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+placeholder_text = "Album Name"
+
+[node name="CharterLabel" type="Label" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+text = "Charter:"
+
+[node name="CharterEdit" type="LineEdit" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+placeholder_text = "Your Name"
+
+[node name="AudioLabel" type="Label" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+text = "Audio File:"
+
+[node name="AudioButton" type="Button" parent="UI/MainContent/SidePanel/Metadata"]
+layout_mode = 2
+text = "Browse..."
+
+[node name="Difficulty" type="VBoxContainer" parent="UI/MainContent/SidePanel"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+metadata/_tab_index = 1
+
+[node name="InstrumentLabel" type="Label" parent="UI/MainContent/SidePanel/Difficulty"]
+layout_mode = 2
+text = "Instrument:"
+
+[node name="InstrumentButtons" type="VBoxContainer" parent="UI/MainContent/SidePanel/Difficulty"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GuitarButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/InstrumentButtons"]
+layout_mode = 2
+button_pressed = true
+text = "Guitar"
+
+[node name="BassButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/InstrumentButtons"]
+layout_mode = 2
+text = "Bass"
+
+[node name="DrumsButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/InstrumentButtons"]
+layout_mode = 2
+text = "Drums"
+
+[node name="Separator" type="HSeparator" parent="UI/MainContent/SidePanel/Difficulty"]
+layout_mode = 2
+
+[node name="DifficultyLabel" type="Label" parent="UI/MainContent/SidePanel/Difficulty"]
+layout_mode = 2
+text = "Difficulty:"
+
+[node name="DifficultyButtons" type="VBoxContainer" parent="UI/MainContent/SidePanel/Difficulty"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ExpertButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/DifficultyButtons"]
+layout_mode = 2
+button_pressed = true
+text = "Expert"
+
+[node name="HardButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/DifficultyButtons"]
+layout_mode = 2
+text = "Hard"
+
+[node name="MediumButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/DifficultyButtons"]
+layout_mode = 2
+text = "Medium"
+
+[node name="EasyButton" type="CheckBox" parent="UI/MainContent/SidePanel/Difficulty/DifficultyButtons"]
+layout_mode = 2
+text = "Easy"
+
+[node name="Properties" type="VBoxContainer" parent="UI/MainContent/SidePanel"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+metadata/_tab_index = 2
+
+[node name="SelectionLabel" type="Label" parent="UI/MainContent/SidePanel/Properties"]
+layout_mode = 2
+text = "Selected: 0 notes"
+
+[node name="TypeLabel" type="Label" parent="UI/MainContent/SidePanel/Properties"]
+layout_mode = 2
+text = "Note Type:"
+
+[node name="TypeButton" type="OptionButton" parent="UI/MainContent/SidePanel/Properties"]
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "Regular"
+popup/item_0/id = 0
+popup/item_1/text = "HOPO"
+popup/item_1/id = 1
+popup/item_2/text = "Tap"
+popup/item_2/id = 2
+
+[node name="PositionLabel" type="Label" parent="UI/MainContent/SidePanel/Properties"]
+layout_mode = 2
+text = "Position: ---"
+
+[node name="ApplyButton" type="Button" parent="UI/MainContent/SidePanel/Properties"]
+layout_mode = 2
+text = "Apply to Selection"
+
+[node name="DeleteButton" type="Button" parent="UI/MainContent/SidePanel/Properties"]
+layout_mode = 2
+text = "Delete Selection"
+
+[node name="StatusBar" type="HBoxContainer" parent="UI"]
+offset_left = 10.0
+offset_top = 648.0
+offset_right = 1142.0
+offset_bottom = 678.0
+theme_override_constants/separation = 20
+
+[node name="TimeStatus" type="Label" parent="UI/StatusBar"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Time: 0:00.000"
+
+[node name="BPMStatus" type="Label" parent="UI/StatusBar"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "BPM: 120.0"
+
+[node name="SnapStatus" type="Label" parent="UI/StatusBar"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Snap: 1/16"
+
+[node name="NotesStatus" type="Label" parent="UI/StatusBar"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Notes: 0"
+
+[node name="Spacer" type="Control" parent="UI/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ModifiedStatus" type="Label" parent="UI/StatusBar"]
+layout_mode = 2
+text = ""
