@@ -2,11 +2,7 @@ extends Node3D
 ## Chart Editor Main Controller
 ## Coordinates between data model, UI components, and editor systems
 
-const EditorHistoryManager = preload("res://Scripts/Editor/EditorHistoryManager.gd")
-const EditorNoteCanvas = preload("res://Scripts/Editor/EditorNoteCanvas.gd")
-const AddNoteCommand = preload("res://Scripts/Editor/Commands/AddNoteCommand.gd")
-const RemoveNoteCommand = preload("res://Scripts/Editor/Commands/RemoveNoteCommand.gd")
-const MoveNoteCommand = preload("res://Scripts/Editor/Commands/MoveNoteCommand.gd")
+# Classes are available via class_name declarations
 
 @onready var menu_bar = $UI/VBox/EditorMenuBar
 @onready var playback_controls = $UI/VBox/PlaybackArea/EditorPlaybackControls
@@ -56,6 +52,7 @@ func _create_note_canvas():
 	note_canvas.set_instrument_difficulty(current_instrument, current_difficulty)
 	note_canvas.note_clicked.connect(_on_note_clicked)
 	note_canvas.canvas_clicked.connect(_on_canvas_clicked)
+	note_canvas.notes_moved.connect(_on_notes_moved)
 
 func _connect_component_signals():
 	# Menu bar signals
@@ -208,11 +205,8 @@ func _on_chart_data_changed():
 
 func _on_note_clicked(note_id: int, button_index: int):
 	"""Handle clicking on an existing note"""
-	if button_index == MOUSE_BUTTON_LEFT:
-		# TODO: Select note
-		print("Note clicked: ", note_id)
-	elif button_index == MOUSE_BUTTON_RIGHT:
-		# Delete note with right click
+	if button_index == MOUSE_BUTTON_RIGHT:
+		# Delete note with right click (selection handled in canvas)
 		var command = RemoveNoteCommand.new(
 			chart_data,
 			current_instrument,
@@ -220,6 +214,27 @@ func _on_note_clicked(note_id: int, button_index: int):
 			note_id
 		)
 		history_manager.execute_command(command)
+
+func _on_notes_moved(note_ids: Array, offset_lane: int, offset_tick: int, original_positions: Dictionary):
+	"""Handle notes being dragged to new positions"""
+	# Create MoveNoteCommand for each moved note
+	for note_id in note_ids:
+		if note_id in original_positions:
+			var original = original_positions[note_id]
+			var new_lane = clamp(original.lane + offset_lane, 0, 4)
+			var new_tick = max(0, original.tick + offset_tick)
+			
+			var command = MoveNoteCommand.new(
+				chart_data,
+				current_instrument,
+				current_difficulty,
+				note_id,
+				new_lane,
+				new_tick
+			)
+			history_manager.execute_command(command)
+	
+	print("Moved ", note_ids.size(), " notes by lane:", offset_lane, " tick:", offset_tick)
 
 func _on_canvas_clicked(lane: int, tick: int, button_index: int):
 	"""Handle clicking on empty canvas space"""
@@ -270,6 +285,19 @@ func _input(event):
 					# Quick note placement with number keys
 					_handle_lane_key_press(event.keycode - KEY_1)
 					get_viewport().set_input_as_handled()
+				KEY_DELETE:
+					# Delete selected notes
+					_delete_selected_notes()
+					get_viewport().set_input_as_handled()
+				KEY_A:
+					if event.ctrl_pressed:
+						# Ctrl+A: Select all notes
+						note_canvas.select_all()
+						get_viewport().set_input_as_handled()
+				KEY_ESCAPE:
+					# Clear selection
+					note_canvas.clear_selection()
+					get_viewport().set_input_as_handled()
 
 func _handle_lane_key_press(lane: int):
 	"""Handle number key press for quick note placement"""
@@ -289,3 +317,22 @@ func _handle_lane_key_press(lane: int):
 		)
 		history_manager.execute_command(command)
 		print("Placed note with key at lane ", lane, " tick ", snapped_tick)
+
+func _delete_selected_notes():
+	"""Delete all currently selected notes"""
+	var selected = note_canvas.get_selected_notes()
+	if selected.size() == 0:
+		return
+	
+	# Delete each selected note
+	for note_id in selected:
+		var command = RemoveNoteCommand.new(
+			chart_data,
+			current_instrument,
+			current_difficulty,
+			note_id
+		)
+		history_manager.execute_command(command)
+	
+	print("Deleted ", selected.size(), " notes")
+	note_canvas.clear_selection()
