@@ -1,193 +1,12 @@
-[gd_scene load_steps=12 format=3 uid="uid://cm0oxamb4mtkw"]
+[gd_scene load_steps=11 format=3 uid="uid://cm0oxamb4mtkw"]
 
+[ext_resource type="Script" path="res://Scripts/chart_editor.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://Scenes/Components/EditorMenuBar.tscn" id="1_menubar"]
 [ext_resource type="PackedScene" path="res://Scenes/Components/EditorPlaybackControls.tscn" id="2_playback"]
 [ext_resource type="PackedScene" path="res://Scenes/Components/EditorToolbar.tscn" id="3_toolbar"]
 [ext_resource type="PackedScene" path="res://Scenes/Components/EditorSidePanel.tscn" id="4_sidepanel"]
 [ext_resource type="PackedScene" path="res://Scenes/Components/EditorStatusBar.tscn" id="5_statusbar"]
 [ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="6_background"]
-
-[sub_resource type="GDScript" id="GDScript_main"]
-script/source = "extends Node3D
-## Chart Editor Main Controller
-## Coordinates between data model, UI components, and editor systems
-
-@onready var menu_bar = $UI/VBox/EditorMenuBar
-@onready var playback_controls = $UI/VBox/PlaybackArea/EditorPlaybackControls
-@onready var toolbar = $UI/VBox/MainContent/EditorToolbar
-@onready var side_panel = $UI/VBox/MainContent/EditorSidePanel
-@onready var status_bar = $UI/VBox/EditorStatusBar
-@onready var audio_player = $AudioStreamPlayer
-@onready var runway = $Runway
-
-var chart_data: ChartDataModel
-var file_path: String = \"\"
-var is_modified: bool = false
-var current_instrument: String = \"guitar\"
-var current_difficulty: String = \"expert\"
-var is_playing: bool = false
-var current_time: float = 0.0
-var playback_speed: float = 1.0
-
-func _ready():
-	_initialize_chart_data()
-	_connect_component_signals()
-	_setup_runway()
-
-func _initialize_chart_data():
-	chart_data = ChartDataModel.new()
-	chart_data.data_changed.connect(_on_chart_data_changed)
-	chart_data.create_chart(current_instrument, current_difficulty)
-
-func _connect_component_signals():
-	# Menu bar signals
-	menu_bar.new_chart_requested.connect(_on_new_chart_requested)
-	menu_bar.open_chart_requested.connect(_on_open_chart_requested)
-	menu_bar.save_requested.connect(_on_save_requested)
-	menu_bar.save_as_requested.connect(_on_save_as_requested)
-	menu_bar.undo_requested.connect(_on_undo_requested)
-	menu_bar.redo_requested.connect(_on_redo_requested)
-	
-	# Playback control signals
-	playback_controls.play_requested.connect(_on_play_requested)
-	playback_controls.pause_requested.connect(_on_pause_requested)
-	playback_controls.stop_requested.connect(_on_stop_requested)
-	playback_controls.seek_requested.connect(_on_seek_requested)
-	playback_controls.speed_changed.connect(_on_speed_changed)
-	
-	# Toolbar signals
-	toolbar.tool_selected.connect(_on_tool_selected)
-	toolbar.snap_changed.connect(_on_snap_changed)
-	toolbar.grid_toggled.connect(_on_grid_toggled)
-	
-	# Side panel signals
-	side_panel.metadata_changed.connect(_on_metadata_changed)
-	side_panel.difficulty_changed.connect(_on_difficulty_changed)
-
-func _setup_runway():
-	# Reuse existing board_renderer logic from gameplay
-	runway.set_script(load(\"res://Scripts/board_renderer.gd\"))
-	runway.num_lanes = 5
-	runway.board_width = runway.mesh.size.x
-	runway.setup_lanes()
-	runway.create_hit_zones()
-	runway.create_lane_lines()
-	runway.set_board_texture()
-
-func _process(delta):
-	if is_playing and audio_player.playing:
-		current_time = audio_player.get_playback_position()
-		playback_controls.update_position(current_time)
-		status_bar.update_time(current_time)
-		
-		# Update BPM display based on current position
-		var current_tick = chart_data.time_to_tick(current_time)
-		var current_bpm = chart_data.get_bpm_at_tick(current_tick)
-		status_bar.update_bpm(current_bpm)
-
-func _on_new_chart_requested():
-	# TODO: Show confirmation if modified
-	chart_data.clear()
-	file_path = \"\"
-	is_modified = false
-	status_bar.set_modified(false)
-
-func _on_open_chart_requested():
-	# TODO: Show file dialog
-	print(\"Open chart requested\")
-
-func _on_save_requested():
-	if file_path.is_empty():
-		_on_save_as_requested()
-	else:
-		_save_chart(file_path)
-
-func _on_save_as_requested():
-	# TODO: Show file dialog
-	print(\"Save as requested\")
-
-func _save_chart(path: String):
-	# TODO: Implement chart serialization
-	file_path = path
-	is_modified = false
-	status_bar.set_modified(false)
-
-func _on_undo_requested():
-	# TODO: Implement undo system
-	print(\"Undo requested\")
-
-func _on_redo_requested():
-	# TODO: Implement redo system
-	print(\"Redo requested\")
-
-func _on_play_requested():
-	if audio_player.stream:
-		audio_player.play(current_time)
-		is_playing = true
-		playback_controls.set_playing(true)
-
-func _on_pause_requested():
-	audio_player.stop()
-	is_playing = false
-	playback_controls.set_playing(false)
-
-func _on_stop_requested():
-	audio_player.stop()
-	current_time = 0.0
-	is_playing = false
-	playback_controls.set_playing(false)
-	playback_controls.update_position(0.0)
-
-func _on_seek_requested(position: float):
-	current_time = position
-	if is_playing:
-		audio_player.play(position)
-
-func _on_speed_changed(speed: float):
-	playback_speed = speed
-	# Note: Godot AudioStreamPlayer doesn't support pitch_scale for speed
-	# You may need to use AudioEffectPitchShift for this
-
-func _on_tool_selected(tool_type):
-	print(\"Tool selected: \", tool_type)
-
-func _on_snap_changed(snap_division: int):
-	status_bar.update_snap(snap_division)
-
-func _on_grid_toggled(enabled: bool):
-	print(\"Grid toggled: \", enabled)
-
-func _on_metadata_changed(metadata: Dictionary):
-	for key in metadata:
-		chart_data.set_metadata(key, metadata[key])
-	is_modified = true
-	status_bar.set_modified(true)
-
-func _on_difficulty_changed(instrument: String, difficulty: String, enabled: bool):
-	if enabled:
-		chart_data.create_chart(instrument, difficulty)
-	print(\"Difficulty changed: \", instrument, \"/\", difficulty, \" = \", enabled)
-
-func _on_chart_data_changed():
-	is_modified = true
-	status_bar.set_modified(true)
-	var note_count = chart_data.get_note_count(current_instrument, current_difficulty)
-	status_bar.update_note_count(note_count)
-
-func _input(event):
-	# Keyboard shortcuts
-	if event is InputEventKey and event.pressed:
-		match event.keycode:
-			KEY_SPACE:
-				if is_playing:
-					_on_pause_requested()
-				else:
-					_on_play_requested()
-			KEY_BRACKETLEFT:  # [
-				toolbar.decrease_snap()
-			KEY_BRACKETRIGHT:  # ]
-				toolbar.increase_snap()
-"
 
 [sub_resource type="QuadMesh" id="QuadMesh_runway"]
 size = Vector2(10, 30)
@@ -204,7 +23,7 @@ uv1_scale = Vector3(5, 1, 5)
 bg_color = Color(0.6, 0.6, 0.6, 0)
 
 [node name="ChartEditor" type="Node3D"]
-script = SubResource("GDScript_main")
+script = ExtResource("1_script")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 10)

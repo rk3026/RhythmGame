@@ -275,54 +275,54 @@ func _rebuild_visual_notes() -> void:
 	if not chart:
 		return
 	
-	var notes = chart.get_all_notes()
-	for note in notes:
-		visual_notes[note.id] = {
-			"tick": note.tick,
-			"lane": note.lane,
-			"note_type": note.note_type,
-			"length": note.length
+	# Access the notes array directly from ChartDifficulty
+	for note in chart.notes:
+		visual_notes[note["id"]] = {
+			"tick": note["tick"],
+			"lane": note["lane"],
+			"note_type": note["type"],
+			"length": note["length"]
 		}
 
-func _on_note_added(instrument: String, difficulty: String, note_id: int) -> void:
+func _on_note_added(note: Dictionary) -> void:
 	"""Handle note added to chart data"""
-	if instrument != current_instrument or difficulty != current_difficulty:
-		return
-	
-	var note = chart_data.get_note(instrument, difficulty, note_id)
-	if note:
-		visual_notes[note_id] = {
-			"tick": note.tick,
-			"lane": note.lane,
-			"note_type": note.note_type,
-			"length": note.length
-		}
-		queue_redraw()
-
-func _on_note_removed(instrument: String, difficulty: String, note_id: int) -> void:
-	"""Handle note removed from chart data"""
-	if instrument != current_instrument or difficulty != current_difficulty:
-		return
-	
-	visual_notes.erase(note_id)
+	# Note contains: id, tick, lane, type, length
+	visual_notes[note["id"]] = {
+		"tick": note["tick"],
+		"lane": note["lane"],
+		"note_type": note["type"],
+		"length": note["length"]
+	}
 	queue_redraw()
 
-func _on_note_modified(instrument: String, difficulty: String, note_id: int) -> void:
+func _on_note_removed(note_id: int) -> void:
+	"""Handle note removed from chart data"""
+	visual_notes.erase(note_id)
+	
+	# Also remove from selection if selected
+	if note_id in selected_notes:
+		selected_notes.erase(note_id)
+	
+	queue_redraw()
+
+func _on_note_modified(note_id: int) -> void:
 	"""Handle note modified in chart data"""
-	if instrument != current_instrument or difficulty != current_difficulty:
+	# Get the updated note from the chart
+	var chart = chart_data.get_chart(current_instrument, current_difficulty)
+	if not chart:
 		return
 	
-	var note = chart_data.get_note(instrument, difficulty, note_id)
-	if note:
+	var note = chart.get_note(note_id)
+	if not note.is_empty():
 		visual_notes[note_id] = {
-			"tick": note.tick,
-			"lane": note.lane,
-			"note_type": note.note_type,
-			"length": note.length
+			"tick": note["tick"],
+			"lane": note["lane"],
+			"note_type": note["type"],
+			"length": note["length"]
 		}
 		queue_redraw()
 
-func _on_bpm_changed() -> void:
+func _on_bpm_changed(_tick: int, _bpm: float) -> void:
 	"""Handle BPM changes"""
 	queue_redraw()
 
