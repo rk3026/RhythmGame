@@ -66,13 +66,32 @@ func _create_note_canvas():
 	note_canvas.notes_moved.connect(_on_notes_moved)
 
 func _connect_component_signals():
-	# Menu bar signals
+	# Menu bar signals - File menu
 	menu_bar.new_chart_requested.connect(_on_new_chart_requested)
 	menu_bar.open_chart_requested.connect(_on_open_chart_requested)
 	menu_bar.save_requested.connect(_on_save_requested)
 	menu_bar.save_as_requested.connect(_on_save_as_requested)
+	menu_bar.import_chart_requested.connect(_on_import_chart_requested)
+	menu_bar.export_chart_requested.connect(_on_export_chart_requested)
+	
+	# Menu bar signals - Edit menu
 	menu_bar.undo_requested.connect(_on_undo_requested)
 	menu_bar.redo_requested.connect(_on_redo_requested)
+	menu_bar.cut_requested.connect(_on_cut_requested)
+	menu_bar.copy_requested.connect(_on_copy_requested)
+	menu_bar.paste_requested.connect(_on_paste_requested)
+	menu_bar.delete_requested.connect(_on_delete_requested)
+	
+	# Menu bar signals - View menu
+	menu_bar.zoom_in_requested.connect(_on_zoom_in_requested)
+	menu_bar.zoom_out_requested.connect(_on_zoom_out_requested)
+	menu_bar.reset_zoom_requested.connect(_on_reset_zoom_requested)
+	menu_bar.toggle_grid_requested.connect(_on_toggle_grid_requested)
+	
+	# Menu bar signals - Playback menu
+	menu_bar.play_pause_requested.connect(_on_play_pause_requested)
+	menu_bar.stop_requested.connect(_on_stop_requested)
+	menu_bar.test_play_requested.connect(_on_test_play_requested)
 	
 	# Playback control signals
 	playback_controls.play_requested.connect(_on_play_requested)
@@ -80,16 +99,20 @@ func _connect_component_signals():
 	playback_controls.stop_requested.connect(_on_stop_requested)
 	playback_controls.seek_requested.connect(_on_seek_requested)
 	playback_controls.speed_changed.connect(_on_speed_changed)
+	playback_controls.skip_to_start_requested.connect(_on_skip_to_start_requested)
+	playback_controls.skip_to_end_requested.connect(_on_skip_to_end_requested)
 	
 	# Toolbar signals
 	toolbar.tool_selected.connect(_on_tool_selected)
 	toolbar.snap_changed.connect(_on_snap_changed)
 	toolbar.grid_toggled.connect(_on_grid_toggled)
+	toolbar.view_mode_changed.connect(_on_view_mode_changed)
 	
 	# Side panel signals
 	side_panel.metadata_changed.connect(_on_metadata_changed)
 	side_panel.difficulty_changed.connect(_on_difficulty_changed)
 	side_panel.audio_file_requested.connect(_on_audio_file_requested)
+	side_panel.property_changed.connect(_on_property_changed)
 
 func _setup_runway():
 	# Reuse existing board_renderer logic from gameplay
@@ -242,6 +265,47 @@ func _on_speed_changed(speed: float):
 	# Note: Godot AudioStreamPlayer doesn't support pitch_scale for speed
 	# You may need to use AudioEffectPitchShift for this
 
+func _on_skip_to_start_requested():
+	"""Skip playback to the beginning (0:00)"""
+	current_time = 0.0
+	
+	# Update timeline controller
+	if timeline_controller:
+		timeline_controller.scrub_to(0.0)
+	
+	# Update audio if playing
+	if is_playing and audio_player and audio_player.stream:
+		audio_player.play(0.0)
+	
+	# Update UI
+	playback_controls.update_position(0.0)
+	
+	# Scroll canvas to beginning
+	note_canvas.scroll_to_tick(0)
+
+func _on_skip_to_end_requested():
+	"""Skip playback to the end of the audio"""
+	if not audio_player or not audio_player.stream:
+		return
+	
+	var end_time = audio_player.stream.get_length()
+	current_time = end_time
+	
+	# Update timeline controller
+	if timeline_controller:
+		timeline_controller.scrub_to(end_time)
+	
+	# Update audio (will likely stop at the end)
+	if is_playing and audio_player:
+		audio_player.play(end_time)
+	
+	# Update UI
+	playback_controls.update_position(end_time)
+	
+	# Scroll canvas to end
+	var end_tick = chart_data.time_to_tick(end_time)
+	note_canvas.scroll_to_tick(end_tick)
+
 func _on_tool_selected(tool_type):
 	current_tool = tool_type
 	print("Tool selected: ", tool_type)
@@ -262,6 +326,102 @@ func _on_difficulty_changed(instrument: String, difficulty: String, enabled: boo
 	if enabled:
 		chart_data.create_chart(instrument, difficulty)
 	print("Difficulty changed: ", instrument, "/", difficulty, " = ", enabled)
+
+func _on_import_chart_requested():
+	print("Import chart requested - TODO: Implement chart import")
+
+func _on_export_chart_requested():
+	print("Export chart requested - TODO: Implement chart export")
+
+func _on_cut_requested():
+	"""Cut selected notes to clipboard"""
+	_on_copy_requested()
+	_delete_selected_notes()
+
+func _on_copy_requested():
+	"""Copy selected notes to clipboard"""
+	var selected = note_canvas.get_selected_notes()
+	if selected.size() == 0:
+		return
+	
+	# TODO: Implement clipboard functionality
+	print("Copied ", selected.size(), " notes to clipboard")
+
+func _on_paste_requested():
+	"""Paste notes from clipboard"""
+	# TODO: Implement clipboard functionality
+	print("Paste requested - clipboard functionality not yet implemented")
+
+func _on_delete_requested():
+	"""Delete selected notes via menu"""
+	_delete_selected_notes()
+
+func _on_zoom_in_requested():
+	"""Zoom in on note canvas"""
+	if note_canvas:
+		note_canvas.zoom_in()
+
+func _on_zoom_out_requested():
+	"""Zoom out on note canvas"""
+	if note_canvas:
+		note_canvas.zoom_out()
+
+func _on_reset_zoom_requested():
+	"""Reset note canvas zoom to default"""
+	if note_canvas:
+		note_canvas.reset_zoom()
+
+func _on_toggle_grid_requested():
+	"""Toggle grid visibility"""
+	var current_state = toolbar.is_grid_enabled()
+	toolbar.grid_toggle.button_pressed = not current_state
+	_on_grid_toggled(not current_state)
+
+func _on_play_pause_requested():
+	"""Toggle play/pause from menu"""
+	if is_playing:
+		_on_pause_requested()
+	else:
+		_on_play_requested()
+
+func _on_test_play_requested():
+	"""Start test playback (full gameplay simulation)"""
+	# TODO: Implement test play mode that launches gameplay scene
+	print("Test play requested - TODO: Launch gameplay with current chart")
+
+func _on_view_mode_changed(mode: int):
+	"""Handle view mode switching between 2D canvas, 3D runway, and split view"""
+	match mode:
+		0:  # CANVAS_2D
+			# Show only 2D canvas
+			note_canvas_container.visible = true
+			runway.visible = false
+			print("Switched to 2D Canvas view")
+		1:  # RUNWAY_3D
+			# Show only 3D runway
+			note_canvas_container.visible = false
+			runway.visible = true
+			print("Switched to 3D Runway view")
+		2:  # SPLIT
+			# Show both (would need split container setup)
+			note_canvas_container.visible = true
+			runway.visible = true
+			print("Switched to Split view - TODO: Implement proper split layout")
+
+func _on_property_changed(property_name: String, value: Variant):
+	"""Handle property changes from side panel (bulk edit)"""
+	match property_name:
+		"note_type":
+			_bulk_change_note_type(value)
+
+func _bulk_change_note_type(type_index: int):
+	"""Change note type for all selected notes"""
+	var selected = note_canvas.get_selected_notes()
+	if selected.size() == 0:
+		return
+	
+	# TODO: Implement bulk note type change with command pattern
+	print("Bulk change note type to ", type_index, " for ", selected.size(), " notes")
 
 func _on_audio_file_requested():
 	"""Show file dialog to select audio file"""
