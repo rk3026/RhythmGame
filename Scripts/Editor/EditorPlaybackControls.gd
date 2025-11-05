@@ -74,13 +74,17 @@ func _on_timeline_drag_started():
 	_updating_slider = true
 
 func _on_timeline_drag_ended(_value_changed: bool):
-	_updating_slider = false
+	# Emit final seek when drag ends
 	seek_requested.emit(timeline_slider.value)
+	_updating_slider = false
 
 func _on_timeline_value_changed(value: float):
-	if not _updating_slider:
-		seek_requested.emit(value)
+	# Always update time label for visual feedback
 	_update_time_label(value)
+	
+	# Emit seek during manual dragging for real-time scrubbing
+	if _updating_slider:
+		seek_requested.emit(value)
 
 func _on_speed_selected(index: int):
 	var speed = SPEED_OPTIONS[index]
@@ -100,6 +104,7 @@ func set_duration(duration: float):
 	_update_duration_label(duration)
 
 func update_position(time_position: float):
+	# Only update slider if not being manually dragged
 	if not _updating_slider:
 		timeline_slider.value = time_position
 	_update_time_label(time_position)

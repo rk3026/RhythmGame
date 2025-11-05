@@ -12,10 +12,13 @@ extends Node3D
 @onready var status_bar = $UI/VBox/EditorStatusBar
 @onready var audio_player = $AudioStreamPlayer
 @onready var runway = $Runway
+@onready var note_spawner = $NoteSpawner
+@onready var note_pool = $NoteSpawner/NotePool
 
 var chart_data: ChartDataModel
 var history_manager: EditorHistoryManager
 var note_canvas: EditorNoteCanvas
+var timeline_controller: TimelineController = null
 
 var file_path: String = ""
 var current_instrument: String = "Single"
@@ -25,12 +28,20 @@ var current_time: float = 0.0
 var playback_speed: float = 1.0
 var current_tool: int = 0  # From EditorToolbar.Tool enum
 
+# Playback-related variables
+var song_start_time: float = 0.0
+var lanes: Array = []
+
+# File dialogs
+var audio_file_dialog: FileDialog = null
+
 func _ready():
 	_initialize_chart_data()
 	_initialize_history_manager()
 	_create_note_canvas()
 	_connect_component_signals()
 	_setup_runway()
+	_setup_file_dialogs()
 
 func _initialize_chart_data():
 	chart_data = ChartDataModel.new()
@@ -78,6 +89,7 @@ func _connect_component_signals():
 	# Side panel signals
 	side_panel.metadata_changed.connect(_on_metadata_changed)
 	side_panel.difficulty_changed.connect(_on_difficulty_changed)
+	side_panel.audio_file_requested.connect(_on_audio_file_requested)
 
 func _setup_runway():
 	# Reuse existing board_renderer logic from gameplay
@@ -88,22 +100,54 @@ func _setup_runway():
 	runway.create_hit_zones()
 	runway.create_lane_lines()
 	runway.set_board_texture()
+	
+	# Store lanes for note spawner
+	lanes = runway.lanes
+	
+	# Create hit effect pool (required by note spawner)
+	var hit_effect_pool = load("res://Scripts/HitEffectPool.gd").new()
+	hit_effect_pool.name = "HitEffectPool"
+	add_child(hit_effect_pool)
+
+func _setup_file_dialogs():
+	"""Create and configure file dialogs for audio loading"""
+	# Audio file dialog
+	audio_file_dialog = FileDialog.new()
+	audio_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	audio_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	audio_file_dialog.filters = PackedStringArray(["*.ogg ; OGG Audio Files", "*.mp3 ; MP3 Audio Files", "*.wav ; WAV Audio Files"])
+	audio_file_dialog.title = "Select Audio File"
+	audio_file_dialog.size = Vector2i(800, 600)
+	audio_file_dialog.file_selected.connect(_on_audio_file_selected)
+	add_child(audio_file_dialog)
 
 func _process(_delta):
-	if is_playing and audio_player.playing:
-		current_time = audio_player.get_playback_position()
+	if is_playing:
+		# Update timeline if it exists
+		if timeline_controller and timeline_controller.active:
+			current_time = timeline_controller.get_time()
+			
+			# Sync audio to timeline (keep them aligned)
+			if audio_player and audio_player.playing and not audio_player.stream_paused:
+				_sync_audio_to_timeline(false)
+		elif audio_player and audio_player.playing:
+			# Fallback: use audio time if no timeline
+			current_time = audio_player.get_playback_position()
+		
+		# Update UI
 		playback_controls.update_position(current_time)
 		status_bar.update_time(current_time)
 		
-		# Update BPM display based on current position
+		# Update note canvas with playback position
 		var current_tick = chart_data.time_to_tick(current_time)
 		var current_bpm = chart_data.get_bpm_at_tick(current_tick)
 		status_bar.update_bpm(current_bpm)
-		
-		# Update note canvas playback visualization
 		note_canvas.update_playback_position(current_tick, true)
+		
+		# Auto-scroll note canvas to follow playback
+		note_canvas.scroll_to_tick(current_tick)
 	elif note_canvas:
-		# Update with stopped state
+		# When not playing, update without playback line
 		var current_tick = chart_data.time_to_tick(current_time)
 		note_canvas.update_playback_position(current_tick, false)
 
@@ -116,6 +160,8 @@ func _on_new_chart_requested():
 
 func _on_open_chart_requested():
 	# TODO: Show file dialog
+	# For now, this would load a chart file and populate chart_data
+	# After loading, call _load_audio_for_chart()
 	print("Open chart requested")
 
 func _on_save_requested():
@@ -146,10 +192,23 @@ func _on_history_changed(can_undo: bool, can_redo: bool):
 	menu_bar.set_redo_enabled(can_redo)
 
 func _on_play_requested():
-	if audio_player.stream:
-		audio_player.play(current_time)
-		is_playing = true
-		playback_controls.set_playing(true)
+	if not audio_player.stream:
+		print("No audio loaded for playback")
+		return
+	
+	# Initialize timeline controller if needed
+	if not timeline_controller:
+		_initialize_playback_system()
+	
+	# Start or resume playback
+	audio_player.play(current_time)
+	is_playing = true
+	playback_controls.set_playing(true)
+	
+	# Activate timeline
+	if timeline_controller:
+		timeline_controller.active = true
+		timeline_controller.scrub_to(current_time)
 
 func _on_pause_requested():
 	audio_player.stop()
@@ -165,7 +224,13 @@ func _on_stop_requested():
 
 func _on_seek_requested(seek_position: float):
 	current_time = seek_position
-	if is_playing:
+	
+	# Scrub timeline controller if it exists
+	if timeline_controller:
+		timeline_controller.scrub_to(seek_position)
+	
+	# Seek audio if playing
+	if is_playing and audio_player and audio_player.stream:
 		audio_player.play(seek_position)
 	
 	# Scroll note canvas to show the current position
@@ -197,6 +262,48 @@ func _on_difficulty_changed(instrument: String, difficulty: String, enabled: boo
 	if enabled:
 		chart_data.create_chart(instrument, difficulty)
 	print("Difficulty changed: ", instrument, "/", difficulty, " = ", enabled)
+
+func _on_audio_file_requested():
+	"""Show file dialog to select audio file"""
+	if audio_file_dialog:
+		audio_file_dialog.popup_centered()
+
+func _on_audio_file_selected(path: String):
+	"""Handle audio file selection"""
+	if not FileAccess.file_exists(path):
+		push_error("Audio file not found: " + path)
+		return
+	
+	# Load the audio stream
+	var audio_stream = null
+	var extension = path.get_extension().to_lower()
+	
+	match extension:
+		"ogg":
+			audio_stream = AudioStreamOggVorbis.load_from_file(path)
+		"mp3", "wav":
+			audio_stream = load(path)
+		_:
+			push_error("Unsupported audio format: " + extension)
+			return
+	
+	if not audio_stream:
+		push_error("Failed to load audio file: " + path)
+		return
+	
+	# Set the audio stream
+	audio_player.stream = audio_stream
+	
+	# Update metadata with the audio file path
+	chart_data.set_metadata("audio_file", path)
+	
+	# Update side panel UI
+	side_panel.set_audio_file(path)
+	
+	# Update playback controls with duration
+	playback_controls.set_duration(audio_stream.get_length())
+	
+	print("Loaded audio: ", path, " (Duration: ", audio_stream.get_length(), "s)")
 
 func _on_chart_data_changed():
 	status_bar.set_modified(true)
@@ -336,3 +443,145 @@ func _delete_selected_notes():
 	
 	print("Deleted ", selected.size(), " notes")
 	note_canvas.clear_selection()
+
+# ============================================================================
+# Playback System Methods (adapted from gameplay.gd)
+# ============================================================================
+
+func _initialize_playback_system():
+	"""Initialize the timeline controller and note spawner for playback"""
+	if timeline_controller:
+		return  # Already initialized
+	
+	# Get chart data for current instrument/difficulty
+	var chart = chart_data.get_chart(current_instrument, current_difficulty)
+	if not chart:
+		print("No chart data available for playback")
+		return
+	
+	# Convert ChartDataModel notes to format expected by note_spawner
+	var notes_array = _convert_chart_notes_to_spawner_format(chart.notes)
+	
+	# Convert ChartDataModel BPM changes to tempo events
+	var tempo_events = _convert_bpm_changes_to_tempo_events()
+	
+	# Configure note spawner
+	note_spawner.notes = notes_array
+	note_spawner.tempo_events = tempo_events
+	note_spawner.resolution = chart_data.resolution
+	note_spawner.offset = chart_data.metadata.get("offset", 0.0)
+	note_spawner.lanes = lanes
+	note_spawner.note_scene = preload("res://Scenes/note.tscn")
+	note_spawner.note_pool = note_pool
+	
+	# Start spawning (builds spawn_data)
+	note_spawner.song_start_time = Time.get_ticks_msec() / 1000.0
+	note_spawner.start_spawning()
+	
+	# Create timeline controller
+	timeline_controller = TimelineController.new()
+	timeline_controller.name = "TimelineController"
+	add_child(timeline_controller)
+	
+	# Setup timeline context
+	var ctx = {
+		"note_spawner": note_spawner,
+		"get_time": func(): return timeline_controller.current_time if timeline_controller else 0.0
+	}
+	
+	# Build spawn commands
+	var spawn_cmds = note_spawner.build_spawn_commands()
+	
+	# Use audio duration as song end time (not note duration)
+	var song_end_time = 0.0
+	if audio_player.stream:
+		song_end_time = audio_player.stream.get_length()
+	else:
+		# Fallback: calculate from last note
+		var last_time = 0.0
+		for d in note_spawner.spawn_data:
+			last_time = max(last_time, d.hit_time)
+		song_end_time = last_time + 5.0  # Add margin
+	
+	# Setup timeline
+	timeline_controller.setup(ctx, spawn_cmds, song_end_time)
+	note_spawner.attach_timeline(timeline_controller)
+	timeline_controller.active = false  # Will be activated on play
+	
+	print("Playback system initialized with ", spawn_cmds.size(), " note commands, duration: ", song_end_time, "s")
+
+func _convert_chart_notes_to_spawner_format(chart_notes: Array) -> Array:
+	"""Convert ChartDataModel notes to the format expected by note_spawner"""
+	var converted = []
+	
+	for note in chart_notes:
+		var spawner_note = {
+			"fret": note.get("lane", 0),  # lane -> fret mapping
+			"pos": note.get("tick", 0),   # note_spawner expects "pos" not "tick"
+			"length": note.get("length", 0),  # sustain length in ticks
+			"is_hopo": note.get("type", 0) == 1,  # type 1 = HOPO
+			"is_tap": note.get("type", 0) == 2    # type 2 = TAP
+		}
+		converted.append(spawner_note)
+	
+	return converted
+
+func _convert_bpm_changes_to_tempo_events() -> Array:
+	"""Convert ChartDataModel BPM changes to tempo events format"""
+	var tempo_events = []
+	
+	for bpm_change in chart_data.bpm_changes:
+		tempo_events.append({
+			"tick": bpm_change.get("tick", 0),
+			"bpm": bpm_change.get("bpm", 120.0)
+		})
+	
+	return tempo_events
+
+func _sync_audio_to_timeline(force_seek: bool):
+	"""Sync audio playback position to timeline (adapted from gameplay.gd)"""
+	if not audio_player or not audio_player.stream or not timeline_controller:
+		return
+	
+	var timeline_time = timeline_controller.current_time
+	var audio_time = _timeline_to_audio_time(timeline_time)
+	var audio_pos = audio_player.get_playback_position()
+	var delta = abs(audio_time - audio_pos)
+	
+	# Seek if out of sync
+	if force_seek or delta > 0.1:  # 100ms tolerance
+		if audio_time >= 0.0 and audio_time < audio_player.stream.get_length():
+			audio_player.seek(audio_time)
+
+func _timeline_to_audio_time(timeline_time: float) -> float:
+	"""Convert timeline time to audio time (accounting for offset)"""
+	var offset = chart_data.metadata.get("offset", 0.0)
+	return timeline_time - offset
+
+func _load_audio_for_chart():
+	"""Load audio file specified in chart metadata"""
+	var audio_file = chart_data.metadata.get("audio_file", "")
+	if audio_file.is_empty():
+		print("No audio file specified in chart metadata")
+		return
+	
+	# Construct full path relative to chart file
+	var folder = file_path.get_base_dir() if not file_path.is_empty() else ""
+	var audio_path = folder + "/" + audio_file if not folder.is_empty() else audio_file
+	
+	if FileAccess.file_exists(audio_path):
+		var audio_stream = AudioStreamOggVorbis.load_from_file(audio_path)
+		if not audio_stream:
+			# Try MP3
+			audio_stream = load(audio_path)
+		
+		if audio_stream:
+			audio_player.stream = audio_stream
+			print("Loaded audio: ", audio_path)
+			
+			# Update playback controls with audio duration
+			playback_controls.set_duration(audio_stream.get_length())
+		else:
+			print("Failed to load audio: ", audio_path)
+	else:
+		print("Audio file not found: ", audio_path)
