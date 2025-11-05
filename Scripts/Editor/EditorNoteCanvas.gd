@@ -378,6 +378,19 @@ func _gui_input(event: InputEvent) -> void:
 			_update_selection_box(event.position)
 		elif is_dragging_notes:
 			_update_note_drag(event.position)
+	
+	elif event is InputEventMouseButton:
+		# Handle mouse wheel scrolling
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			# Scroll up (backward in time)
+			var scroll_amount = int(resolution / snap_division * 4)  # Scroll by 4 snap divisions
+			scroll_offset = max(0, scroll_offset - scroll_amount)
+			queue_redraw()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			# Scroll down (forward in time)
+			var scroll_amount = int(resolution / snap_division * 4)  # Scroll by 4 snap divisions
+			scroll_offset += scroll_amount
+			queue_redraw()
 
 func _get_note_at_position(lane: int, tick: int) -> int:
 	"""Find note at given position, returns note_id or -1"""

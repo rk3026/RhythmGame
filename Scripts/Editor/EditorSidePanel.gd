@@ -6,6 +6,7 @@ class_name EditorSidePanel
 signal metadata_changed(metadata: Dictionary)
 signal difficulty_changed(instrument: String, difficulty: String, enabled: bool)
 signal property_changed(property_name: String, value: Variant)
+signal audio_file_requested()
 
 # Metadata tab controls
 @onready var title_edit: LineEdit = $Metadata/MetadataGrid/TitleEdit
@@ -78,8 +79,7 @@ func _on_year_changed(value: float):
 	metadata_changed.emit(current_metadata)
 
 func _on_audio_browse_pressed():
-	# This will need to trigger a file dialog in the main editor
-	pass
+	audio_file_requested.emit()
 
 func _on_difficulty_toggled(enabled: bool, instrument: String, difficulty: String):
 	difficulty_changed.emit(instrument, difficulty, enabled)
@@ -134,3 +134,9 @@ func update_selection_info(count: int, _note_types: Array):
 		selection_info_label.text = "1 note selected"
 	else:
 		selection_info_label.text = "%d notes selected" % count
+
+func set_audio_file(file_path: String):
+	"""Set the audio file path in metadata and update UI"""
+	audio_file_edit.text = file_path
+	current_metadata["audio_file"] = file_path
+	metadata_changed.emit(current_metadata)

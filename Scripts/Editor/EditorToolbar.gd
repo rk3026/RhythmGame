@@ -6,6 +6,13 @@ class_name EditorToolbar
 signal tool_selected(tool_type: ToolType)
 signal snap_changed(snap_division: int)
 signal grid_toggled(enabled: bool)
+signal view_mode_changed(mode: ViewMode)
+
+enum ViewMode {
+	CANVAS_2D,
+	RUNWAY_3D,
+	SPLIT
+}
 
 enum ToolType {
 	NOTE,
@@ -23,10 +30,14 @@ enum ToolType {
 @onready var bpm_button: Button = $ToolButtonGroup/BPMButton
 @onready var event_button: Button = $ToolButtonGroup/EventButton
 @onready var snap_selector: OptionButton = $SnapGroup/SnapSelector
+@onready var view_2d_button: Button = $ViewGroup/View2DButton
+@onready var view_3d_button: Button = $ViewGroup/View3DButton
+@onready var view_split_button: Button = $ViewGroup/ViewSplitButton
 @onready var grid_toggle: CheckButton = $GridToggle
 
 var current_tool: ToolType = ToolType.NOTE
 var current_snap: int = 16  # Default to 1/16 notes
+var current_view_mode: ViewMode = ViewMode.CANVAS_2D
 
 # Snap divisions matching Moonscraper
 const SNAP_DIVISIONS = [4, 8, 12, 16, 24, 32, 48, 64, 192]
@@ -64,6 +75,9 @@ func _connect_signals():
 	bpm_button.pressed.connect(_on_bpm_button_pressed)
 	event_button.pressed.connect(_on_event_button_pressed)
 	snap_selector.item_selected.connect(_on_snap_selected)
+	view_2d_button.pressed.connect(_on_view_2d_pressed)
+	view_3d_button.pressed.connect(_on_view_3d_pressed)
+	view_split_button.pressed.connect(_on_view_split_pressed)
 	grid_toggle.toggled.connect(_on_grid_toggled)
 
 func _on_note_button_pressed():
@@ -135,3 +149,25 @@ func decrease_snap():
 	if current_index > 0:
 		set_snap_division(SNAP_DIVISIONS[current_index - 1])
 		snap_changed.emit(current_snap)
+
+func _on_view_2d_pressed():
+	_set_view_mode(ViewMode.CANVAS_2D)
+
+func _on_view_3d_pressed():
+	_set_view_mode(ViewMode.RUNWAY_3D)
+
+func _on_view_split_pressed():
+	_set_view_mode(ViewMode.SPLIT)
+
+func _set_view_mode(mode: ViewMode):
+	current_view_mode = mode
+	_update_view_button_states()
+	view_mode_changed.emit(mode)
+
+func _update_view_button_states():
+	view_2d_button.button_pressed = current_view_mode == ViewMode.CANVAS_2D
+	view_3d_button.button_pressed = current_view_mode == ViewMode.RUNWAY_3D
+	view_split_button.button_pressed = current_view_mode == ViewMode.SPLIT
+
+func get_current_view_mode() -> ViewMode:
+	return current_view_mode
