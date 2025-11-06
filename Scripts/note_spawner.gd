@@ -18,6 +18,7 @@ var spawn_index = 0
 var spawning_started = false
 var note_pool
 var timeline_controller: Node = null
+var movement_paused: bool = false  # Controls whether notes move via delta-based _process
 
 func _ready():
 	pass  # Wait for start signal
@@ -119,6 +120,11 @@ func _process(_delta: float):
 		for n in active_notes:
 			if is_instance_valid(n):
 				n.reverse_mode = is_reverse
+		
+		# Reposition notes based on timeline during active playback
+		# This ensures notes stay synced to timeline instead of accumulating delta errors
+		if not movement_paused:
+			reposition_active_notes(timeline_controller.current_time)
 	_cleanup_pass()
 
 func spawn_note_for_lane(lane_index: int, hit_time: float, note_type: int, is_sustain: bool, sustain_length: float, initial_z: float = runway_begin_z, relative_spawn_time: float = -1.0):
@@ -237,6 +243,13 @@ func build_spawn_commands() -> Array:
 func attach_timeline(timeline):
 	timeline_controller = timeline
 
+func is_movement_paused() -> bool:
+	"""Check if note movement is currently paused"""
+	return movement_paused
+
+func set_movement_paused(paused: bool):
+	"""Set whether notes should pause delta-based movement"""
+	movement_paused = paused
 
 func _release_note(note, removal_time: float = -1.0):
 	if note.spawn_command and note.spawn_command.has_method("notify_note_removed"):

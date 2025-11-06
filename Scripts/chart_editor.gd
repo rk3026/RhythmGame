@@ -93,6 +93,10 @@ func _connect_component_signals():
 	menu_bar.stop_requested.connect(_on_stop_requested)
 	menu_bar.test_play_requested.connect(_on_test_play_requested)
 	
+	# Editor menu signals
+	menu_bar.back_to_main_menu_requested.connect(_on_back_to_main_menu_requested)
+	menu_bar.quit_requested.connect(_on_quit_requested)
+	
 	# Playback control signals
 	playback_controls.play_requested.connect(_on_play_requested)
 	playback_controls.pause_requested.connect(_on_pause_requested)
@@ -232,11 +236,23 @@ func _on_play_requested():
 	if timeline_controller:
 		timeline_controller.active = true
 		timeline_controller.scrub_to(current_time)
+	
+	# Enable note movement during playback
+	if note_spawner:
+		note_spawner.set_movement_paused(false)
 
 func _on_pause_requested():
 	audio_player.stop()
 	is_playing = false
 	playback_controls.set_playing(false)
+	
+	# Deactivate timeline to stop spawning new notes
+	if timeline_controller:
+		timeline_controller.active = false
+	
+	# Freeze note movement when paused
+	if note_spawner:
+		note_spawner.set_movement_paused(true)
 
 func _on_stop_requested():
 	audio_player.stop()
@@ -244,6 +260,15 @@ func _on_stop_requested():
 	is_playing = false
 	playback_controls.set_playing(false)
 	playback_controls.update_position(0.0)
+	
+	# Deactivate timeline and reset to beginning
+	if timeline_controller:
+		timeline_controller.active = false
+		timeline_controller.scrub_to(0.0)
+	
+	# Freeze note movement when stopped
+	if note_spawner:
+		note_spawner.set_movement_paused(true)
 
 func _on_seek_requested(seek_position: float):
 	current_time = seek_position
@@ -388,6 +413,22 @@ func _on_test_play_requested():
 	"""Start test playback (full gameplay simulation)"""
 	# TODO: Implement test play mode that launches gameplay scene
 	print("Test play requested - TODO: Launch gameplay with current chart")
+
+func _on_back_to_main_menu_requested():
+	"""Return to the main menu scene"""
+	print("Back to main menu requested")
+	
+	# Stop any playback
+	if is_playing:
+		_on_stop_requested()
+	
+	# Change to main menu scene
+	SceneSwitcher.change_scene(("res://Scenes/main_menu.tscn"))
+
+func _on_quit_requested():
+	"""Quit the application"""
+	print("Quit requested")
+	get_tree().quit()
 
 func _on_view_mode_changed(mode: int):
 	"""Handle view mode switching between 2D canvas, 3D runway, and split view"""

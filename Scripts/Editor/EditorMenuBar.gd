@@ -30,10 +30,15 @@ signal play_pause_requested()
 signal stop_requested()
 signal test_play_requested()
 
+# Editor menu signals
+signal back_to_main_menu_requested()
+signal quit_requested()
+
 @onready var file_menu: PopupMenu = $FileMenu
 @onready var edit_menu: PopupMenu = $EditMenu
 @onready var view_menu: PopupMenu = $ViewMenu
 @onready var playback_menu: PopupMenu = $PlaybackMenu
+@onready var editor_menu: PopupMenu = $EditorMenu
 
 # Menu item IDs
 enum FileMenuItems {
@@ -72,6 +77,11 @@ enum PlaybackMenuItems {
 	TEST_PLAY
 }
 
+enum EditorMenuItems {
+	BACK_TO_MAIN_MENU,
+	QUIT
+}
+
 func _ready():
 	_connect_menu_signals()
 
@@ -80,6 +90,7 @@ func _connect_menu_signals():
 	edit_menu.id_pressed.connect(_on_edit_menu_id_pressed)
 	view_menu.id_pressed.connect(_on_view_menu_id_pressed)
 	playback_menu.id_pressed.connect(_on_playback_menu_id_pressed)
+	editor_menu.id_pressed.connect(_on_editor_menu_id_pressed)
 
 func _on_file_menu_id_pressed(id: int):
 	match id:
@@ -130,6 +141,13 @@ func _on_playback_menu_id_pressed(id: int):
 			stop_requested.emit()
 		PlaybackMenuItems.TEST_PLAY:
 			test_play_requested.emit()
+
+func _on_editor_menu_id_pressed(id: int):
+	match id:
+		EditorMenuItems.BACK_TO_MAIN_MENU:
+			back_to_main_menu_requested.emit()
+		EditorMenuItems.QUIT:
+			quit_requested.emit()
 
 func set_undo_enabled(enabled: bool):
 	edit_menu.set_item_disabled(EditMenuItems.UNDO, not enabled)

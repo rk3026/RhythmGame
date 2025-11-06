@@ -101,9 +101,16 @@ func update_visuals():
 			tail_instance = null
 
 func _process(delta: float):
-	# Movement respects reverse playback flag
-	var dir = -1.0 if reverse_mode else 1.0
-	position.z += SettingsManager.note_speed * delta * dir
+	# Check if we should move (only during active playback)
+	var spawner = get_parent()
+	var should_move = true
+	if spawner and spawner.has_method("is_movement_paused"):
+		should_move = not spawner.is_movement_paused()
+	
+	# Movement respects reverse playback flag and pause state
+	if should_move:
+		var dir = -1.0 if reverse_mode else 1.0
+		position.z += SettingsManager.note_speed * delta * dir
 
 	# Passive miss: note passed the hit zone without being hit
 	if position.z >= 5 and not was_hit and not was_missed and not reverse_mode:
