@@ -20,6 +20,8 @@ var hit_effect_pool: Node = null
 var travel_time: float = 0.0
 var reverse_mode: bool = false
 var spawn_command = null
+var movement_paused: bool = false  # Set externally by spawner to control movement
+var use_timeline_positioning: bool = false  # If true, spawner handles positioning, not delta movement
 
 func _ready():
 	# Elevated priority so it draws above board; tail will use a higher one
@@ -39,6 +41,8 @@ func reset():
 	travel_time = 0.0
 	reverse_mode = false
 	spawn_command = null
+	movement_paused = false
+	use_timeline_positioning = false
 	if tail_instance:
 		tail_instance.queue_free()
 		tail_instance = null
@@ -101,14 +105,9 @@ func update_visuals():
 			tail_instance = null
 
 func _process(delta: float):
-	# Check if we should move (only during active playback)
-	var spawner = get_parent()
-	var should_move = true
-	if spawner and spawner.has_method("is_movement_paused"):
-		should_move = not spawner.is_movement_paused()
-	
-	# Movement respects reverse playback flag and pause state
-	if should_move:
+	# Only use delta-based movement if NOT using timeline positioning
+	# (timeline positioning is handled by spawner calling reposition_active_notes)
+	if not use_timeline_positioning and not movement_paused:
 		var dir = -1.0 if reverse_mode else 1.0
 		position.z += SettingsManager.note_speed * delta * dir
 

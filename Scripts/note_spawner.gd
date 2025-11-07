@@ -121,10 +121,9 @@ func _process(_delta: float):
 			if is_instance_valid(n):
 				n.reverse_mode = is_reverse
 		
-		# Reposition notes based on timeline during active playback
+		# When timeline is active, always use timeline positioning (not delta movement)
 		# This ensures notes stay synced to timeline instead of accumulating delta errors
-		if not movement_paused:
-			reposition_active_notes(timeline_controller.current_time)
+		reposition_active_notes(timeline_controller.current_time)
 	_cleanup_pass()
 
 func spawn_note_for_lane(lane_index: int, hit_time: float, note_type: int, is_sustain: bool, sustain_length: float, initial_z: float = runway_begin_z, relative_spawn_time: float = -1.0):
@@ -151,6 +150,8 @@ func spawn_note_for_lane(lane_index: int, hit_time: float, note_type: int, is_su
 	note.sustain_length = sustain_length
 	note.travel_time = abs(runway_begin_z) / max(1.0, note_speed)
 	note.spawn_command = null
+	note.movement_paused = movement_paused  # Set current pause state
+	note.use_timeline_positioning = (timeline_controller != null)  # Use timeline positioning if timeline exists
 	# Ensure signals (pool keeps instances, so only connect if missing)
 	if not note.is_connected("note_miss", Callable(self, "_on_note_miss")):
 		note.connect("note_miss", Callable(self, "_on_note_miss"))
@@ -250,6 +251,11 @@ func is_movement_paused() -> bool:
 func set_movement_paused(paused: bool):
 	"""Set whether notes should pause delta-based movement"""
 	movement_paused = paused
+	
+	# Update all active notes with the pause state
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.movement_paused = paused
 
 func _release_note(note, removal_time: float = -1.0):
 	if note.spawn_command and note.spawn_command.has_method("notify_note_removed"):
@@ -274,6 +280,8 @@ func _command_spawn_note(lane_index: int, hit_time: float, note_type: int, is_su
 	note.sustain_length = sustain_length
 	note.travel_time = travel_time
 	note.spawn_command = command_ref
+	note.movement_paused = movement_paused  # Set current pause state
+	note.use_timeline_positioning = (timeline_controller != null)  # Use timeline positioning if timeline exists
 	if not note.is_connected("note_miss", Callable(self, "_on_note_miss")):
 		note.connect("note_miss", Callable(self, "_on_note_miss"))
 	if not note.is_connected("note_finished", Callable(self, "_on_note_finished")):
