@@ -14,7 +14,9 @@ func _ready():
 	set_board_texture()
 
 func set_board_texture():
-	get_surface_override_material(0).uv1_scale = Vector3(num_lanes, 1, 1)
+	var material = get_surface_override_material(0)
+	if material:
+		material.uv1_scale = Vector3(num_lanes, 1, 1)
 
 func setup_lanes():
 	zone_width = board_width / num_lanes

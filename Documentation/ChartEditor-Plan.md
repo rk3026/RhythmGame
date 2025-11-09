@@ -1,4 +1,18 @@
-The main chart editor I want my system to be similar to is Moonscraper.
+I want my chart editor to be almost exactly like Moonscraper, a Clone Hero chart editor tool.
+Currently, I already have gameplay in my game. The gameplay scene already has a chart runway, and notes. The gameplay UI can be reused for the chart editing scene. I'd copy the gameplay runway setup, and then just add the chart editing UI features on. Gameplay also has playback logic (for spawning notes), so you could possibly reuse some of that logic as well.
+
+For the chart editor scene, good design would be to have many of the UI separated into individual components (.gd and .tscn for each one) so that the chart editor scene doesn't have to be so large.
+
+For important things in the chart editor, the basic logic of placing notes and then being able to TEST the song right after is VERY IMPORTANT. Also, there should be logic so the user can drag a playback timeline forwards and backwards, and the notes will move according to the scrubbing of the timeline.
+
+Note placement should be snappy (1/4, 1/8, etc.). Also, there should be placement preview ON THE RUNWAY to show the user where they are placing notes (mainly if they are clicking and dragging). User should be able to select notes by click and drag. I also believe for things like hold notes, there is a tool in moonscraper to change the length and stuff.
+
+Some things that may need to be addressed as we work on the chart editing system:
+- The way notes work, they have movement logic in their own class in process. They update their own position. But with the chart editor, we obviously want a way to stop the movement, and also scrub the timeline (which would move the note positions).
+- It may be beneficial to have a note controller and note visuals separated
+- Note spawning and pooling. In gameplay this is fine, but with the editor, because the user is going to be moving the timeline alot and changing time in the song, we may need a different way of doing it. I am curious of how Moonscraper handles this, so I'd look into that.
+
+All the other moonscraper features should be in my system, but I need the important ones to WORK correctly the first time.
 
 ### Moonscraper Core Features
 

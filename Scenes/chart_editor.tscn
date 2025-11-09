@@ -1,0 +1,118 @@
+[gd_scene load_steps=6 format=3 uid="uid://chart_editor_main"]
+
+[ext_resource type="Script" uid="uid://editor_chart_editor_001" path="res://Scripts/Editor/chart_editor.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://editor_toolbar_001" path="res://Scenes/Editor/editor_toolbar.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://editor_settings_panel_001" path="res://Scenes/Editor/editor_settings_panel.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://editor_toolbox_001" path="res://Scenes/Editor/editor_toolbox.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://editor_progress_bar_001" path="res://Scenes/Editor/editor_progress_bar.tscn" id="5"]
+
+[node name="ChartEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Toolbar" parent="MainLayout" instance=ExtResource("2")]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="MainLayout"]
+layout_mode = 2
+
+[node name="TimelineArea" type="VBoxContainer" parent="MainLayout"]
+layout_mode = 2
+
+[node name="TimelineControls" type="HBoxContainer" parent="MainLayout/TimelineArea"]
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="MainLayout/TimelineArea/TimelineControls"]
+layout_mode = 2
+text = "▶ Play"
+
+[node name="PauseButton" type="Button" parent="MainLayout/TimelineArea/TimelineControls"]
+layout_mode = 2
+text = "⏸ Pause"
+
+[node name="StopButton" type="Button" parent="MainLayout/TimelineArea/TimelineControls"]
+layout_mode = 2
+text = "⏹ Stop"
+
+[node name="Control" type="Control" parent="MainLayout/TimelineArea/TimelineControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TimeLabel" type="Label" parent="MainLayout/TimelineArea/TimelineControls"]
+layout_mode = 2
+text = "00:00.00"
+
+[node name="Timeline" type="HSlider" parent="MainLayout/TimelineArea"]
+layout_mode = 2
+max_value = 180.0
+
+[node name="HSeparator2" type="HSeparator" parent="MainLayout"]
+layout_mode = 2
+
+[node name="ContentArea" type="HBoxContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftPanel" type="VBoxContainer" parent="MainLayout/ContentArea"]
+layout_mode = 2
+
+[node name="SettingsPanel" parent="MainLayout/ContentArea/LeftPanel" instance=ExtResource("3")]
+layout_mode = 2
+
+[node name="VSeparator" type="VSeparator" parent="MainLayout/ContentArea/LeftPanel"]
+layout_mode = 2
+
+[node name="Toolbox" parent="MainLayout/ContentArea/LeftPanel" instance=ExtResource("4")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VSeparator" type="VSeparator" parent="MainLayout/ContentArea"]
+layout_mode = 2
+
+[node name="CenterArea" type="VBoxContainer" parent="MainLayout/ContentArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RunwayViewport" type="SubViewportContainer" parent="MainLayout/ContentArea/CenterArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="MainLayout/ContentArea/CenterArea/RunwayViewport"]
+handle_input_locally = false
+size = Vector2i(800, 600)
+render_target_update_mode = 4
+
+[node name="Camera3D" type="Camera3D" parent="MainLayout/ContentArea/CenterArea/RunwayViewport/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 10)
+
+[node name="Runway" type="MeshInstance3D" parent="MainLayout/ContentArea/CenterArea/RunwayViewport/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="MainLayout/ContentArea/CenterArea/RunwayViewport/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+
+[node name="VSeparator2" type="VSeparator" parent="MainLayout/ContentArea"]
+layout_mode = 2
+
+[node name="ProgressBar" parent="MainLayout/ContentArea" instance=ExtResource("5")]
+layout_mode = 2
+
+[connection signal="pressed" from="MainLayout/TimelineArea/TimelineControls/PlayButton" to="." method="toggle_playback"]
+[connection signal="pressed" from="MainLayout/TimelineArea/TimelineControls/PauseButton" to="." method="toggle_playback"]
+[connection signal="pressed" from="MainLayout/TimelineArea/TimelineControls/StopButton" to="." method="toggle_playback"]
