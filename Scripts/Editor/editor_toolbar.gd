@@ -12,6 +12,9 @@ signal song_properties_requested
 signal tool_selected(tool_name: String)
 signal options_requested
 signal help_requested
+signal waveform_toggled(enabled: bool)
+signal grid_toggled(enabled: bool)
+signal metronome_toggled(enabled: bool)
 
 # Menu references
 @onready var file_menu: PopupMenu = $FileButton.get_popup()
@@ -72,10 +75,10 @@ func _setup_menus():
 	options_menu.add_item("Preferences", 0)
 	options_menu.add_item("Key Bindings", 1)
 	options_menu.add_separator()
-	options_menu.add_check_item("Show Grid", 2)
-	options_menu.add_check_item("Show Waveform", 3)
-	options_menu.add_check_item("Metronome", 4)
-	options_menu.set_item_checked(2, true)  # Grid on by default
+	options_menu.add_check_item("Show Grid", 10)  # Use non-conflicting IDs
+	options_menu.add_check_item("Show Waveform", 11)
+	options_menu.add_check_item("Metronome", 12)
+	options_menu.set_item_checked(options_menu.get_item_index(10), true)  # Grid on by default
 	options_menu.id_pressed.connect(_on_options_menu_id_pressed)
 	
 	# Help Menu
@@ -117,8 +120,18 @@ func _on_options_menu_id_pressed(id: int):
 		options_requested.emit()
 	else:
 		# Toggle checkboxes for display options
-		var is_checked = options_menu.is_item_checked(id)
-		options_menu.set_item_checked(id, !is_checked)
+		var item_index = options_menu.get_item_index(id)
+		var is_checked = options_menu.is_item_checked(item_index)
+		options_menu.set_item_checked(item_index, !is_checked)
+		
+		# Emit specific signals for toggle options
+		match id:
+			10:  # Show Grid
+				grid_toggled.emit(!is_checked)
+			11:  # Show Waveform
+				waveform_toggled.emit(!is_checked)
+			12:  # Metronome
+				metronome_toggled.emit(!is_checked)
 
 func _on_help_menu_id_pressed(_id: int):
 	help_requested.emit()

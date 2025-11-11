@@ -37,6 +37,8 @@ var playback_speed: float = 1.0
 var note_placement_mode: bool = true
 var num_lanes: int = 5
 var sync_timer: float = 0.0  # Timer for periodic audio sync checks
+var show_waveform: bool = false  # Toggle for waveform display
+var waveform_texture: Texture2D = null  # Cached waveform texture
 
 # Audio system
 var audio_player: AudioStreamPlayer
@@ -138,6 +140,7 @@ func _connect_signals():
 	toolbar.difficulty_changed.connect(set_difficulty)
 	toolbar.song_properties_requested.connect(_on_song_properties_requested)
 	toolbar.tool_selected.connect(_on_tool_selected)
+	toolbar.waveform_toggled.connect(_on_waveform_toggled)
 	
 	# Settings panel signals
 	settings_panel.snap_step_changed.connect(set_snap_division)
@@ -205,8 +208,14 @@ func _update_waveform_scroll():
 		var runway_material = runway_board_renderer.get_surface_override_material(0)
 		if runway_material and runway_material.albedo_texture:
 			# Calculate UV offset based on current time
-			# The texture represents the full song, offset it so current_time aligns with z=0 (hit line)
+			# The texture represents the full song (UV scale = 1.0)
+			# We want to scroll through it as time progresses
+			# At time 0, show the beginning of the waveform
+			# At time = song_duration, show the end of the waveform
 			var time_progress = current_time / song_duration
+			
+			# Offset in Y direction (along the runway)
+			# Negative offset moves the texture "up" in UV space, showing later parts
 			runway_material.uv1_offset = Vector3(0, -time_progress, 0)
 
 func _update_note_positions():
@@ -401,8 +410,12 @@ func _load_audio_file(path: String):
 		timeline_slider.max_value = song_duration
 		print("Audio loaded. Duration: ", song_duration, " seconds")
 		
-		# Generate and apply waveform texture to runway
+		# Generate waveform texture (cached for toggling)
 		_generate_waveform_texture()
+		
+		# Apply waveform if enabled
+		if show_waveform:
+			_toggle_waveform_display()
 	else:
 		push_error("Failed to load audio file: " + path)
 
@@ -482,6 +495,53 @@ func set_instrument(instrument: String):
 func set_difficulty(difficulty: String):
 	current_difficulty = difficulty
 	print("Difficulty changed to: ", difficulty)
+
+func _on_waveform_toggled(enabled: bool):
+	show_waveform = enabled
+	_toggle_waveform_display()
+	print("Waveform display: ", "ON" if show_waveform else "OFF")
+
+func _toggle_waveform_display():
+	if not runway_board_renderer:
+		print("ERROR: No runway_board_renderer found!")
+		return
+	
+	var runway_material = runway_board_renderer.get_surface_override_material(0)
+	if not runway_material:
+		print("ERROR: No runway material found!")
+		return
+	
+	if show_waveform:
+		# Show waveform - apply the texture
+		if waveform_texture:
+			print("Applying waveform texture to runway...")
+			runway_material.albedo_texture = waveform_texture
+			# Enable texture mixing with base color
+			runway_material.albedo_color = Color(1.0, 1.0, 1.0, 1.0)  # White to show texture
+			
+			# The waveform texture is now oriented correctly:
+			# - X-axis (width=512) = amplitude across the runway
+			# - Y-axis (height=2048) = time along the runway
+			# The texture represents the FULL song duration
+			# We want it to display once and scroll through as time progresses
+			# UV scale of 1.0 means the texture displays once across the surface
+			runway_material.uv1_scale = Vector3(1.0, 1.0, 1.0)
+			
+			# Ensure texture is visible
+			runway_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+			print("✓ Waveform texture applied successfully!")
+			print("  - Texture size: ", waveform_texture.get_size())
+			print("  - UV scale: ", runway_material.uv1_scale)
+			print("  - Song duration: ", song_duration, "s")
+		else:
+			print("ERROR: No waveform texture available - load audio first")
+	else:
+		# Hide waveform - remove the texture and restore runway color
+		print("Removing waveform texture from runway...")
+		runway_material.albedo_texture = null
+		runway_material.albedo_color = Color(0.2, 0.2, 0.25)  # Restore dark gray-blue
+		runway_material.uv1_scale = Vector3(num_lanes, 1, 1)  # Restore original scale
+		print("✓ Waveform texture removed")
 
 # Mouse input and note placement
 func _on_runway_input(event: InputEvent):
@@ -733,20 +793,21 @@ func _generate_waveform_texture():
 		return
 	
 	# Create waveform image
-	var waveform_width = 2048  # Width in pixels
-	var waveform_height = 512  # Height in pixels
+	# NOTE: We draw it rotated 90° so time goes vertically (along runway Y-axis in UVs)
+	var waveform_width = 512   # Width in pixels (amplitude direction, across runway)
+	var waveform_height = 2048  # Height in pixels (time direction, along runway)
 	var image = Image.create(waveform_width, waveform_height, false, Image.FORMAT_RGBA8)
 	
 	# Fill with semi-transparent dark background
 	image.fill(Color(0.1, 0.1, 0.15, 0.7))
 	
-	# Calculate samples per pixel
-	var samples_per_pixel = float(audio_data.size()) / float(waveform_width)
+	# Calculate samples per pixel along the HEIGHT (time axis)
+	var samples_per_pixel = float(audio_data.size()) / float(waveform_height)
 	
-	# Draw waveform
-	for x in range(waveform_width):
-		var sample_start = int(x * samples_per_pixel)
-		var sample_end = int((x + 1) * samples_per_pixel)
+	# Draw waveform - iterate along Y (time), draw amplitude on X
+	for y in range(waveform_height):
+		var sample_start = int(y * samples_per_pixel)
+		var sample_end = int((y + 1) * samples_per_pixel)
 		
 		# Get min and max amplitude in this pixel range
 		var min_amp = 0.0
@@ -757,32 +818,24 @@ func _generate_waveform_texture():
 			min_amp = min(min_amp, amp)
 			max_amp = max(max_amp, amp)
 		
-		# Convert amplitude to pixel height (center line is at height/2)
-		var center_y = waveform_height / 2.0
-		var y_min = int(center_y + min_amp * center_y)
-		var y_max = int(center_y + max_amp * center_y)
+		# Convert amplitude to pixel width (center line is at width/2)
+		var center_x = waveform_width / 2.0
+		var x_min = int(center_x + min_amp * center_x)
+		var x_max = int(center_x + max_amp * center_x)
 		
-		# Draw vertical line for this pixel
-		for y in range(max(0, y_min), min(waveform_height, y_max + 1)):
+		# Draw horizontal line for this pixel (amplitude across the width)
+		for x in range(max(0, x_min), min(waveform_width, x_max + 1)):
 			# Gradient color from blue to cyan based on amplitude
-			var amp_intensity = abs((y - center_y) / float(center_y))
+			var amp_intensity = abs((x - center_x) / float(center_x))
 			var color = Color(0.2, 0.5 + amp_intensity * 0.5, 1.0, 0.9)
 			image.set_pixel(x, y, color)
 	
-	# Create texture from image
-	var texture = ImageTexture.create_from_image(image)
-	
-	# Apply to runway material
-	if runway_board_renderer:
-		var runway_material = runway_board_renderer.get_surface_override_material(0)
-		if runway_material:
-			runway_material.albedo_texture = texture
-			# Scale UV to match song duration (stretch texture across runway length)
-			# The runway represents 5 seconds of time, texture should tile/scale accordingly
-			runway_material.uv1_scale = Vector3(1, song_duration / 5.0, 1)
-			print("Waveform texture applied to runway")
-		else:
-			print("No runway material found")
+	# Create texture from image and cache it
+	waveform_texture = ImageTexture.create_from_image(image)
+	print("✓ Waveform texture generated and cached successfully!")
+	print("  - Texture dimensions: ", waveform_width, "x", waveform_height)
+	print("  - Audio data samples: ", audio_data.size())
+	print("  - Song duration: ", song_duration, " seconds")
 
 func _get_audio_data(stream: AudioStream) -> PackedFloat32Array:
 	# Extract raw audio data for waveform visualization
