@@ -1,9 +1,9 @@
 extends Control
 
-@onready var _note_speed_slider: HSlider = $Margin/VBox/Scroll/Options/NoteSpeedProgress/Slider
-@onready var _note_speed_label: Label = $Margin/VBox/Scroll/Options/NoteSpeedProgress/ValueLabel
-@onready var _volume_slider: HSlider = $Margin/VBox/Scroll/Options/MasterVolumeProgress/Slider
-@onready var _volume_label: Label = $Margin/VBox/Scroll/Options/MasterVolumeProgress/ValueLabel
+@onready var _note_speed_slider: HSlider = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/NoteSpeedProgress/Slider
+@onready var _note_speed_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/NoteSpeedProgress/TopRow/ValueLabel
+@onready var _volume_slider: HSlider = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MasterVolumeProgress/Slider
+@onready var _volume_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MasterVolumeProgress/TopRow/ValueLabel
 
 var waiting_for_key_index: int = -1
 
@@ -19,16 +19,18 @@ func _connect_signals():
 	_volume_slider.value_changed.connect(_on_volume_changed)
 	
 	# Connect timing offset spinbox
-	$Margin/VBox/Scroll/Options/TimingOffsetHBox/TimingOffsetSpin.value_changed.connect(_on_offset_changed)
+	$Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/TimingOffsetVBox/TimingOffsetSpin.value_changed.connect(_on_offset_changed)
 	
 	# Connect lane key buttons
-	var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+	var lane_keys_container = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys
 	for i in range(lane_keys_container.get_child_count()):
 		var lane_row = lane_keys_container.get_child(i)
 		var keybind_display = lane_row.get_node("KeybindDisplay")
 		keybind_display.keybind_changed.connect(_start_rebind.bind(i))
 	
-	# Connect back button
+	# Connect buttons
+	$Margin/VBox/ButtonsHBox/SaveButton.pressed.connect(_on_save)
+	$Margin/VBox/ButtonsHBox/ResetButton.pressed.connect(_on_reset)
 	$Margin/VBox/BackButton.pressed.connect(_on_back)
 
 func get_settings_manager():
@@ -44,10 +46,10 @@ func _load_values_into_ui():
 	_volume_label.text = str(int(SettingsManager.master_volume * 100)) + "%"
 	
 	# Load timing offset
-	$Margin/VBox/Scroll/Options/TimingOffsetHBox/TimingOffsetSpin.value = int(SettingsManager.timing_offset * 1000.0)
+	$Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/TimingOffsetVBox/TimingOffsetSpin.value = int(SettingsManager.timing_offset * 1000.0)
 	
 	# Load lane keys
-	var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+	var lane_keys_container = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys
 	for i in range(min(lane_keys_container.get_child_count(), SettingsManager.lane_keys.size())):
 		var lane_row = lane_keys_container.get_child(i)
 		var keybind_display = lane_row.get_node("KeybindDisplay")
@@ -71,7 +73,7 @@ func _on_keybind_gui_input(event: InputEvent, lane_index: int):
 
 func _start_rebind(index: int):
 	waiting_for_key_index = index
-	var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+	var lane_keys_container = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys
 	var lane_row = lane_keys_container.get_child(index)
 	var keybind_display = lane_row.get_node("KeybindDisplay")
 	keybind_display.key_text = "Press a key..."
@@ -88,7 +90,7 @@ func _input(event):
 		# Update the keybind
 		SettingsManager.set_lane_key(waiting_for_key_index, event.keycode)
 		
-		var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+		var lane_keys_container = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys
 		var lane_row = lane_keys_container.get_child(waiting_for_key_index)
 		var keybind_display = lane_row.get_node("KeybindDisplay")
 		keybind_display.key_text = OS.get_keycode_string(event.keycode)
@@ -102,7 +104,7 @@ func _input(event):
 
 func _cancel_rebind():
 	if waiting_for_key_index >= 0:
-		var lane_keys_container = $Margin/VBox/Scroll/Options/LaneKeys
+		var lane_keys_container = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys
 		var lane_row = lane_keys_container.get_child(waiting_for_key_index)
 		var keybind_display = lane_row.get_node("KeybindDisplay")
 		keybind_display.key_text = OS.get_keycode_string(SettingsManager.get_lane_key(waiting_for_key_index))
