@@ -208,29 +208,31 @@ func _on_note_miss(note):
 		note_pool.return_note(note)
 
 func _spawn_hit_effect(note, sustain_end: bool):
+	# VFX are now handled by gameplay.gd's _on_note_hit via GameplayVFXManager
+	# This function is kept for backwards compatibility and sustain end effects
+	# which may not go through the normal hit detection flow
+	
 	var gameplay = get_parent()
-	if not gameplay or not gameplay.has_node("HitEffectPool"):
+	if not gameplay:
 		return
-	var pool = gameplay.get_node("HitEffectPool")
-	if not pool.has_method("get_effect"):
-		return
-	var eff = pool.get_effect()
-	gameplay.add_child(eff)
-	# Position at hit line (assumes z ~ 0) with lane x
-	eff.global_transform.origin = Vector3(note.position.x, 0.2, 0.0)
-	# Color mapping by fret / type
-	var col = Color.WHITE
-	var palette = [Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.ORANGE]
-	if note.note_type == 3: # OPEN / STAR
-		col = Color(1, 0.9, 0.3)
-	elif note.fret < palette.size():
-		col = palette[note.fret]
-	# Differentiate sustain release
-	if sustain_end:
-		col = col.lightened(0.4)
-	# Removed note-type based scaling to keep effects consistent size
-	if eff.has_method("play"):
-		eff.play(col, 1.0)
+	
+	# For sustain end effects, still use old effect pool as a simple fallback
+	# (these don't trigger normal hit detection)
+	if sustain_end and gameplay.has_node("HitEffectPool"):
+		var pool = gameplay.get_node("HitEffectPool")
+		if pool.has_method("get_effect"):
+			var eff = pool.get_effect()
+			gameplay.add_child(eff)
+			eff.global_transform.origin = Vector3(note.position.x, 0.2, 0.0)
+			var col = Color.WHITE
+			var palette = [Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.ORANGE]
+			if note.note_type == 3: # OPEN / STAR
+				col = Color(1, 0.9, 0.3)
+			elif note.fret < palette.size():
+				col = palette[note.fret]
+			col = col.lightened(0.4)  # Lighter for sustain end
+			if eff.has_method("play"):
+				eff.play(col, 0.7)  # Smaller scale for sustain end
 
 # ---------------- Command Pattern Helpers ----------------
 func build_spawn_commands() -> Array:

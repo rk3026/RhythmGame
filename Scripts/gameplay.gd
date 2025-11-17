@@ -6,8 +6,18 @@ extends Node3D
 @onready var score_manager = $ScoreManager
 @onready var note_spawner = $NoteSpawner
 @onready var note_pool = $NoteSpawner/NotePool
+@onready var vfx_manager = $GameplayVFXManager
 var hit_effect_pool: Node
 var timeline_controller = null
+
+# Lane color mapping (matching fret colors)
+const LANE_COLORS = [
+	Color.GREEN,    # Lane 0
+	Color.RED,      # Lane 1
+	Color.YELLOW,   # Lane 2
+	Color.BLUE,     # Lane 3
+	Color.ORANGE    # Lane 4
+]
 
 @export var num_lanes: int
 var lanes: Array = []
@@ -101,6 +111,10 @@ func _ready():
 		animation_director = get_node("AnimationDirector")
 	
 	settings_manager = _get_settings_manager()
+	
+	# Initialize VFX manager with camera and environment references
+	if vfx_manager:
+		vfx_manager.initialize($Camera3D, $WorldEnvironment, num_lanes, lanes)
 	
 	# Configure input handler AFTER lanes exist (its _ready ran earlier)
 	input_handler.original_materials = original_materials
@@ -357,6 +371,22 @@ func _on_note_hit(note, grade: int):
 			SettingsManager.HitGrade.MISS:
 				SoundEffectManager.play_sfx("bad", SoundEffectManager.SoundCategory.HIT_BAD)
 	
+	# Trigger VFX effects for the note hit
+	if vfx_manager and note.fret >= 0 and note.fret < LANE_COLORS.size():
+		var lane_color = LANE_COLORS[note.fret]
+		# Convert grade int to string for VFX manager
+		var grade_string = ""
+		match grade:
+			SettingsManager.HitGrade.PERFECT:
+				grade_string = "perfect"
+			SettingsManager.HitGrade.GREAT:
+				grade_string = "great"
+			SettingsManager.HitGrade.GOOD:
+				grade_string = "good"
+			_:
+				grade_string = "miss"
+		vfx_manager.trigger_note_hit(note.fret, grade_string, lane_color)
+	
 	# Use command pattern for reversible scoring (only during replay/scrubbing)
 	if timeline_controller and timeline_controller.direction != 1:
 		var HitNoteCommandClass = load("res://Scripts/Commands/HitNoteCommand.gd")
@@ -410,6 +440,11 @@ func _on_combo_changed(combo):
 	$UI/ComboLabel.text = "Combo: " + str(combo)
 	if combo > 0 and animation_director:
 		animation_director.animate_combo_label($UI/ComboLabel)
+	
+	# Trigger VFX for combo milestones
+	if vfx_manager and combo > 0 and combo % 50 == 0:
+		# Use golden color for combo milestones
+		vfx_manager.trigger_combo_milestone(combo, Color(1.0, 0.85, 0.0))
 
 func _on_note_spawned(note):
 	if animation_director:

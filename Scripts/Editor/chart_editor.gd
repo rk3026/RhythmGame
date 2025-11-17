@@ -82,7 +82,9 @@ func _setup_runway():
 	# Remove the default mesh and replace with board_renderer
 	var board_renderer = load("res://Scripts/board_renderer.gd").new()
 	board_renderer.mesh = QuadMesh.new()
-	board_renderer.mesh.size = Vector2(10, 30)
+	# Runway length should show ~3 seconds of notes at default speed (20 units/sec = 60 units)
+	# Using 60 units gives a comfortable preview window in the editor
+	board_renderer.mesh.size = Vector2(10, 60)
 	board_renderer.mesh.orientation = PlaneMesh.FACE_Y
 	board_renderer.num_lanes = num_lanes
 	
@@ -157,6 +159,49 @@ func _connect_signals():
 	runway_viewport.gui_input.connect(_on_runway_input)
 	runway_viewport.mouse_entered.connect(_on_runway_mouse_entered)
 	runway_viewport.mouse_exited.connect(_on_runway_mouse_exited)
+
+func _input(event: InputEvent):
+	if event is InputEventKey and event.pressed and not event.echo:
+		_handle_keyboard_shortcut(event)
+
+func _handle_keyboard_shortcut(event: InputEventKey):
+	# Handle keyboard shortcuts for chart editor
+	var key = event.keycode
+	
+	# Note placement shortcuts (1-5 for lanes)
+	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note":
+		var lane = key - KEY_1  # Convert KEY_1 to lane 0, KEY_2 to lane 1, etc.
+		_place_note_at_cursor_time(lane)
+		return
+	
+	# Playback control
+	if key == KEY_SPACE:
+		toggle_playback()
+		get_viewport().set_input_as_handled()
+		return
+	
+	# Snap division controls
+	if key == KEY_BRACKETRIGHT:  # ] key - increase snap
+		_increase_snap_division()
+		get_viewport().set_input_as_handled()
+		return
+	
+	if key == KEY_BRACKETLEFT:  # [ key - decrease snap
+		_decrease_snap_division()
+		get_viewport().set_input_as_handled()
+		return
+	
+	# Save shortcut
+	if event.ctrl_pressed and key == KEY_S:
+		_on_file_save()
+		get_viewport().set_input_as_handled()
+		return
+	
+	# Delete selected notes
+	if key == KEY_DELETE:
+		_delete_selected_notes()
+		get_viewport().set_input_as_handled()
+		return
 
 func _process(delta):
 	if is_playing and audio_player and audio_player.playing:
@@ -649,6 +694,67 @@ func _erase_note_at_mouse(mouse_pos: Vector2):
 		settings_panel.update_note_count(placed_notes.size())
 		print("Note erased at lane ", lane, " time ", nearest_note.time)
 
+func _place_note_at_cursor_time(lane: int):
+	# Place a note at the current timeline time in the specified lane
+	if lane < 0 or lane >= num_lanes:
+		return
+	
+	# Use current_time as the placement time (snapped to grid)
+	var time = _snap_time_to_grid(current_time)
+	
+	# Check if a note already exists at this time and lane
+	for note_data in placed_notes:
+		if note_data.lane == lane and abs(note_data.time - time) < 0.01:
+			print("Note already exists at this position")
+			return
+	
+	# Create note data
+	var note_data = {
+		"lane": lane,
+		"time": time,
+		"note_type": _string_to_note_type(current_note_type),
+		"is_sustain": false,
+		"sustain_length": 0.0
+	}
+	
+	placed_notes.append(note_data)
+	_create_note_visual(note_data)
+	settings_panel.update_note_count(placed_notes.size())
+	print("Note placed at lane ", lane, " time ", time, " (keyboard shortcut)")
+
+func _increase_snap_division():
+	# Increase snap division: 4 -> 8 -> 12 -> 16 -> 24 -> 32 -> 64 -> (cycle back to 4)
+	var divisions = [4, 8, 12, 16, 24, 32, 64]
+	var current_index = divisions.find(snap_division)
+	if current_index >= 0:
+		var next_index = (current_index + 1) % divisions.size()
+		snap_division = divisions[next_index]
+	else:
+		snap_division = 16  # Default
+	
+	# Update UI
+	settings_panel.set_snap_step(snap_division)
+	print("Snap division increased to 1/", snap_division)
+
+func _decrease_snap_division():
+	# Decrease snap division: 4 <- 8 <- 12 <- 16 <- 24 <- 32 <- 64 <- (cycle back to 64)
+	var divisions = [4, 8, 12, 16, 24, 32, 64]
+	var current_index = divisions.find(snap_division)
+	if current_index >= 0:
+		var prev_index = (current_index - 1 + divisions.size()) % divisions.size()
+		snap_division = divisions[prev_index]
+	else:
+		snap_division = 16  # Default
+	
+	# Update UI
+	settings_panel.set_snap_step(snap_division)
+	print("Snap division decreased to 1/", snap_division)
+
+func _delete_selected_notes():
+	# TODO: Implement note selection system first
+	# For now, this is a placeholder
+	print("Delete selected notes - selection system not yet implemented")
+
 func _mouse_to_runway_position(mouse_pos: Vector2) -> Vector3:
 	if not camera_3d:
 		return Vector3.ZERO
@@ -688,9 +794,10 @@ func _position_to_time(z_pos: float) -> float:
 	# Convert z position on runway to time in song
 	# Z coordinate system: negative Z = far away = future time, Z = 0 = hit line = current_time
 	# Earlier notes (negative Z) should map to later time (current_time + offset)
-	# Using the inverse of _time_to_runway_position: z = (time - current_time) * -5.0
-	# So: time = current_time - (z / 5.0)
-	return current_time - (z_pos / 5.0)
+	# Using the inverse of _time_to_runway_position: z = (time - current_time) * -note_speed
+	# So: time = current_time - (z / note_speed)
+	var note_speed = SettingsManager.note_speed if SettingsManager else 20.0
+	return current_time - (z_pos / note_speed)
 
 func _snap_time_to_grid(time: float) -> float:
 	# Snap time to the nearest grid division
@@ -748,7 +855,9 @@ func _time_to_runway_position(time: float, lane: int) -> Vector3:
 	# Notes at current_time should be at z=0 (hit line)
 	# Earlier notes should be negative (further away)
 	var time_diff = time - current_time
-	var z = time_diff * -5.0  # Scale factor: 5 units per second
+	# Use the same note speed as gameplay for consistent visual speed
+	var note_speed = SettingsManager.note_speed if SettingsManager else 20.0
+	var z = time_diff * -note_speed
 	
 	return Vector3(x, y, z)
 

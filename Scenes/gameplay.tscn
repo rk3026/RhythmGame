@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://cy8f37l2slbwk"]
+[gd_scene load_steps=15 format=3 uid="uid://cy8f37l2slbwk"]
 
 [ext_resource type="Script" uid="uid://3arnqosf5atb" path="res://Scripts/gameplay.gd" id="1_abc123"]
 [ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="2_1qnfl"]
@@ -7,6 +7,9 @@
 [ext_resource type="Script" uid="uid://7kxrltvq7psj" path="res://Scripts/ScoreManager.gd" id="5_score_manager"]
 [ext_resource type="Script" uid="uid://ct8l028b31w44" path="res://Scripts/note_spawner.gd" id="6_note_spawner"]
 [ext_resource type="Script" uid="uid://d0prnscc0kmja" path="res://Scripts/NotePool.gd" id="7_note_pool"]
+[ext_resource type="Script" uid="uid://ce5ssio07plfe" path="res://Scripts/gameplay_vfx_manager.gd" id="8_vfx_manager"]
+[ext_resource type="Script" uid="uid://bmekkqi26t7ek" path="res://Scripts/camera_shake.gd" id="9_camera_shake"]
+[ext_resource type="Script" uid="uid://ckq2bn87s8ykn" path="res://Scripts/post_processing_manager.gd" id="10_post_processing"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_def456"]
 size = Vector2(10, 30)
@@ -16,6 +19,13 @@ orientation = 1
 transparency = 1
 albedo_texture = ExtResource("2_1qnfl")
 uv1_scale = Vector3(5, 1, 5)
+
+[sub_resource type="Environment" id="Environment_vfx"]
+background_mode = 1
+glow_enabled = true
+glow_strength = 1.2
+glow_bloom = 0.1
+glow_blend_mode = 0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0, 0, 0, 0.8)
@@ -58,6 +68,18 @@ script = ExtResource("6_note_spawner")
 
 [node name="NotePool" type="Node" parent="NoteSpawner"]
 script = ExtResource("7_note_pool")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_vfx")
+
+[node name="GameplayVFXManager" type="Node3D" parent="."]
+script = ExtResource("8_vfx_manager")
+
+[node name="CameraShake" type="Node" parent="GameplayVFXManager"]
+script = ExtResource("9_camera_shake")
+
+[node name="PostProcessingManager" type="Node" parent="GameplayVFXManager"]
+script = ExtResource("10_post_processing")
 
 [node name="UI" type="CanvasLayer" parent="."]
 process_mode = 3

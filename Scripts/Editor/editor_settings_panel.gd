@@ -66,3 +66,13 @@ func _on_highway_length_changed(value: float):
 func update_note_count(count: int):
 	note_count = count
 	note_count_label.text = str(note_count)
+
+func set_snap_step(value: int):
+	# Programmatically set the snap step and update UI
+	var snap_divisions = [4, 8, 12, 16, 24, 32, 64]
+	var index = snap_divisions.find(value)
+	if index >= 0:
+		snap_step = value
+		snap_step_option.selected = index
+		snap_step_label.text = "Step: 1/" + str(snap_step)
+		# Note: Don't emit signal here to avoid infinite loops

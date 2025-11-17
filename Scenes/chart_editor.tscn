@@ -1,10 +1,14 @@
-[gd_scene load_steps=6 format=3 uid="uid://chart_editor_main"]
+[gd_scene load_steps=7 format=3 uid="uid://bui6yk6tm6i3c"]
 
-[ext_resource type="Script" uid="uid://editor_chart_editor_001" path="res://Scripts/Editor/chart_editor.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://editor_toolbar_001" path="res://Scenes/Editor/editor_toolbar.tscn" id="2"]
-[ext_resource type="PackedScene" uid="uid://editor_settings_panel_001" path="res://Scenes/Editor/editor_settings_panel.tscn" id="3"]
-[ext_resource type="PackedScene" uid="uid://editor_toolbox_001" path="res://Scenes/Editor/editor_toolbox.tscn" id="4"]
-[ext_resource type="PackedScene" uid="uid://editor_progress_bar_001" path="res://Scenes/Editor/editor_progress_bar.tscn" id="5"]
+[ext_resource type="Script" path="res://Scripts/Editor/chart_editor.gd" id="1"]
+[ext_resource type="PackedScene" path="res://Scenes/Editor/editor_toolbar.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://Scenes/Editor/editor_settings_panel.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://Scenes/Editor/editor_toolbox.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://Scenes/Editor/editor_progress_bar.tscn" id="5"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_083ue"]
+size = Vector2(10, 30)
+orientation = 1
 
 [node name="ChartEditor" type="Control"]
 layout_mode = 3
@@ -95,7 +99,7 @@ stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MainLayout/ContentArea/CenterArea/RunwayViewport"]
 handle_input_locally = false
-size = Vector2i(800, 600)
+size = Vector2i(1566, 974)
 render_target_update_mode = 4
 
 [node name="Camera3D" type="Camera3D" parent="MainLayout/ContentArea/CenterArea/RunwayViewport/SubViewport"]
@@ -103,6 +107,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 10)
 
 [node name="Runway" type="MeshInstance3D" parent="MainLayout/ContentArea/CenterArea/RunwayViewport/SubViewport"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+mesh = SubResource("QuadMesh_083ue")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="MainLayout/ContentArea/CenterArea/RunwayViewport/SubViewport"]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
