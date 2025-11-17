@@ -60,11 +60,28 @@ func _load_chart_data_async():
 	# Additional processing if needed - for now just update progress
 	call_deferred("_update_progress", 75, "Loading music stream...")
 	
-	# Get music stream
-	var music_stream = parser.get_music_stream(sections)
-	if not music_stream:
-		var ini_parser = parser_factory.create_metadata_parser()
-		music_stream = ini_parser.get_music_stream_from_ini(chart_path)
+	# Check if this is a MIDI file
+	var extension = chart_path.get_extension().to_lower()
+	var is_midi = (extension == "mid" or extension == "midi")
+	var music_stream = ""
+	var audio_tracks: Array = []
+	
+	if is_midi:
+		# Load multiple audio tracks for MIDI songs
+		var folder_path = chart_path.get_base_dir()
+		var MidiAudioLoaderClass = load("res://Scripts/Audio/MidiAudioLoader.gd")
+		audio_tracks = MidiAudioLoaderClass.scan_audio_files(folder_path)
+		
+		if audio_tracks.is_empty():
+			push_warning("LoadingScreen: No audio tracks found for MIDI song: " + chart_path)
+		else:
+			call_deferred("_update_progress", 80, "Loaded %d audio tracks..." % audio_tracks.size())
+	else:
+		# Get single music stream for regular charts
+		music_stream = parser.get_music_stream(sections)
+		if not music_stream:
+			var ini_parser = parser_factory.create_metadata_parser()
+			music_stream = ini_parser.get_music_stream_from_ini(chart_path)
 	
 	call_deferred("_update_progress", 85, "Finalizing data...")
 	
@@ -76,6 +93,8 @@ func _load_chart_data_async():
 		"tempo_events": tempo_events,
 		"notes": notes,
 		"music_stream": music_stream,
+		"audio_tracks": audio_tracks,
+		"is_midi": is_midi,
 		"parser": parser
 	}
 	

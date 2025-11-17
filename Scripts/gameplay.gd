@@ -10,6 +10,10 @@ extends Node3D
 var hit_effect_pool: Node
 var timeline_controller = null
 
+# Audio playback (supports both single-stream and MIDI multi-track)
+var midi_track_manager: Node = null  # For MIDI songs with multiple audio tracks
+var is_midi_song: bool = false  # Flag to determine which audio system to use
+
 # Lane color mapping (matching fret colors)
 const LANE_COLORS = [
 	Color.GREEN,    # Lane 0
@@ -149,36 +153,58 @@ func _ready():
 		SoundEffectManager.preload_category(SoundEffectManager.SoundCategory.COMBO_MILESTONE)
 		SoundEffectManager.preload_category(SoundEffectManager.SoundCategory.COUNTDOWN)
 	
-	# Get music stream from chart data
-	var music_stream = chart_data.music_stream
-	
+	# Setup audio playback (MIDI multi-track or single-stream)
+	is_midi_song = chart_data.is_midi
 	var folder = chart_path.get_base_dir()
-	var audio_path = ""
-	if music_stream:
-		audio_path = folder + "/" + music_stream
-	else:
-		# Scan for any .ogg file in the folder
-		audio_path = FileSystemHelper.find_audio_file(folder)
 	
-	if audio_path and FileAccess.file_exists(audio_path):
-		audio_player = AudioStreamPlayer.new()
-		audio_player.stream = load(audio_path)
-		audio_player.bus = "Music"  # Route to Music bus for proper volume control
-		add_child(audio_player)
+	print("Gameplay: is_midi_song=%s, audio_tracks.size=%d" % [is_midi_song, chart_data.audio_tracks.size()])
+	
+	if is_midi_song and chart_data.audio_tracks.size() > 0:
+		# MIDI song with multiple audio tracks
+		print("Gameplay: Loading MIDI multi-track audio system...")
+		var MidiTrackManagerClass = load("res://Scripts/Audio/MidiTrackManager.gd")
+		midi_track_manager = MidiTrackManagerClass.new()
+		add_child(midi_track_manager)
+		var success = midi_track_manager.load_tracks(chart_data.audio_tracks)
+		print("Gameplay: MidiTrackManager loaded successfully: %s" % success)
+		
 		# Start countdown before playing
 		start_countdown(func():
 			if offset < 0:
-				audio_player.play(-offset)
+				midi_track_manager.play(-offset)
 			else:
-				audio_player.play()
+				midi_track_manager.play(0.0)
 			_start_note_spawning()
 		)
 	else:
-		print("No audio file found for: ", chart_path)
-		# Still start the game without audio
-		start_countdown(func():
-			_start_note_spawning()
-		)
+		# Regular song with single audio stream
+		var music_stream = chart_data.music_stream
+		var audio_path = ""
+		if music_stream:
+			audio_path = folder + "/" + music_stream
+		else:
+			# Scan for any .ogg file in the folder
+			audio_path = FileSystemHelper.find_audio_file(folder)
+		
+		if audio_path and FileAccess.file_exists(audio_path):
+			audio_player = AudioStreamPlayer.new()
+			audio_player.stream = load(audio_path)
+			audio_player.bus = "Music"  # Route to Music bus for proper volume control
+			add_child(audio_player)
+			# Start countdown before playing
+			start_countdown(func():
+				if offset < 0:
+					audio_player.play(-offset)
+				else:
+					audio_player.play()
+				_start_note_spawning()
+			)
+		else:
+			print("No audio file found for: ", chart_path)
+			# Still start the game without audio
+			start_countdown(func():
+				_start_note_spawning()
+			)
 	
 	$UI/PauseButton.connect("pressed", Callable(self, "_on_pause_button_pressed"))
 	
@@ -241,17 +267,33 @@ func _start_note_spawning():
 func _process(_delta):
 	if song_finished:
 		return
+	
 	# Keep audio synced while in forward direction (avoid constant seeks while playing normally)
-	if audio_player and timeline_controller and timeline_controller.direction == 1 and audio_player.playing and not audio_player.stream_paused:
-		# Drift correction: if difference exceeds small epsilon, resync
-		var desired = _timeline_to_audio_time(timeline_controller.current_time)
-		var diff = abs(audio_player.get_playback_position() - desired)
-		if diff > 0.050: # 50 ms tolerance
-			audio_player.seek(desired)
+	if timeline_controller and timeline_controller.direction == 1:
+		if is_midi_song and midi_track_manager:
+			# MIDI multi-track sync (MidiTrackManager handles internal sync automatically)
+			if midi_track_manager.is_playing:
+				var desired = _timeline_to_audio_time(timeline_controller.current_time)
+				var diff = abs(midi_track_manager.get_playback_position() - desired)
+				if diff > 0.050: # 50 ms tolerance
+					midi_track_manager.seek(desired)
+		elif audio_player and audio_player.playing and not audio_player.stream_paused:
+			# Single-stream sync
+			var desired = _timeline_to_audio_time(timeline_controller.current_time)
+			var diff = abs(audio_player.get_playback_position() - desired)
+			if diff > 0.050: # 50 ms tolerance
+				audio_player.seek(desired)
+	
 	# Detect completion: all notes spawned AND active notes empty AND (audio ended or no audio or timeline reached end)
 	var spawner_done = timeline_controller != null and timeline_controller.executed_count >= timeline_controller.command_log.size()
 	var no_active = note_spawner.active_notes.is_empty()
-	var audio_done = (audio_player == null) or (audio_player and not audio_player.playing)
+	var audio_done = false
+	if is_midi_song and midi_track_manager:
+		audio_done = not midi_track_manager.is_playing
+	elif audio_player:
+		audio_done = not audio_player.playing
+	else:
+		audio_done = true  # No audio system loaded
 	var timeline_done = timeline_controller != null and timeline_controller.current_time >= timeline_controller.song_end_time
 	if spawner_done and no_active and (audio_done or timeline_done):
 		song_finished = true
@@ -266,13 +308,19 @@ func _process(_delta):
 		if dbg.has_node("VBox/ProgressLabel"):
 			dbg.get_node("VBox/ProgressLabel").text = "Exec: %d/%d" % [timeline_controller.executed_count, timeline_controller.command_log.size()]
 		# Provide audio time for debugging (optional)
-		if audio_player and not dbg.has_node("VBox/AudioLabel"):
+		var has_audio = (is_midi_song and midi_track_manager) or audio_player
+		if has_audio and not dbg.has_node("VBox/AudioLabel"):
 			# Dynamically add only once if user wants to inspect
 			var lbl = Label.new()
 			lbl.name = "AudioLabel"
 			dbg.get_node("VBox").add_child(lbl)
-		if audio_player and dbg.has_node("VBox/AudioLabel"):
-			dbg.get_node("VBox/AudioLabel").text = "Audio: %.3f" % audio_player.get_playback_position()
+		if has_audio and dbg.has_node("VBox/AudioLabel"):
+			var audio_pos = 0.0
+			if is_midi_song and midi_track_manager:
+				audio_pos = midi_track_manager.get_playback_position()
+			elif audio_player:
+				audio_pos = audio_player.get_playback_position()
+			dbg.get_node("VBox/AudioLabel").text = "Audio: %.3f" % audio_pos
 
 func _input(event):
 	if not timeline_controller:
@@ -293,13 +341,17 @@ func _input(event):
 				# Toggle reverse direction
 				var new_dir = -1 if timeline_controller.direction == 1 else 1
 				timeline_controller.set_direction(new_dir)
-				if audio_player:
-					if new_dir == -1:
-						# Entering reverse: we cannot easily play backwards with AudioStreamPlayer; mute via stream_paused.
-						# Advanced reverse playback would require AudioStreamGenerator or pre-reversed buffer.
+				if new_dir == -1:
+					# Entering reverse: pause audio (cannot play backwards easily)
+					if is_midi_song and midi_track_manager:
+						midi_track_manager.pause()
+					elif audio_player:
 						audio_player.stream_paused = true
-					else:
-						# Resume forward playback at correct mapped time
+				else:
+					# Resume forward playback at correct mapped time
+					if is_midi_song and midi_track_manager:
+						_sync_audio_to_timeline(false)
+					elif audio_player:
 						audio_player.stream_paused = false
 						_sync_audio_to_timeline(false)
 				return
@@ -486,7 +538,9 @@ func _on_end_song():
 	$UI/PauseMenu.visible = false
 	$UI/PauseButton.visible = true
 	# Stop audio and clear active notes to end the song
-	if audio_player:
+	if is_midi_song and midi_track_manager:
+		midi_track_manager.stop()
+	elif audio_player:
 		audio_player.stop()
 	# Return all active notes to pool
 	for note in note_spawner.active_notes:
@@ -540,19 +594,30 @@ func _timeline_to_audio_time(timeline_time: float) -> float:
 	return max(0.0, timeline_time)
 
 func _sync_audio_to_timeline(force_seek: bool):
-	if not (audio_player and timeline_controller):
+	if not timeline_controller:
 		return
 	if timeline_controller.direction == -1:
 		# Reverse mode: keep paused (future enhancement: implement reverse generator)
 		return
+	
 	var desired = _timeline_to_audio_time(timeline_controller.current_time)
-	var length = 0.0
-	if audio_player.stream and audio_player.stream.has_method("get_length"):
-		length = audio_player.stream.get_length()
-	if length > 0.0:
-		desired = clamp(desired, 0.0, length - 0.01)
-	var diff = abs(audio_player.get_playback_position() - desired)
-	if force_seek or diff > 0.010:
-		audio_player.seek(desired)
-	if not audio_player.playing:
-		audio_player.play()
+	
+	if is_midi_song and midi_track_manager:
+		# MIDI multi-track sync
+		var diff = abs(midi_track_manager.get_playback_position() - desired)
+		if force_seek or diff > 0.010:
+			midi_track_manager.seek(desired)
+		if not midi_track_manager.is_playing:
+			midi_track_manager.resume()
+	elif audio_player:
+		# Single-stream sync
+		var length = 0.0
+		if audio_player.stream and audio_player.stream.has_method("get_length"):
+			length = audio_player.stream.get_length()
+		if length > 0.0:
+			desired = clamp(desired, 0.0, length - 0.01)
+		var diff = abs(audio_player.get_playback_position() - desired)
+		if force_seek or diff > 0.010:
+			audio_player.seek(desired)
+		if not audio_player.playing:
+			audio_player.play()

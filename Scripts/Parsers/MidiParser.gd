@@ -1,62 +1,118 @@
 class_name MidiParser
 extends ParserInterface
 
+## MidiParser - Parses MIDI files using the working MidiFileParser
+## Implements proper Guitar Hero MIDI note mapping
+
 var cached_data = {}
+const MidiFileParserClass = preload("res://Scripts/Parsers/midi_file_parser.gd")
 
-func load_chart(path: String) -> Dictionary:
+# Guitar Hero MIDI note mapping
+const MIDI_MAPPING = {
+	"Expert": {
+		"notes": [96, 97, 98, 99, 100],  # Green, Red, Yellow, Blue, Orange
+		"open": 103,
+		"hopo_offset": 5,
+		"tap_offset": 6
+	},
+	"Hard": {
+		"notes": [84, 85, 86, 87, 88],
+		"open": 91,
+		"hopo_offset": 5,
+		"tap_offset": 6
+	},
+	"Medium": {
+		"notes": [72, 73, 74, 75, 76],
+		"open": 79,
+		"hopo_offset": 5,
+		"tap_offset": 6
+	},
+	"Easy": {
+		"notes": [60, 61, 62, 63, 64],
+		"open": 67,
+		"hopo_offset": 5,
+		"tap_offset": 6
+	}
+}
+
+const STAR_POWER_NOTE = 116
+
+func load_chart(path: String, _progress_callback: Callable = Callable()) -> Dictionary:
 	if cached_data.has(path):
-		var data = cached_data[path]
-		if not data.has("path"):
-			data["path"] = path
-		return data
+		var cached = cached_data[path]
+		if not cached.has("path"):
+			cached["path"] = path
+		return cached
 
-	var midi_parser = MidiFileParser.load_file(path)
-	if not midi_parser or midi_parser.state == MidiFileParser.MIDI_PARSER_ERROR:
-		push_error("Failed to parse MIDI file: " + path)
+	print("MidiParser: Loading MIDI file: %s" % path)
+	var midi_parser = MidiFileParserClass.load_file(path)
+	if not midi_parser or midi_parser.state == MidiFileParserClass.MIDI_PARSER_ERROR:
+		push_error("MidiParser: Failed to parse MIDI file: " + path)
 		return {}
 
-	var data = _convert_midi_data(midi_parser)
+	var chart_data = _convert_midi_data(midi_parser)
 
 	# Store the path for music stream lookup
-	data["path"] = path
-	cached_data[path] = data
-	return data
+	chart_data["path"] = path
+	cached_data[path] = chart_data
+	return chart_data
 
-func _convert_midi_data(midi_parser: MidiFileParser) -> Dictionary:
-	var tracks = []
-	for track in midi_parser.tracks:
-		var events = []
+func _convert_midi_data(midi_parser) -> Dictionary:
+	var tracks_data = []
+	var tempo_events = []
+	
+	for track_idx in range(midi_parser.tracks.size()):
+		var track = midi_parser.tracks[track_idx]
+		var track_name = ""
+		var note_events = []
+		var current_tempo_bpm = 120.0
+		
+		# Scan for track name and note events
 		for event in track.events:
-			var event_data = {
-				"delta_time": event.delta_ticks,
-				"absolute_ticks": event.absolute_ticks
-			}
-			if event is MidiFileParser.Midi:
-				event_data["type"] = "midi"
-				event_data["status"] = event.status
-				event_data["channel"] = event.channel
-				event_data["param1"] = event.param1
-				event_data["param2"] = event.param2
-				if event.status == MidiFileParser.Midi.Status.NOTE_ON:
-					event_data["type"] = "note_on"
-				elif event.status == MidiFileParser.Midi.Status.NOTE_OFF:
-					event_data["type"] = "note_off"
-			elif event is MidiFileParser.Meta:
-				if event.type == MidiFileParser.Meta.Type.SET_TEMPO:
-					event_data["type"] = "tempo"
-					event_data["tempo"] = event.value  # microseconds per quarter note
-				elif event.type == MidiFileParser.Meta.Type.TIME_SIGNATURE:
-					event_data["type"] = "time_signature"
-					event_data["numerator"] = event.bytes[0] if event.bytes.size() > 0 else 4
-					event_data["denominator"] = event.bytes[1] if event.bytes.size() > 1 else 4
-			events.append(event_data)
-		tracks.append({"events": events})
-
+			# Check for track name in meta events
+			if event is MidiFileParserClass.Meta:
+				if event.type == MidiFileParserClass.Meta.Type.TRACK_NAME:
+					track_name = event.bytes.get_string_from_utf8()
+					print("MidiParser: Track %d name: %s" % [track_idx, track_name])
+				elif event.type == MidiFileParserClass.Meta.Type.SET_TEMPO:
+					var tempo_us = event.value
+					current_tempo_bpm = 60000000.0 / tempo_us
+					tempo_events.append({
+						"tick": event.absolute_ticks,
+						"bpm": current_tempo_bpm
+					})
+			
+			# Collect note events
+			elif event is MidiFileParserClass.Midi:
+				if event.status == MidiFileParserClass.Midi.Status.NOTE_ON and event.param2 > 0:
+					note_events.append({
+						"type": "note_on",
+						"tick": event.absolute_ticks,
+						"note": event.param1,
+						"velocity": event.param2
+					})
+				elif event.status == MidiFileParserClass.Midi.Status.NOTE_OFF or \
+					 (event.status == MidiFileParserClass.Midi.Status.NOTE_ON and event.param2 == 0):
+					note_events.append({
+						"type": "note_off",
+						"tick": event.absolute_ticks,
+						"note": event.param1
+					})
+		
+		tracks_data.append({
+			"name": track_name,
+			"events": note_events
+		})
+	
+	# Sort tempo events by tick
+	tempo_events.sort_custom(func(a, b): return a.tick < b.tick)
+	
 	return {
 		"format": midi_parser.header.format,
 		"num_tracks": midi_parser.header.tracks,
 		"division": midi_parser.header.time_division,
-		"tracks": tracks
+		"tracks": tracks_data,
+		"tempo_events": tempo_events
 	}
 
 func get_resolution(sections: Dictionary) -> int:
@@ -68,7 +124,7 @@ func get_resolution(sections: Dictionary) -> int:
 		return 96
 	return division
 
-func get_offset(sections: Dictionary) -> float:
+func get_offset(_sections: Dictionary) -> float:
 	# MIDI doesn't typically have an offset like .chart files
 	# Could be added as a custom meta event in the future
 	return 0.0
@@ -112,77 +168,141 @@ func get_music_stream(sections: Dictionary) -> String:
 	return ""
 
 func get_tempo_events(sections: Dictionary) -> Array:
-	var tempo_events = []
-	var current_time = 0
+	# Tempo events are already extracted in _convert_midi_data
+	return sections.get("tempo_events", [])
 
-	for track in sections.get("tracks", []):
-		current_time = 0
-		for event in track.get("events", []):
-			current_time += event.get("delta_time", 0)
-			if event.get("type") == "tempo":
-				var tempo_us = event.get("tempo", 500000)  # microseconds per quarter note
-				var bpm = 60000000.0 / tempo_us  # Convert to BPM
-				tempo_events.append({
-					"tick": current_time,
-					"bpm": bpm
-				})
-
-	# Sort by tick position
-	tempo_events.sort_custom(func(a, b): return a.tick < b.tick)
-	return tempo_events
-
-func get_notes(sections: Dictionary, _instrument: String, _resolution: int, _progress_callback: Callable = Callable()) -> Array:
+func get_notes(sections: Dictionary, instrument: String, _resolution: int, _progress_callback: Callable = Callable()) -> Array:
+	print("MidiParser: Getting notes for instrument: %s" % instrument)
 	var notes = []
-	var current_time = 0
-	var active_notes = {}  # note -> start_time
-
-	for track in sections.get("tracks", []):
-		current_time = 0
-		for event in track.get("events", []):
-			current_time += event.get("delta_time", 0)
-
-			if event.get("type") == "note_on" and event.get("param2", 0) > 0:  # velocity > 0
-				active_notes[event.param1] = current_time
-			elif event.get("type") == "note_off" or (event.get("type") == "note_on" and event.get("param2", 0) == 0):
-				if active_notes.has(event.param1):
-					var start_time = active_notes[event.param1]
-					var length = current_time - start_time
-
-					notes.append({
-						"pos": start_time,
-						"fret": _midi_note_to_fret(event.param1),
-						"length": length,
-						"is_hopo": false,  # MIDI doesn't have HOPO markers, default to false
-						"is_tap": false    # MIDI doesn't have TAP markers, default to false
-					})
-
-					active_notes.erase(event.param1)
-
+	
+	# Extract difficulty from instrument string (e.g., "ExpertSingle" -> "Expert")
+	var difficulty = _extract_difficulty(instrument)
+	if not MIDI_MAPPING.has(difficulty):
+		push_warning("MidiParser: Unknown difficulty '%s', defaulting to Expert" % difficulty)
+		difficulty = "Expert"
+	
+	var mapping = MIDI_MAPPING[difficulty]
+	var active_notes = {}  # MIDI note number -> {start_tick, fret, is_hopo, is_tap}
+	
+	# Find the appropriate track for this instrument
+	var target_track = _find_instrument_track(sections.get("tracks", []), instrument)
+	if target_track.is_empty():
+		print("MidiParser: No track found for instrument '%s', using first track with notes" % instrument)
+		# Fallback to first track with note events
+		for track in sections.get("tracks", []):
+			if not track.get("events", []).is_empty():
+				target_track = track
+				break
+	
+	if target_track.is_empty():
+		push_warning("MidiParser: No tracks with notes found")
+		return notes
+	
+	# Process note events
+	for event in target_track.get("events", []):
+		var midi_note = event.get("note", -1)
+		if midi_note < 0:
+			continue
+		
+		if event.get("type") == "note_on":
+			# Check if this is a game note
+			var fret = _map_midi_note_to_fret(midi_note, mapping)
+			if fret >= 0:
+				active_notes[midi_note] = {
+					"start_tick": event.get("tick", 0),
+					"fret": fret,
+					"is_hopo": _is_hopo_note(midi_note, mapping),
+					"is_tap": _is_tap_note(midi_note, mapping)
+				}
+		
+		elif event.get("type") == "note_off":
+			if active_notes.has(midi_note):
+				var note_data = active_notes[midi_note]
+				var start_tick = note_data.start_tick
+				var end_tick = event.get("tick", start_tick)
+				var length = end_tick - start_tick
+				
+				notes.append({
+					"pos": start_tick,
+					"fret": note_data.fret,
+					"length": length,
+					"is_hopo": note_data.is_hopo,
+					"is_tap": note_data.is_tap
+				})
+				
+				active_notes.erase(midi_note)
+	
 	# Sort by position
 	notes.sort_custom(func(a, b): return a.pos < b.pos)
+	
+	print("MidiParser: Found %d notes for %s %s" % [notes.size(), difficulty, instrument])
 	return notes
 
-func _midi_note_to_fret(note: int) -> int:
-	# Map MIDI notes to guitar frets
-	# Standard guitar tuning: E2(40), A2(45), D3(50), G3(55), B3(59), E4(64)
-	# Map to frets 0-4, with 5+ being special notes
-	var guitar_notes = [40, 45, 50, 55, 59, 64]  # E, A, D, G, B, E
+## Extract difficulty from instrument string
+func _extract_difficulty(instrument: String) -> String:
+	if "Expert" in instrument:
+		return "Expert"
+	elif "Hard" in instrument:
+		return "Hard"
+	elif "Medium" in instrument:
+		return "Medium"
+	elif "Easy" in instrument:
+		return "Easy"
+	return "Expert"  # Default
 
-	for i in range(guitar_notes.size()):
-		if note == guitar_notes[i]:
+## Find track for specific instrument
+func _find_instrument_track(tracks: Array, instrument: String) -> Dictionary:
+	# Determine which part we're looking for
+	var target_part = "PART GUITAR"  # Default
+	if "Bass" in instrument:
+		target_part = "PART BASS"
+	elif "Drums" in instrument:
+		target_part = "PART DRUMS"
+	elif "Keys" in instrument:
+		target_part = "PART KEYS"
+	
+	for track in tracks:
+		var track_name = track.get("name", "").to_upper()
+		if target_part in track_name:
+			print("MidiParser: Found track '%s' for instrument '%s'" % [track_name, instrument])
+			return track
+	
+	return {}
+
+## Map MIDI note to fret (0-4) or -1 if not a playable note
+func _map_midi_note_to_fret(midi_note: int, mapping: Dictionary) -> int:
+	var notes = mapping.get("notes", [])
+	for i in range(notes.size()):
+		if midi_note == notes[i]:
 			return i
+	
+	# Check for open note
+	if midi_note == mapping.get("open", -1):
+		return 5  # Open note (fret 5)
+	
+	return -1  # Not a playable note
 
-	# For notes not in standard tuning, find closest string
-	var min_diff = 127
-	var closest_fret = 0
+## Check if MIDI note is a HOPO
+func _is_hopo_note(midi_note: int, mapping: Dictionary) -> bool:
+	var hopo_offset = mapping.get("hopo_offset", 5)
+	var notes = mapping.get("notes", [])
+	
+	for note in notes:
+		if midi_note == note + hopo_offset:
+			return true
+	
+	return false
 
-	for i in range(guitar_notes.size()):
-		var diff = abs(note - guitar_notes[i])
-		if diff < min_diff:
-			min_diff = diff
-			closest_fret = i
-
-	return closest_fret
+## Check if MIDI note is a TAP
+func _is_tap_note(midi_note: int, mapping: Dictionary) -> bool:
+	var tap_offset = mapping.get("tap_offset", 6)
+	var notes = mapping.get("notes", [])
+	
+	for note in notes:
+		if midi_note == note + tap_offset:
+			return true
+	
+	return false
 
 func get_note_times(notes: Array, resolution: int, tempo_events: Array) -> Array:
 	var note_times = []

@@ -3,6 +3,7 @@ extends Control
 @onready var song_list_container = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongList/VBoxContainer
 @onready var song_info_panel = $MarginContainer/VBoxContainer/Middle/HBoxContainer/SongSelection/SongInfo/VBoxContainer
 @onready var audio_player = $AudioStreamPlayer
+var midi_track_manager = null  # For MIDI song previews
 @onready var back_button = $MarginContainer/VBoxContainer/Top/BackButton
 
 var parser_factory: ParserFactory
@@ -153,23 +154,78 @@ func _scan_chart_instruments(chart_path: String) -> Dictionary:
 	return instruments
 
 func _scan_midi_instruments(chart_path: String) -> Dictionary:
-	var file = FileAccess.open(chart_path, FileAccess.READ)
-	if not file:
+	# Use MidiFileParser to properly detect instruments and difficulties
+	var MidiFileParserClass = load("res://Scripts/Parsers/midi_file_parser.gd")
+	if not MidiFileParserClass:
+		push_error("Failed to load MidiFileParser")
 		return {}
-
-	var header = file.get_buffer(4)
-	if header.size() < 4 or header.get_string_from_ascii() != "MThd":
-		file.close()
+	
+	# Parse MIDI file (load_file is a static method that returns MidiFileParser instance)
+	var midi_parser = MidiFileParserClass.load_file(chart_path)
+	if not midi_parser or midi_parser.state == MidiFileParserClass.MIDI_PARSER_ERROR:
 		return {}
-	file.big_endian = true
-	file.get_32() # header length, typically 6
-	file.get_16() # format, unused here
-	var track_count = file.get_16()
-	file.close()
-
+	
 	var instruments = {}
-	for i in range(track_count):
-		instruments["Track %d" % (i + 1)] = ["Expert"]
+	var instrument_names = ["Guitar", "Bass", "Drums", "Keys"]  # Common GH MIDI instruments
+	
+	# Check each instrument for available difficulties
+	for instrument_name in instrument_names:
+		var difficulties = []
+		
+		# Try to find track for this instrument
+		var track_name_search = "PART " + instrument_name.to_upper()
+		var track_index = -1
+		
+		for i in range(midi_parser.tracks.size()):
+			var current_track = midi_parser.tracks[i]
+			# Check Meta events for TRACK_NAME
+			for meta_event in current_track.meta:
+				if meta_event.type == MidiFileParserClass.Meta.Type.TRACK_NAME:
+					var track_name_str = meta_event.bytes.get_string_from_utf8()
+					if track_name_search in track_name_str.to_upper():
+						track_index = i
+						break
+			if track_index >= 0:
+				break
+		
+		if track_index < 0:
+			continue  # Instrument not found in MIDI
+		
+		# Check which difficulties have notes
+		var instrument_track = midi_parser.tracks[track_index]
+		var has_expert = false
+		var has_hard = false
+		var has_medium = false
+		var has_easy = false
+		
+		# Check Midi events for notes
+		for midi_event in instrument_track.midi:
+			# Check for NOTE_ON with velocity > 0
+			if midi_event.status == MidiFileParserClass.Midi.Status.NOTE_ON and midi_event.param2 > 0:
+				var note = midi_event.param1
+				# Check against MIDI note ranges from MidiParser.MIDI_MAPPING
+				if note >= 96 and note <= 103:  # Expert range (96-100 + open 103)
+					has_expert = true
+				elif note >= 84 and note <= 91:  # Hard range (84-88 + open 91)
+					has_hard = true
+				elif note >= 72 and note <= 79:  # Medium range (72-76 + open 79)
+					has_medium = true
+				elif note >= 60 and note <= 67:  # Easy range (60-64 + open 67)
+					has_easy = true
+		
+		# Add available difficulties
+		if has_expert:
+			difficulties.append("Expert")
+		if has_hard:
+			difficulties.append("Hard")
+		if has_medium:
+			difficulties.append("Medium")
+		if has_easy:
+			difficulties.append("Easy")
+		
+		if difficulties.size() > 0:
+			instruments[instrument_name] = difficulties
+	
 	return instruments
 
 func add_song_to_ui(song_info: Dictionary):
@@ -295,29 +351,70 @@ func _on_song_selected(song_info: Dictionary):
 			difficulty_container.add_child(button)
 
 func _on_preview(song_info: Dictionary):
+	# Stop any currently playing audio
 	if audio_player.playing:
 		audio_player.stop()
-	var music_path = song_info.music_path
-	if music_path and FileAccess.file_exists(music_path):
-		var stream = load(music_path)
-		if stream:
-			audio_player.stream = stream
-			# Use preview_start_time from song.ini if available, otherwise use 1/3 of song
-			var preview_start = song_info.get("preview_start_time", -1.0)
-			if preview_start < 0:
-				var song_length = stream.get_length()
-				preview_start = song_length / 3.0
-			print("Preview start time: ", preview_start)
-			audio_player.play()
-			audio_player.seek(preview_start)
+	if midi_track_manager:
+		midi_track_manager.stop()
+		midi_track_manager.queue_free()
+		midi_track_manager = null
+	
+	# Check if this is a MIDI song
+	var chart_path = song_info.chart_path
+	var extension = chart_path.get_extension().to_lower()
+	var is_midi = (extension == "mid" or extension == "midi")
+	
+	if is_midi:
+		# Load multi-track MIDI preview
+		var folder_path = chart_path.get_base_dir()
+		var MidiAudioLoaderClass = load("res://Scripts/Audio/MidiAudioLoader.gd")
+		var audio_tracks = MidiAudioLoaderClass.scan_audio_files(folder_path)
+		
+		if not audio_tracks.is_empty():
+			var MidiTrackManagerClass = load("res://Scripts/Audio/MidiTrackManager.gd")
+			midi_track_manager = MidiTrackManagerClass.new()
+			add_child(midi_track_manager)
+			if midi_track_manager.load_tracks(audio_tracks):
+				# Use preview_start_time from song.ini if available
+				var preview_start = song_info.get("preview_start_time", -1.0)
+				if preview_start < 0:
+					# Default to 1/3 of song length (estimate ~180s for most songs)
+					preview_start = 60.0
+				print("MIDI Preview start time: ", preview_start)
+				midi_track_manager.play(preview_start)
+			else:
+				print("Failed to load MIDI tracks for preview")
+				midi_track_manager.queue_free()
+				midi_track_manager = null
 		else:
-			print("Failed to load audio stream: ", music_path)
+			print("No audio tracks found for MIDI song")
 	else:
-		print("Music file not found: ", music_path)
+		# Regular single-track preview
+		var music_path = song_info.music_path
+		if music_path and FileAccess.file_exists(music_path):
+			var stream = load(music_path)
+			if stream:
+				audio_player.stream = stream
+				# Use preview_start_time from song.ini if available, otherwise use 1/3 of song
+				var preview_start = song_info.get("preview_start_time", -1.0)
+				if preview_start < 0:
+					var song_length = stream.get_length()
+					preview_start = song_length / 3.0
+				print("Preview start time: ", preview_start)
+				audio_player.play()
+				audio_player.seek(preview_start)
+			else:
+				print("Failed to load audio stream: ", music_path)
+		else:
+				print("Music file not found: ", music_path)
 
 func _on_play(chart_path: String, instrument: String, difficulty: String):
 	if audio_player.playing:
 		audio_player.stop()
+	if midi_track_manager:
+		midi_track_manager.stop()
+		midi_track_manager.queue_free()
+		midi_track_manager = null
 	var loading_screen = load("res://Scenes/loading_screen.tscn").instantiate()
 	loading_screen.chart_path = chart_path
 	loading_screen.instrument = difficulty + instrument
@@ -326,12 +423,21 @@ func _on_play(chart_path: String, instrument: String, difficulty: String):
 func _on_back_button_pressed():
 	if audio_player.playing:
 		audio_player.stop()
+	if midi_track_manager:
+		midi_track_manager.stop()
+		midi_track_manager.queue_free()
+		midi_track_manager = null
 	SceneSwitcher.pop_scene()
 
 func _notification(what):
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
-		if not visible and audio_player.playing:
-			audio_player.stop()
+		if not visible:
+			if audio_player.playing:
+				audio_player.stop()
+			if midi_track_manager:
+				midi_track_manager.stop()
+				midi_track_manager.queue_free()
+				midi_track_manager = null
 
 # ============================================================================
 # Score History Integration

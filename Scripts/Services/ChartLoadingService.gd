@@ -12,18 +12,22 @@ class ChartData:
 	var offset: float
 	var tempo_events: Array
 	var notes: Array
-	var music_stream: String
-	var parser: Variant  # ParserInterface implementation
+	var music_stream: String  # Single audio file (legacy/non-MIDI songs)
+	var audio_tracks: Array   # Multiple audio tracks (MIDI songs) - Array of MidiTrackManager.AudioTrackInfo
+	var is_midi: bool         # Whether this is a MIDI song with multiple tracks
+	var parser: Variant       # ParserInterface implementation
 	
 	func _init(p_sections: Dictionary = {}, p_resolution: int = 0, p_offset: float = 0.0,
 			   p_tempo_events: Array = [], p_notes: Array = [], p_music_stream: String = "",
-			   p_parser: Variant = null):
+			   p_audio_tracks: Array = [], p_is_midi: bool = false, p_parser: Variant = null):
 		sections = p_sections
 		resolution = p_resolution
 		offset = p_offset
 		tempo_events = p_tempo_events
 		notes = p_notes
 		music_stream = p_music_stream
+		audio_tracks = p_audio_tracks
+		is_midi = p_is_midi
 		parser = p_parser
 
 var parser_factory: ParserFactory
@@ -74,18 +78,35 @@ func load_chart_data(chart_path: String, instrument: String, progress_callback: 
 	if progress_callback.is_valid():
 		progress_callback.call(75.0, "Loading music stream...")
 	
-	# Get music stream
-	var music_stream = parser.get_music_stream(sections)
-	if not music_stream:
-		# Fallback to ini parser
-		var ini_parser = parser_factory.create_metadata_parser()
-		music_stream = ini_parser.get_music_stream_from_ini(chart_path)
+	# Check if this is a MIDI file
+	var extension = chart_path.get_extension().to_lower()
+	var is_midi = (extension == "mid" or extension == "midi")
+	var music_stream = ""
+	var audio_tracks: Array = []
+	
+	if is_midi:
+		# Load multiple audio tracks for MIDI songs
+		var folder_path = chart_path.get_base_dir()
+		var MidiAudioLoaderClass = load("res://Scripts/Audio/MidiAudioLoader.gd")
+		audio_tracks = MidiAudioLoaderClass.scan_audio_files(folder_path)
+		
+		if audio_tracks.is_empty():
+			push_warning("ChartLoadingService: No audio tracks found for MIDI song: " + chart_path)
+		else:
+			print("ChartLoadingService: Loaded %d audio tracks for MIDI song" % audio_tracks.size())
+	else:
+		# Get single music stream for regular charts
+		music_stream = parser.get_music_stream(sections)
+		if not music_stream:
+			# Fallback to ini parser
+			var ini_parser = parser_factory.create_metadata_parser()
+			music_stream = ini_parser.get_music_stream_from_ini(chart_path)
 	
 	if progress_callback.is_valid():
 		progress_callback.call(100.0, "Chart loading complete")
 	
 	# Return structured data
-	return ChartData.new(sections, resolution, offset, tempo_events, notes, music_stream, parser)
+	return ChartData.new(sections, resolution, offset, tempo_events, notes, music_stream, audio_tracks, is_midi, parser)
 
 ## Load chart data synchronously (for quick loading without progress)
 ## @param chart_path: Path to the chart file
@@ -133,5 +154,7 @@ static func chart_data_from_preloaded(preloaded_data: Dictionary) -> ChartData:
 		preloaded_data.get("tempo_events", []),
 		preloaded_data.get("notes", []),
 		preloaded_data.get("music_stream", ""),
+		preloaded_data.get("audio_tracks", []),
+		preloaded_data.get("is_midi", false),
 		preloaded_data.get("parser", null)
 	)
