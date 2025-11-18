@@ -36,6 +36,7 @@ var music_volume: float = 0.6  # Music/track volume (quieter default)
 # Per-profile settings (loaded based on current_profile_id)
 var lane_keys: Array = [] # current runtime keycodes for lanes
 var default_lane_keys: Array = [KEY_D, KEY_F, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON]
+var limit_break_key: int = KEY_SPACE  # Limit Break activation key
 var note_speed: float = 20.0
 var timing_offset: float = 0.0
 
@@ -99,6 +100,7 @@ func load_profile_settings(profile_id: String):
 	if err == OK:
 		# Load and validate per-profile settings
 		lane_keys = validate_lane_keys(cfg.get_value("input", "lane_keys", default_lane_keys))
+		limit_break_key = validate_keycode(cfg.get_value("input", "limit_break_key", KEY_SPACE))
 		note_speed = validate_note_speed(cfg.get_value("gameplay", "note_speed", 20.0))
 		timing_offset = validate_timing_offset(cfg.get_value("timing", "offset", 0.0))
 	else:
@@ -111,6 +113,7 @@ func load_profile_settings(profile_id: String):
 			# Use defaults for new profile
 			push_warning("Could not load profile settings for " + profile_id + ", using defaults. Error: " + str(err))
 			lane_keys = default_lane_keys.duplicate()
+			limit_break_key = KEY_SPACE
 			note_speed = 20.0
 			timing_offset = 0.0
 			save_profile_settings()
@@ -143,11 +146,13 @@ func _migrate_legacy_settings_to_profile(profile_id: String):
 	
 	# Extract per-profile settings from legacy global config
 	var legacy_lane_keys = cfg.get_value("input", "lane_keys", default_lane_keys)
+	var legacy_limit_break_key = cfg.get_value("input", "limit_break_key", KEY_SPACE)
 	var legacy_note_speed = cfg.get_value("gameplay", "note_speed", 20.0)
 	var legacy_timing_offset = cfg.get_value("timing", "offset", 0.0)
 	
 	# Validate and set
 	lane_keys = validate_lane_keys(legacy_lane_keys)
+	limit_break_key = validate_keycode(legacy_limit_break_key)
 	note_speed = validate_note_speed(legacy_note_speed)
 	timing_offset = validate_timing_offset(legacy_timing_offset)
 	
@@ -156,6 +161,7 @@ func _migrate_legacy_settings_to_profile(profile_id: String):
 	
 	# Remove per-profile settings from global config and set migration flag
 	cfg.erase_section_key("input", "lane_keys")
+	cfg.erase_section_key("input", "limit_break_key")
 	cfg.erase_section_key("gameplay", "note_speed")
 	cfg.erase_section_key("timing", "offset")
 	cfg.set_value("meta", "settings_migrated", true)
@@ -184,6 +190,12 @@ func validate_lane_keys(keys) -> Array:
 			return default_lane_keys.duplicate()
 	
 	return keys
+
+func validate_keycode(keycode) -> int:
+	if not (keycode is int) or keycode < 0:
+		push_warning("Invalid keycode (" + str(keycode) + "), using default SPACE")
+		return KEY_SPACE
+	return keycode
 
 func validate_note_speed(speed) -> float:
 	var val = float(speed)
@@ -231,6 +243,7 @@ func save_profile_settings():
 	
 	var cfg = ConfigFile.new()
 	cfg.set_value("input", "lane_keys", lane_keys)
+	cfg.set_value("input", "limit_break_key", limit_break_key)
 	cfg.set_value("gameplay", "note_speed", note_speed)
 	cfg.set_value("timing", "offset", timing_offset)
 	cfg.save(settings_path)
@@ -243,6 +256,7 @@ func save_settings():
 func reset_defaults():
 	# Reset per-profile settings
 	lane_keys = default_lane_keys.duplicate()
+	limit_break_key = KEY_SPACE
 	note_speed = 20.0
 	timing_offset = 0.0
 	save_profile_settings()
@@ -326,6 +340,20 @@ func get_lane_key(index: int) -> int:
 	if index >= 0 and index < lane_keys.size():
 		return lane_keys[index]
 	return KEY_NONE
+
+func set_limit_break_key(scancode: int):
+	if scancode < 0:
+		push_error("Invalid scancode: " + str(scancode))
+		return
+	
+	# Check if key is already used by lane keys
+	for i in range(lane_keys.size()):
+		if lane_keys[i] == scancode:
+			push_warning("Key already assigned to lane " + str(i))
+			return
+	
+	limit_break_key = scancode
+	save_profile_settings()
 
 # Apply all volume settings to audio buses
 func _apply_volume_settings():

@@ -9,6 +9,8 @@ extends Node3D
 @onready var vfx_manager = $GameplayVFXManager
 var hit_effect_pool: Node
 var timeline_controller = null
+var limit_break_manager: Node = null
+var limit_break_ui: Control = null
 
 # Audio playback (supports both single-stream and MIDI multi-track)
 var midi_track_manager: Node = null  # For MIDI songs with multiple audio tracks
@@ -114,6 +116,20 @@ func _ready():
 	else:
 		animation_director = get_node("AnimationDirector")
 	
+	# Initialize Limit Break Manager
+	if not has_node("LimitBreakManager"):
+		limit_break_manager = load("res://Scripts/LimitBreakManager.gd").new()
+		limit_break_manager.name = "LimitBreakManager"
+		add_child(limit_break_manager)
+	else:
+		limit_break_manager = get_node("LimitBreakManager")
+	
+	# Load and add Limit Break UI
+	var lb_ui_scene = load("res://Scenes/Components/limit_break_ui.tscn")
+	limit_break_ui = lb_ui_scene.instantiate()
+	limit_break_ui.position = Vector2(10, 100)  # Position below score label
+	$UI.add_child(limit_break_ui)
+	
 	settings_manager = _get_settings_manager()
 	
 	# Initialize VFX manager with camera and environment references
@@ -146,6 +162,13 @@ func _ready():
 	note_spawner.connect("note_spawned", Callable(self, "_on_note_spawned"))
 	_on_combo_changed(0)
 	_on_score_changed(0)
+	
+	# Connect Limit Break signals
+	if limit_break_manager and limit_break_ui:
+		limit_break_manager.connect("charge_changed", Callable(self, "_on_limit_break_charge_changed"))
+		limit_break_manager.connect("limit_break_activated", Callable(self, "_on_limit_break_activated"))
+		limit_break_manager.connect("limit_break_deactivated", Callable(self, "_on_limit_break_deactivated"))
+		limit_break_manager.connect("limit_break_ready", Callable(self, "_on_limit_break_ready"))
 	
 	# Preload sound effects for gameplay
 	if SoundEffectManager:
@@ -321,8 +344,22 @@ func _process(_delta):
 			elif audio_player:
 				audio_pos = audio_player.get_playback_position()
 			dbg.get_node("VBox/AudioLabel").text = "Audio: %.3f" % audio_pos
+	
+	# Update Limit Break timer when active
+	if limit_break_manager and limit_break_manager.is_active and limit_break_ui:
+		limit_break_ui.update_timer(limit_break_manager.time_remaining)
 
 func _input(event):
+	# Handle Limit Break activation (only when not in timeline control)
+	# Let input_handler process it first for note hitting
+	if event is InputEventKey and event.pressed and not event.echo:
+		if limit_break_manager and settings_manager:
+			if event.keycode == settings_manager.limit_break_key:
+				# Activate Limit Break if ready
+				if limit_break_manager.is_ready:
+					limit_break_manager.activate_limit_break()
+				# Don't return - let other systems handle it too
+	
 	if not timeline_controller:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -447,7 +484,11 @@ func _on_note_hit(note, grade: int):
 		timeline_controller.add_command(cmd)
 	else:
 		# Regular gameplay scoring
-		score_manager.add_hit(grade, note.note_type)
+		var multiplier = limit_break_manager.get_score_multiplier() if limit_break_manager else 1.0
+		score_manager.add_hit(grade, note.note_type, multiplier)
+		# Charge Limit Break meter
+		if limit_break_manager:
+			limit_break_manager.add_charge_for_grade(grade)
 	# Fancy label animation (pass grade for size differentiation)
 	if animation_director:
 		animation_director.animate_judgement_label(label, grade)
@@ -621,3 +662,35 @@ func _sync_audio_to_timeline(force_seek: bool):
 			audio_player.seek(desired)
 		if not audio_player.playing:
 			audio_player.play()
+
+# Limit Break callback functions
+func _on_limit_break_charge_changed(current_charge: float, max_charge: float):
+	print("Gameplay: charge_changed callback - charge:", current_charge, "/", max_charge)
+	if limit_break_ui:
+		print("Gameplay: Calling limit_break_ui.update_charge()")
+		limit_break_ui.update_charge(current_charge, max_charge)
+	else:
+		print("Gameplay: ERROR - limit_break_ui is null!")
+
+func _on_limit_break_ready():
+	if limit_break_ui:
+		limit_break_ui.set_ready(true)
+		# Update the ready label to show the correct key
+		if settings_manager and limit_break_ui.has_node("ReadyLabel"):
+			var key_name = OS.get_keycode_string(settings_manager.limit_break_key)
+			limit_break_ui.get_node("ReadyLabel").text = "READY! Press %s to activate!" % key_name
+
+func _on_limit_break_activated():
+	if limit_break_ui:
+		limit_break_ui.set_ready(false)
+		limit_break_ui.set_active(true)
+	# Trigger VFX for activation
+	if vfx_manager:
+		vfx_manager.trigger_limit_break_start()
+
+func _on_limit_break_deactivated():
+	if limit_break_ui:
+		limit_break_ui.set_active(false)
+	# Trigger VFX for deactivation
+	if vfx_manager:
+		vfx_manager.trigger_limit_break_end()

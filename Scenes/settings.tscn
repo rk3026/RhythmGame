@@ -190,6 +190,22 @@ layout_mode = 2
 script = ExtResource("3")
 key_text = ";"
 
+[node name="LimitBreakKey" type="HBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys/LimitBreakKey"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Limit Break"
+
+[node name="KeybindDisplay" type="PanelContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LaneKeys/LimitBreakKey"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+script = ExtResource("3")
+key_text = "Space"
+
 [node name="GameplaySection" type="PanelContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer"]
 layout_mode = 2
 script = ExtResource("5")

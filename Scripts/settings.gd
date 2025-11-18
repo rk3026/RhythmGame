@@ -6,6 +6,7 @@ extends Control
 @onready var _volume_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MasterVolumeProgress/TopRow/ValueLabel
 
 var waiting_for_key_index: int = -1
+var waiting_for_limit_break_key: bool = false
 
 func _ready():
 	_load_values_into_ui()
@@ -27,6 +28,11 @@ func _connect_signals():
 		var lane_row = lane_keys_container.get_child(i)
 		var keybind_display = lane_row.get_node("KeybindDisplay")
 		keybind_display.keybind_changed.connect(_start_rebind.bind(i))
+	
+	# Connect Limit Break key button (if exists)
+	if has_node("Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey"):
+		var lb_keybind = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey/KeybindDisplay
+		lb_keybind.keybind_changed.connect(_start_limit_break_rebind)
 	
 	# Connect buttons
 	$Margin/VBox/ButtonsHBox/SaveButton.pressed.connect(_on_save)
@@ -54,6 +60,11 @@ func _load_values_into_ui():
 		var lane_row = lane_keys_container.get_child(i)
 		var keybind_display = lane_row.get_node("KeybindDisplay")
 		keybind_display.key_text = OS.get_keycode_string(SettingsManager.lane_keys[i])
+	
+	# Load Limit Break key (if UI element exists)
+	if has_node("Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey"):
+		var lb_keybind = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey/KeybindDisplay
+		lb_keybind.key_text = OS.get_keycode_string(SettingsManager.limit_break_key)
 
 func _on_note_speed_changed(value: float):
 	SettingsManager.set_note_speed(value)
@@ -81,6 +92,27 @@ func _start_rebind(index: int):
 	set_process_input(true)
 
 func _input(event):
+	if waiting_for_limit_break_key and event is InputEventKey and event.pressed and not event.echo:
+		# ESC cancels rebind
+		if event.keycode == KEY_ESCAPE:
+			_cancel_limit_break_rebind()
+			return
+		
+		# Update the Limit Break keybind
+		SettingsManager.set_limit_break_key(event.keycode)
+		
+		if has_node("Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey"):
+			var lb_keybind = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey/KeybindDisplay
+			lb_keybind.key_text = OS.get_keycode_string(event.keycode)
+			lb_keybind.set_state(lb_keybind.KeyState.NORMAL)
+		
+		waiting_for_limit_break_key = false
+		set_process_input(false)
+		
+		# Immediately save and apply the change
+		SettingsManager.save_settings()
+		return
+	
 	if waiting_for_key_index >= 0 and event is InputEventKey and event.pressed and not event.echo:
 		# ESC cancels rebind
 		if event.keycode == KEY_ESCAPE:
@@ -122,3 +154,20 @@ func _on_reset():
 func _on_back():
 	SettingsManager.save_settings()
 	SceneSwitcher.pop_scene()
+
+func _start_limit_break_rebind():
+	waiting_for_limit_break_key = true
+	if has_node("Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey"):
+		var lb_keybind = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey/KeybindDisplay
+		lb_keybind.key_text = "Press a key..."
+		lb_keybind.set_state(lb_keybind.KeyState.WAITING)
+	set_process_input(true)
+
+func _cancel_limit_break_rebind():
+	if waiting_for_limit_break_key:
+		if has_node("Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey"):
+			var lb_keybind = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent/LimitBreakKey/KeybindDisplay
+			lb_keybind.key_text = OS.get_keycode_string(SettingsManager.limit_break_key)
+			lb_keybind.set_state(lb_keybind.KeyState.NORMAL)
+		waiting_for_limit_break_key = false
+		set_process_input(false)

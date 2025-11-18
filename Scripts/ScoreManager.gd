@@ -8,7 +8,7 @@ var score = 0
 var max_combo = 0
 var grade_counts := {"perfect":0, "great":0, "good":0, "miss":0}
 
-func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR):
+func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR, score_multiplier: float = 1.0):
 	combo += 1
 	if combo > max_combo:
 		max_combo = combo
@@ -23,7 +23,7 @@ func add_hit(grade: int, note_type: NoteType.Type = NoteType.Type.REGULAR):
 		base_score = 5
 		grade_counts.good += 1
 	var type_multiplier = get_type_multiplier(note_type)
-	score += base_score * combo * type_multiplier
+	score += int(base_score * combo * type_multiplier * score_multiplier)
 	
 	# Play combo milestone sounds
 	if SoundEffectManager:

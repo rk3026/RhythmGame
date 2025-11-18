@@ -14,6 +14,10 @@ const PostProcessingManager = preload("res://Scripts/post_processing_manager.gd"
 @export var camera_shake: Node  # Will be CameraShake instance
 @export var post_processing: Node  # Will be PostProcessingManager instance
 
+# Board glow reference
+var board_glow_mesh: MeshInstance3D = null
+var glow_tween: Tween = null
+
 # VFX pools
 var lane_lights: Array = []
 var gpu_particle_pool: Array = []
@@ -60,6 +64,17 @@ func initialize(camera: Camera3D, world_env: WorldEnvironment, num_lanes: int, l
 	# Set up post-processing reference
 	if post_processing and post_processing is PostProcessingManager:
 		post_processing.world_environment = world_env
+	
+	# Find the board glow mesh (added in gameplay scene)
+	var gameplay = get_parent()
+	if gameplay and gameplay.has_node("Runway/LimitBreakGlow"):
+		board_glow_mesh = gameplay.get_node("Runway/LimitBreakGlow")
+		# Pre-warm the material to prevent first-activation lag
+		var mat = board_glow_mesh.get_surface_override_material(0)
+		if mat:
+			# Access the property once to initialize it
+			mat.emission_energy_multiplier = 1.0
+		print("Board glow mesh found and ready")
 	
 	# Initialize effect pools
 	_initialize_lane_lights()
@@ -234,3 +249,58 @@ func set_vfx_enabled(enabled: bool):
 func set_lane_positions(positions: Array[float]):
 	"""Update lane positions if they change"""
 	lane_positions = positions
+
+# ---------------- Limit Break VFX ----------------
+func trigger_limit_break_start():
+	"""Trigger visual effects when Limit Break activates"""
+	# Camera shake (reduced intensity)
+	if camera_shake and enable_camera_shake:
+		camera_shake.add_trauma(0.3)
+	
+	# Screen flash with orange/red color (reduced intensity)
+	if post_processing and enable_post_processing:
+		post_processing.trigger_hit_flash(Color(1.0, 0.5, 0.0), 1.2)
+	
+	# Trigger burst of particles across all lanes (reduced scale)
+	if enable_gpu_particles:
+		for i in range(lane_positions.size()):
+			var lane_pos = Vector3(lane_positions[i], 0, 0)
+			var particles = _get_available_particle()
+			if particles:
+				particles.global_position = lane_pos
+				particles.play(Color(1.0, 0.6, 0.0), 1.3)
+	
+	# Start board glow effect
+	if board_glow_mesh:
+		board_glow_mesh.visible = true
+		# Animate the glow pulsing
+		if glow_tween:
+			glow_tween.kill()
+		glow_tween = create_tween()
+		glow_tween.set_loops()
+		var mat = board_glow_mesh.get_surface_override_material(0)
+		if mat:
+			glow_tween.tween_property(mat, "emission_energy_multiplier", 1.8, 0.7)
+			glow_tween.tween_property(mat, "emission_energy_multiplier", 1.0, 0.7)
+
+func trigger_limit_break_end():
+	"""Trigger visual effects when Limit Break ends"""
+	# Light camera shake
+	if camera_shake and enable_camera_shake:
+		camera_shake.add_trauma(0.2)
+	
+	# Fade out screen flash
+	if post_processing and enable_post_processing:
+		post_processing.trigger_hit_flash(Color(0.5, 0.5, 0.5), 0.5)
+	
+	# Stop board glow effect
+	if board_glow_mesh:
+		if glow_tween:
+			glow_tween.kill()
+			glow_tween = null
+		# Fade out the glow
+		var fade_tween = create_tween()
+		var mat = board_glow_mesh.get_surface_override_material(0)
+		if mat:
+			fade_tween.tween_property(mat, "emission_energy_multiplier", 0.0, 0.5)
+		fade_tween.tween_callback(func(): board_glow_mesh.visible = false)

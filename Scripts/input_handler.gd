@@ -51,6 +51,29 @@ func setup_lane_keys(lanes_count: int):
 
 func _input(event):
 	if event is InputEventKey and not event.echo:
+		# Check for Limit Break key - triggers all lanes when ready
+		if is_instance_valid(SettingsManager) and event.keycode == SettingsManager.limit_break_key:
+			if event.pressed:
+				# Check if Limit Break is ready (can be used to hit notes)
+				if gameplay.limit_break_manager and gameplay.limit_break_manager.is_ready:
+					# Activate Limit Break first
+					print("InputHandler: Activating Limit Break!")
+					gameplay.limit_break_manager.activate_limit_break()
+					
+					# Process Limit Break hit for all lanes (only hits, no misses)
+					for i in range(lane_keys.size()):
+						key_states[i] = true
+						light_up_zone(i, true)
+						_process_limit_break_lane_input(i)
+			else:
+				# Key released
+				if gameplay.limit_break_manager and gameplay.limit_break_manager.is_ready:
+					for i in range(lane_keys.size()):
+						key_states[i] = false
+						light_up_zone(i, false)
+			return
+		
+		# Regular lane key processing
 		for i in range(lane_keys.size()):
 			if event.keycode == lane_keys[i]:
 				if event.pressed:
@@ -68,6 +91,61 @@ func _process(_delta: float):
 	for i in range(key_states.size()):
 		if key_states[i] and _has_sustain_held(i):
 			gameplay.score_manager.add_sustain_score(_delta)
+
+## Limit Break hit detection - only hits notes within good window, NEVER causes misses
+func _process_limit_break_lane_input(lane_index: int):
+	var current_time = _get_current_time()
+	var note_spawner = gameplay.get_node("NoteSpawner")
+	
+	# Get timing windows from settings
+	var perfect_window = SettingsManager.perfect_window if is_instance_valid(SettingsManager) else 0.025
+	var great_window = SettingsManager.great_window if is_instance_valid(SettingsManager) else 0.05
+	var good_window = SettingsManager.good_window if is_instance_valid(SettingsManager) else 0.1
+	
+	# Find the earliest unhit note in this lane
+	var target_note = _find_next_hittable_note_no_miss(lane_index, current_time, good_window, note_spawner)
+	
+	if not target_note:
+		return # No note to hit - THIS IS OK, not a miss
+	
+	# Calculate timing difference
+	var time_diff = current_time - target_note.expected_hit_time
+	var abs_diff = abs(time_diff)
+	
+	# Only hit if within good window - otherwise do nothing (no miss penalty)
+	if abs_diff <= good_window:
+		var grade = _calculate_grade(abs_diff, perfect_window, great_window, good_window)
+		_register_hit(target_note, grade, lane_index, current_time)
+	# If outside good window, do nothing - no miss registered
+
+## Find next hittable note without miss window (for Limit Break)
+func _find_next_hittable_note_no_miss(lane_index: int, current_time: float, good_window: float, note_spawner: Node) -> Node:
+	var lane_x = lanes[lane_index]
+	var earliest_note: Node = null
+	var earliest_time: float = INF
+	
+	for note in note_spawner.active_notes:
+		# Skip invalid or already processed notes
+		if not is_instance_valid(note):
+			continue
+		if note.was_hit or note.was_missed:
+			continue
+		
+		# Check if note is in the correct lane
+		if abs(note.position.x - lane_x) > 0.1 or note.fret != lane_index:
+			continue
+		
+		# Only consider notes within good window (no miss window)
+		var time_diff = abs(note.expected_hit_time - current_time)
+		if time_diff > good_window:
+			continue # Note is outside good window - skip it
+		
+		# Track the earliest note by expected hit time
+		if note.expected_hit_time < earliest_time:
+			earliest_time = note.expected_hit_time
+			earliest_note = note
+	
+	return earliest_note
 
 ## Core hit detection logic - finds and judges the next hittable note in a lane
 func _process_lane_input(lane_index: int):
