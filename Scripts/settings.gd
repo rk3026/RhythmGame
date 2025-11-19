@@ -4,6 +4,12 @@ extends Control
 @onready var _note_speed_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/NoteSpeedProgress/TopRow/ValueLabel
 @onready var _volume_slider: HSlider = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MasterVolumeProgress/Slider
 @onready var _volume_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MasterVolumeProgress/TopRow/ValueLabel
+@onready var _sfx_slider: HSlider = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/SFXVolumeProgress/Slider
+@onready var _sfx_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/SFXVolumeProgress/TopRow/ValueLabel
+@onready var _ui_slider: HSlider = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/UIVolumeProgress/Slider
+@onready var _ui_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/UIVolumeProgress/TopRow/ValueLabel
+@onready var _music_slider: HSlider = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MusicVolumeProgress/Slider
+@onready var _music_label: Label = $Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MusicVolumeProgress/TopRow/ValueLabel
 
 var waiting_for_key_index: int = -1
 var waiting_for_limit_break_key: bool = false
@@ -16,8 +22,11 @@ func _connect_signals():
 	# Connect note speed slider
 	_note_speed_slider.value_changed.connect(_on_note_speed_changed)
 	
-	# Connect volume slider
+	# Connect volume sliders
 	_volume_slider.value_changed.connect(_on_volume_changed)
+	_sfx_slider.value_changed.connect(_on_sfx_volume_changed)
+	_ui_slider.value_changed.connect(_on_ui_volume_changed)
+	_music_slider.value_changed.connect(_on_music_volume_changed)
 	
 	# Connect timing offset spinbox
 	$Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/TimingOffsetVBox/TimingOffsetSpin.value_changed.connect(_on_offset_changed)
@@ -51,6 +60,18 @@ func _load_values_into_ui():
 	_volume_slider.value = SettingsManager.master_volume
 	_volume_label.text = str(int(SettingsManager.master_volume * 100)) + "%"
 	
+	# Load SFX volume
+	_sfx_slider.value = SettingsManager.sfx_volume
+	_sfx_label.text = str(int(SettingsManager.sfx_volume * 100)) + "%"
+	
+	# Load UI volume
+	_ui_slider.value = SettingsManager.ui_volume
+	_ui_label.text = str(int(SettingsManager.ui_volume * 100)) + "%"
+	
+	# Load Music volume
+	_music_slider.value = SettingsManager.music_volume
+	_music_label.text = str(int(SettingsManager.music_volume * 100)) + "%"
+	
 	# Load timing offset
 	$Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent/TimingOffsetVBox/TimingOffsetSpin.value = int(SettingsManager.timing_offset * 1000.0)
 	
@@ -73,6 +94,18 @@ func _on_note_speed_changed(value: float):
 func _on_volume_changed(value: float):
 	SettingsManager.set_master_volume(value)
 	_volume_label.text = str(int(value * 100)) + "%"
+
+func _on_sfx_volume_changed(value: float):
+	SettingsManager.set_sfx_volume(value)
+	_sfx_label.text = str(int(value * 100)) + "%"
+
+func _on_ui_volume_changed(value: float):
+	SettingsManager.set_ui_volume(value)
+	_ui_label.text = str(int(value * 100)) + "%"
+
+func _on_music_volume_changed(value: float):
+	SettingsManager.set_music_volume(value)
+	_music_label.text = str(int(value * 100)) + "%"
 
 func _on_offset_changed(value):
 	# store in seconds internally

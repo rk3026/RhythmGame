@@ -85,7 +85,7 @@ theme_override_constants/separation = 15
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.7, 1, 1)
 theme_override_font_sizes/font_size = 28
-text = "🎹 KEY BINDINGS"
+text = "KEY BINDINGS"
 
 [node name="Divider" type="HSeparator" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/InputSection/InputMargin/InputContent"]
 layout_mode = 2
@@ -229,7 +229,7 @@ theme_override_constants/separation = 15
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 28
-text = "🎮 GAMEPLAY"
+text = "GAMEPLAY"
 
 [node name="Divider" type="HSeparator" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/GameplaySection/GameplayMargin/GameplayContent"]
 layout_mode = 2
@@ -302,7 +302,7 @@ theme_override_constants/separation = 15
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.4, 1, 1)
 theme_override_font_sizes/font_size = 28
-text = "🔊 AUDIO"
+text = "AUDIO"
 
 [node name="Divider" type="HSeparator" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent"]
 layout_mode = 2
@@ -332,6 +332,84 @@ layout_mode = 2
 max_value = 1.0
 step = 0.01
 value = 1.0
+
+[node name="SFXVolumeProgress" type="VBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/SFXVolumeProgress"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/SFXVolumeProgress/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "SFX Volume"
+
+[node name="ValueLabel" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/SFXVolumeProgress/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "100%"
+
+[node name="Slider" type="HSlider" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/SFXVolumeProgress"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="UIVolumeProgress" type="VBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/UIVolumeProgress"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/UIVolumeProgress/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "UI Volume"
+
+[node name="ValueLabel" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/UIVolumeProgress/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "100%"
+
+[node name="Slider" type="HSlider" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/UIVolumeProgress"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="MusicVolumeProgress" type="VBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MusicVolumeProgress"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MusicVolumeProgress/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Music Volume"
+
+[node name="ValueLabel" type="Label" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MusicVolumeProgress/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "60%"
+
+[node name="Slider" type="HSlider" parent="Margin/VBox/Scroll/CenterContainer/OptionsContainer/AudioSection/AudioMargin/AudioContent/MusicVolumeProgress"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.6
 
 [node name="ButtonsHBox" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
