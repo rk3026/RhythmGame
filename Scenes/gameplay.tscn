@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cy8f37l2slbwk"]
+[gd_scene load_steps=21 format=3 uid="uid://cy8f37l2slbwk"]
 
 [ext_resource type="Script" uid="uid://3arnqosf5atb" path="res://Scripts/gameplay.gd" id="1_abc123"]
 [ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="2_1qnfl"]
@@ -10,6 +10,11 @@
 [ext_resource type="Script" uid="uid://ce5ssio07plfe" path="res://Scripts/gameplay_vfx_manager.gd" id="8_vfx_manager"]
 [ext_resource type="Script" uid="uid://bmekkqi26t7ek" path="res://Scripts/camera_shake.gd" id="9_camera_shake"]
 [ext_resource type="Script" uid="uid://ckq2bn87s8ykn" path="res://Scripts/post_processing_manager.gd" id="10_post_processing"]
+[ext_resource type="Script" uid="uid://bpw6d1ixsqpjp" path="res://Scripts/animation_director.gd" id="11_animation_director"]
+[ext_resource type="Script" uid="uid://ck5copulc4dqv" path="res://Scripts/LimitBreakManager.gd" id="12_limit_break_manager"]
+[ext_resource type="Script" uid="uid://56xihmpj0ybu" path="res://Scripts/HitEffectPool.gd" id="13_hit_effect_pool"]
+[ext_resource type="Script" uid="uid://cs7i188am5saa" path="res://Scripts/TimelineController.gd" id="14_timeline_controller"]
+[ext_resource type="PackedScene" uid="uid://dlb5m8x7nj4k2" path="res://Scenes/Components/limit_break_ui.tscn" id="15_limit_break_ui"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_def456"]
 size = Vector2(10, 30)
@@ -70,6 +75,18 @@ transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70
 process_mode = 3
 script = ExtResource("2_pause_handler")
 
+[node name="TimelineController" type="Node" parent="."]
+script = ExtResource("14_timeline_controller")
+
+[node name="AnimationDirector" type="Node" parent="."]
+script = ExtResource("11_animation_director")
+
+[node name="LimitBreakManager" type="Node" parent="."]
+script = ExtResource("12_limit_break_manager")
+
+[node name="HitEffectPool" type="Node" parent="."]
+script = ExtResource("13_hit_effect_pool")
+
 [node name="InputHandler" type="Node" parent="."]
 script = ExtResource("4_input_handler")
 
@@ -103,7 +120,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 100.0
 offset_top = 587.0
-offset_right = -1215.0
+offset_right = -1287.0
 offset_bottom = -160.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -125,6 +142,22 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Score: 0"
 horizontal_alignment = 1
+
+[node name="LimitBreakUI" parent="UI/StatsContainer" instance=ExtResource("15_limit_break_ui")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ChargeBar" parent="UI/StatsContainer/LimitBreakUI" index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = -85.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="DebugTimeline" type="Panel" parent="UI"]
 offset_left = 620.0
@@ -243,3 +276,5 @@ text = "Song Select"
 [node name="MainMenuButton" type="Button" parent="UI/PauseMenu/Panel/VBoxContainer"]
 layout_mode = 2
 text = "Main Menu"
+
+[editable path="UI/StatsContainer/LimitBreakUI"]

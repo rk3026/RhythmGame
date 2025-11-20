@@ -7,10 +7,11 @@ extends Node3D
 @onready var note_spawner = $NoteSpawner
 @onready var note_pool = $NoteSpawner/NotePool
 @onready var vfx_manager = $GameplayVFXManager
-var hit_effect_pool: Node
-var timeline_controller = null
-var limit_break_manager: Node = null
-var limit_break_ui: Control = null
+@onready var hit_effect_pool: Node = $HitEffectPool
+@onready var timeline_controller: Node = $TimelineController
+@onready var limit_break_manager: Node = get_node_or_null("LimitBreakManager")
+@onready var limit_break_ui: Control = $UI/StatsContainer/LimitBreakUI
+@onready var animation_director: Node = get_node_or_null("AnimationDirector")
 
 # Audio playback (supports both single-stream and MIDI multi-track)
 var midi_track_manager: Node = null  # For MIDI songs with multiple audio tracks
@@ -38,7 +39,6 @@ var audio_player: AudioStreamPlayer
 var song_finished: bool = false
 var countdown_active: bool = false
 var settings_manager
-var animation_director: Node = null
 var chart_offset: float = 0.0
 
 func start_countdown(callback: Callable):
@@ -103,33 +103,6 @@ func _ready():
 	lanes = runway.lanes
 	original_materials = runway.original_materials
 
-	# Create hit effect pool (only once per gameplay instance)
-	hit_effect_pool = load("res://Scripts/HitEffectPool.gd").new()
-	hit_effect_pool.name = "HitEffectPool"
-	add_child(hit_effect_pool)
-
-	# Animation director (central lightweight animation system)
-	if not has_node("AnimationDirector"):
-		animation_director = load("res://Scripts/animation_director.gd").new()
-		animation_director.name = "AnimationDirector"
-		add_child(animation_director)
-	else:
-		animation_director = get_node("AnimationDirector")
-	
-	# Initialize Limit Break Manager
-	if not has_node("LimitBreakManager"):
-		limit_break_manager = load("res://Scripts/LimitBreakManager.gd").new()
-		limit_break_manager.name = "LimitBreakManager"
-		add_child(limit_break_manager)
-	else:
-		limit_break_manager = get_node("LimitBreakManager")
-	
-	# Load and add Limit Break UI
-	var lb_ui_scene = load("res://Scenes/Components/limit_break_ui.tscn")
-	limit_break_ui = lb_ui_scene.instantiate()
-	limit_break_ui.position = Vector2(10, 100)  # Position below score label
-	$UI.add_child(limit_break_ui)
-	
 	settings_manager = _get_settings_manager()
 	
 	# Initialize VFX manager with camera and environment references
@@ -259,14 +232,9 @@ func _start_note_spawning():
 	note_spawner.song_start_time = Time.get_ticks_msec() / 1000.0
 	input_handler.song_start_time = note_spawner.song_start_time
 	note_spawner.start_spawning()
-	# Build command list & initialize timeline controller (Phase 1: only spawn commands)
 	if not timeline_controller:
-		if not has_node("TimelineController"):
-			timeline_controller = load("res://Scripts/TimelineController.gd").new()
-			timeline_controller.name = "TimelineController"
-			add_child(timeline_controller)
-		else:
-			timeline_controller = $TimelineController
+		push_error("TimelineController node is missing from gameplay scene")
+		return
 	# Provide context
 	timeline_controller.ctx = {
 		"note_spawner": note_spawner,
@@ -307,20 +275,22 @@ func _process(_delta):
 			if diff > 0.050: # 50 ms tolerance
 				audio_player.seek(desired)
 	
-	# Detect completion: all notes spawned AND active notes empty AND (audio ended or no audio or timeline reached end)
-	var spawner_done = timeline_controller != null and timeline_controller.executed_count >= timeline_controller.command_log.size()
-	var no_active = note_spawner.active_notes.is_empty()
-	var audio_done = false
-	if is_midi_song and midi_track_manager:
-		audio_done = not midi_track_manager.is_playing
-	elif audio_player:
-		audio_done = not audio_player.playing
-	else:
-		audio_done = true  # No audio system loaded
-	var timeline_done = timeline_controller != null and timeline_controller.current_time >= timeline_controller.song_end_time
-	if spawner_done and no_active and (audio_done or timeline_done):
-		song_finished = true
-		_show_results()
+	# Detect completion only after timeline setup is active
+	var timeline_ready = timeline_controller != null and timeline_controller.active
+	if timeline_ready:
+		var spawner_done = timeline_controller.executed_count >= timeline_controller.command_log.size()
+		var no_active = note_spawner.active_notes.is_empty()
+		var audio_done = false
+		if is_midi_song and midi_track_manager:
+			audio_done = not midi_track_manager.is_playing
+		elif audio_player:
+			audio_done = not audio_player.playing
+		else:
+			audio_done = true  # No audio system loaded
+		var timeline_done = timeline_controller.current_time >= timeline_controller.song_end_time
+		if spawner_done and no_active and (audio_done or timeline_done):
+			song_finished = true
+			_show_results()
 	# Update debug timeline labels
 	if $UI.has_node("DebugTimeline") and timeline_controller:
 		var dbg = $UI/DebugTimeline
