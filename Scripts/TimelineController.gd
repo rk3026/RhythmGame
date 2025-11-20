@@ -9,6 +9,9 @@ var ctx: Dictionary = {}
 var song_end_time: float = 0.0
 var active: bool = false
 
+func _ready() -> void:
+	set_process(true)
+
 func setup(p_ctx: Dictionary, p_commands: Array, p_song_end: float) -> void:
 	ctx = p_ctx
 	command_log = p_commands

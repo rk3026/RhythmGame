@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://cy8f37l2slbwk"]
+[gd_scene load_steps=23 format=3 uid="uid://cy8f37l2slbwk"]
 
 [ext_resource type="Script" uid="uid://3arnqosf5atb" path="res://Scripts/gameplay.gd" id="1_abc123"]
 [ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="2_1qnfl"]
@@ -15,6 +15,8 @@
 [ext_resource type="Script" uid="uid://56xihmpj0ybu" path="res://Scripts/HitEffectPool.gd" id="13_hit_effect_pool"]
 [ext_resource type="Script" uid="uid://cs7i188am5saa" path="res://Scripts/TimelineController.gd" id="14_timeline_controller"]
 [ext_resource type="PackedScene" uid="uid://dlb5m8x7nj4k2" path="res://Scenes/Components/limit_break_ui.tscn" id="15_limit_break_ui"]
+[ext_resource type="Script" uid="uid://b3fuek63icfro" path="res://Scripts/timeline_manager.gd" id="16_timeline_manager"]
+[ext_resource type="PackedScene" uid="uid://bs73sbbuobfbh" path="res://Scenes/Components/timeline_debug_ui.tscn" id="17_timeline_debug_ui"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_def456"]
 size = Vector2(10, 30)
@@ -42,10 +44,6 @@ glow_blend_mode = 0
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause"]
 bg_color = Color(0, 0, 0, 0.8)
 border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 1, 1, 1)
 
 [node name="Gameplay" type="Node3D"]
 script = ExtResource("1_abc123")
@@ -74,6 +72,14 @@ transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70
 [node name="PauseHandler" type="Node" parent="."]
 process_mode = 3
 script = ExtResource("2_pause_handler")
+
+[node name="TimelineManager" type="Node" parent="."]
+script = ExtResource("16_timeline_manager")
+timeline_controller_path = NodePath("../TimelineController")
+note_spawner_path = NodePath("../NoteSpawner")
+note_pool_path = NodePath("../NoteSpawner/NotePool")
+score_manager_path = NodePath("../ScoreManager")
+timeline_ui_path = NodePath("../UI/DebugTimeline")
 
 [node name="TimelineController" type="Node" parent="."]
 script = ExtResource("14_timeline_controller")
@@ -120,7 +126,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 100.0
 offset_top = 587.0
-offset_right = -1287.0
+offset_right = -1342.0
 offset_bottom = -160.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -155,66 +161,9 @@ anchor_bottom = 1.0
 offset_left = 0.0
 offset_top = 0.0
 offset_right = 0.0
-offset_bottom = -85.0
+offset_bottom = -83.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="DebugTimeline" type="Panel" parent="UI"]
-offset_left = 620.0
-offset_top = 10.0
-offset_right = 940.0
-offset_bottom = 150.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_pause")
-
-[node name="VBox" type="VBoxContainer" parent="UI/DebugTimeline"]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 300.0
-offset_bottom = 130.0
-theme_override_constants/separation = 4
-
-[node name="Title" type="Label" parent="UI/DebugTimeline/VBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Timeline Debug"
-
-[node name="TimeLabel" type="Label" parent="UI/DebugTimeline/VBox"]
-layout_mode = 2
-text = "Time: 0.000"
-
-[node name="DirectionLabel" type="Label" parent="UI/DebugTimeline/VBox"]
-layout_mode = 2
-text = "Dir: +1"
-
-[node name="ProgressLabel" type="Label" parent="UI/DebugTimeline/VBox"]
-layout_mode = 2
-text = "Exec: 0/0"
-
-[node name="Buttons" type="HBoxContainer" parent="UI/DebugTimeline/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="Back2" type="Button" parent="UI/DebugTimeline/VBox/Buttons"]
-layout_mode = 2
-text = "<< -2s"
-
-[node name="Fwd2" type="Button" parent="UI/DebugTimeline/VBox/Buttons"]
-layout_mode = 2
-text = "+2s >>"
-
-[node name="ToggleDir" type="Button" parent="UI/DebugTimeline/VBox/Buttons"]
-layout_mode = 2
-text = "Toggle Dir"
-
-[node name="PauseButton" type="Button" parent="UI"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -80.0
-offset_bottom = 40.0
-grow_horizontal = 0
-text = "Pause"
 
 [node name="PauseMenu" type="Control" parent="UI"]
 visible = false
@@ -276,5 +225,11 @@ text = "Song Select"
 [node name="MainMenuButton" type="Button" parent="UI/PauseMenu/Panel/VBoxContainer"]
 layout_mode = 2
 text = "Main Menu"
+
+[node name="DebugTimeline" parent="UI" instance=ExtResource("17_timeline_debug_ui")]
+offset_left = 620.0
+offset_top = 10.0
+offset_right = 940.0
+offset_bottom = 150.0
 
 [editable path="UI/StatsContainer/LimitBreakUI"]

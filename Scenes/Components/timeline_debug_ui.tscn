@@ -1,0 +1,58 @@
+[gd_scene load_steps=3 format=3 uid="uid://bs73sbbuobfbh"]
+
+[ext_resource type="Script" uid="uid://cqj6luynocy0" path="res://Scripts/UI/timeline_debug_ui.gd" id="1_ui_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_debug_panel"]
+bg_color = Color(0, 0, 0, 0.8)
+
+[node name="DebugTimeline" type="Panel"]
+custom_minimum_size = Vector2(320, 140)
+theme_override_styles/panel = SubResource("StyleBoxFlat_debug_panel")
+script = ExtResource("1_ui_script")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Timeline Debug"
+
+[node name="TimeLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Time: 0.000"
+
+[node name="DirectionLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Dir: +1"
+
+[node name="ProgressLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Exec: 0/0"
+
+[node name="AudioLabel" type="Label" parent="VBox"]
+visible = false
+layout_mode = 2
+text = "Audio: 0.000"
+
+[node name="Buttons" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Back2" type="Button" parent="VBox/Buttons"]
+layout_mode = 2
+text = "<< -2s"
+
+[node name="Fwd2" type="Button" parent="VBox/Buttons"]
+layout_mode = 2
+text = "+2s >>"
+
+[node name="ToggleDir" type="Button" parent="VBox/Buttons"]
+layout_mode = 2
+text = "Toggle Dir"
