@@ -43,7 +43,7 @@ var chart_offset: float = 0.0
 
 func start_countdown(callback: Callable):
 	countdown_active = true
-	var label = $UI/JudgementLabel
+	var label = $UI/StatsContainer/JudgementLabel
 	for i in range(3, 0, -1):
 		label.text = str(i)
 		label.modulate = Color.WHITE
@@ -425,7 +425,7 @@ func _show_results():
 	SceneSwitcher.push_scene_instance(results_scene)
 
 func _on_note_hit(note, grade: int):
-	var label = $UI/JudgementLabel
+	var label = $UI/StatsContainer/JudgementLabel
 	if current_tween:
 		current_tween.kill()
 	label.modulate.a = 1
@@ -501,7 +501,7 @@ func _on_note_hit(note, grade: int):
 	current_tween = null
 
 func _on_note_miss(_note):
-	var label = $UI/JudgementLabel
+	var label = $UI/StatsContainer/JudgementLabel
 	if current_tween:
 		current_tween.kill()
 	label.modulate.a = 1
@@ -530,9 +530,9 @@ func _on_note_miss(_note):
 	current_tween = null
 
 func _on_combo_changed(combo):
-	$UI/ComboLabel.text = "Combo: " + str(combo)
-	if combo > 0 and animation_director:
-		animation_director.animate_combo_label($UI/ComboLabel)
+	$UI/StatsContainer/ComboLabel.text = "Combo: " + str(combo)
+	# Removed combo label size tweening as per user request: no scaling animation.
+	# Keep any visual VFX triggers but do not animate the text size.
 	
 	# Trigger VFX for combo milestones
 	if vfx_manager and combo > 0 and combo % 50 == 0:
@@ -544,7 +544,7 @@ func _on_note_spawned(note):
 		animation_director.animate_note_spawn(note)
 
 func _on_score_changed(score):
-	$UI/ScoreLabel.text = "Score: " + str(int(score))
+	$UI/StatsContainer/ScoreLabel.text = "Score: " + str(int(score))
 	# Apply updated settings on score change (settings may have changed mid-game)
 	if settings_manager and is_instance_valid(SettingsManager):
 		# Re-sync lane keys if they were changed in settings

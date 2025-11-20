@@ -7,7 +7,6 @@ extends Node
 class_name AnimationDirector
 var _anims: Array = [] # Each: {node, property, from, to, elapsed, duration, ease, on_complete}
 var _sequences: Array = [] # Each: {steps: [anim dicts], index}
-var _base_scales_2d := {} # node_id -> Vector2
 
 enum EaseType { LINEAR, OUT_QUAD, IN_QUAD, OUT_BACK }
 
@@ -127,42 +126,14 @@ func animate_note_spawn(note: Node) -> void:
 		_animate(note, "modulate", note.modulate, base_col, 0.18, EaseType.OUT_QUAD)
 
 func animate_judgement_label(label: Label, grade: int = -1) -> void:
-	if not is_instance_valid(label):
-		return
-	# Store baseline scale once
-	var id = str(label.get_instance_id())
-	if not _base_scales_2d.has(id):
-		_base_scales_2d[id] = label.scale
-	# Clear existing scale anims to avoid stacking (no position movement now)
-	_kill_anims(label, "scale")
-	label.scale = _base_scales_2d[id]
-	# Subtle differentiated overshoot
-	var overshoot_mult = 1.08
-	if grade == 0: # Perfect
-		overshoot_mult = 1.12
-	elif grade == 3: # Bad
-		overshoot_mult = 1.04
-	var target = _base_scales_2d[id] * overshoot_mult
-	var up = _animate(label, "scale", label.scale, target, 0.06, EaseType.OUT_BACK)
-	var down = _animate(label, "scale", target, _base_scales_2d[id], 0.09, EaseType.OUT_QUAD)
-	_sequence([up, down])
-	# Mild color lift
-	var col = label.modulate
-	label.modulate = col.lightened(0.2)
-	_animate(label, "modulate", label.modulate, col, 0.12, EaseType.OUT_QUAD)
+	# Removed
+	return
 
-func animate_combo_label(label: Label) -> void:
-	if not is_instance_valid(label):
-		return
-	var id = str(label.get_instance_id())
-	if not _base_scales_2d.has(id):
-		_base_scales_2d[id] = Vector2(1,1) if label.scale == Vector2.ZERO else label.scale
-	_kill_anims(label, "scale")
-	label.scale = _base_scales_2d[id]
-	var overshoot = _base_scales_2d[id] * 1.12
-	var up = _animate(label, "scale", label.scale, overshoot, 0.055, EaseType.OUT_BACK)
-	var down = _animate(label, "scale", overshoot, _base_scales_2d[id], 0.09, EaseType.OUT_QUAD)
-	_sequence([up, down])
+func animate_combo_label(_label: Label) -> void:
+	# NO-OP: Previous implementation animated label.scale with a bounce effect.
+	# Combo label scaling animations were intentionally removed per user request.
+	# Keep this method as a compatibility stub in case external callers exist.
+	return
 
 func animate_lane_press(zone: MeshInstance3D, pressed: bool) -> void:
 	if not is_instance_valid(zone):

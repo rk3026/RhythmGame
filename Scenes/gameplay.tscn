@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cy8f37l2slbwk"]
+[gd_scene load_steps=16 format=3 uid="uid://cy8f37l2slbwk"]
 
 [ext_resource type="Script" uid="uid://3arnqosf5atb" path="res://Scripts/gameplay.gd" id="1_abc123"]
 [ext_resource type="Texture2D" uid="uid://cis2sntnjd6og" path="res://Assets/Textures/black-fabric-texture-background-vector.jpg" id="2_1qnfl"]
@@ -26,7 +26,6 @@ blend_mode = 1
 albedo_color = Color(1, 0.6, 0, 0.15)
 emission_enabled = true
 emission = Color(1, 0.5, 0, 1)
-emission_energy_multiplier = 1.0
 
 [sub_resource type="Environment" id="Environment_vfx"]
 background_mode = 1
@@ -98,28 +97,31 @@ script = ExtResource("10_post_processing")
 [node name="UI" type="CanvasLayer" parent="."]
 process_mode = 3
 
-[node name="JudgementLabel" type="Label" parent="UI"]
-offset_left = 350.0
-offset_top = 200.0
-offset_right = 450.0
-offset_bottom = 264.0
+[node name="StatsContainer" type="VBoxContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 100.0
+offset_top = 587.0
+offset_right = -1215.0
+offset_bottom = -160.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="JudgementLabel" type="Label" parent="UI/StatsContainer"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 64
+text = "GOOD"
 horizontal_alignment = 1
 
-[node name="ComboLabel" type="Label" parent="UI"]
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 110.0
-offset_bottom = 60.0
+[node name="ComboLabel" type="Label" parent="UI/StatsContainer"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Combo: 0"
 horizontal_alignment = 1
 
-[node name="ScoreLabel" type="Label" parent="UI"]
-offset_left = 10.0
-offset_top = 50.0
-offset_right = 110.0
-offset_bottom = 100.0
+[node name="ScoreLabel" type="Label" parent="UI/StatsContainer"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Score: 0"
 horizontal_alignment = 1
