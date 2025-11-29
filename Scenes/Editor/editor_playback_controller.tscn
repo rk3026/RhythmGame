@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://csfa1e6dx7tck"]
+
+[ext_resource type="Script" path="res://Scripts/Editor/editor_playback_controller.gd" id="1"]
+[ext_resource type="Script" path="res://Scripts/TimelineController.gd" id="2"]
+
+[node name="EditorPlaybackController" type="Node"]
+script = ExtResource("1")
+
+[node name="AudioPlayer" type="AudioStreamPlayer" parent="."]
+bus = "Music"
+
+[node name="TimelineController" type="Node" parent="."]
+script = ExtResource("2")

@@ -1,0 +1,30 @@
+# Godot-cpp build artifacts
+godot-cpp/bin/
+godot-cpp/.scons*
+godot-cpp/**/*.o
+godot-cpp/**/*.obj
+
+# Extension build artifacts
+bin/**/*.exp
+bin/**/*.lib
+bin/**/*.pdb
+*.o
+*.obj
+.sconsign.dblite
+.scons_cache/
+
+# IDE files
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.log
