@@ -163,3 +163,4 @@ text = "Click to select"
 
 [node name="AudioPlayer" type="AudioStreamPlayer" parent="."]
 unique_name_in_owner = true
+bus = &"Music"
