@@ -20,6 +20,8 @@ var current_tool: String = "Note"
 var current_note_type: NoteType.Type = NoteType.Type.REGULAR
 var snap_division: int = 16
 var tempo_events: Array = []
+var time_signatures: Array = []
+var resolution: int = 192
 var current_time: float = 0.0
 var erase_threshold: float = 0.2
 
@@ -55,16 +57,22 @@ func set_snap_division(division: int) -> void:
 func set_tempo_events(events: Array) -> void:
 	tempo_events = events.duplicate(true)
 
+func set_time_signatures(signatures: Array) -> void:
+	time_signatures = signatures.duplicate(true)
+
+func set_resolution(res: int) -> void:
+	resolution = max(res, 1)
+
 func set_current_time(time_value: float) -> void:
 	current_time = time_value
 
 func snap_time_to_grid(time_value: float) -> float:
-	var bpm: float = 120.0
-	if tempo_events.size() > 0:
-		bpm = tempo_events[0].bpm
-	var beat_duration: float = 60.0 / bpm
-	var snap_duration: float = beat_duration / (snap_division / 4.0)
-	return round(time_value / snap_duration) * snap_duration
+	# Convert time to tick using tempo events
+	var tick: int = TempoCalculator.time_to_tick(time_value, tempo_events, resolution)
+	# Snap tick to grid based on resolution, snap division, and time signatures
+	var snapped_tick: int = TempoCalculator.snap_tick_to_grid(tick, snap_division, resolution, time_signatures)
+	# Convert snapped tick back to time
+	return TempoCalculator.tick_to_time(snapped_tick, tempo_events, resolution)
 
 func _setup_preview_note() -> void:
 	preview_note = PreviewNoteScene.instantiate()
@@ -106,12 +114,16 @@ func _place_note_at_mouse(mouse_pos: Vector2) -> void:
 	var time_value: float = snap_time_to_grid(_position_to_time(world_pos.z))
 	if chart_document and not chart_document.find_note_by_lane_and_time(lane, time_value, 0.01).is_empty():
 		return
+	# Calculate tick position for the note
+	var tick: int = TempoCalculator.time_to_tick(time_value, tempo_events, resolution)
 	var note_data: Dictionary = {
 		"lane": lane,
 		"time": time_value,
+		"tick": tick,
 		"note_type": current_note_type,
 		"is_sustain": false,
-		"sustain_length": 0.0
+		"sustain_length": 0.0,
+		"sustain_length_ticks": 0
 	}
 	if add_note_callable.is_valid():
 		add_note_callable.call(note_data)

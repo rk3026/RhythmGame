@@ -5,6 +5,38 @@ class_name AudioPCMExtractor
 # Set to false if GDExtension is not built/available yet
 const USE_MINIAUDIO_EXTENSION: bool = true
 
+# Static cache for last extraction info
+static var _last_sample_rate: int = 0
+static var _last_channel_count: int = 0
+
+static func get_last_sample_rate() -> int:
+	return _last_sample_rate
+
+static func get_last_channel_count() -> int:
+	return _last_channel_count
+
+static func extract_pcm(file_path: String) -> PackedFloat32Array:
+	var extractor = AudioPCMExtractor.new()
+	return extractor._extract_from_file(file_path)
+
+func _extract_from_file(file_path: String) -> PackedFloat32Array:
+	var ext := file_path.get_extension().to_lower()
+	if ext in ["ogg", "mp3", "flac", "wav"]:
+		if USE_MINIAUDIO_EXTENSION and ext in ["ogg", "mp3", "flac"]:
+			var result := _from_miniaudio(file_path)
+			if result.size() > 0:
+				return result
+		# Try loading as wav
+		if ext == "wav":
+			var wave_resource: Resource = load(file_path)
+			if wave_resource and wave_resource.get_class() == "AudioStreamWAV":
+				AudioPCMExtractor._last_sample_rate = wave_resource.mix_rate
+				AudioPCMExtractor._last_channel_count = 2 if wave_resource.stereo else 1
+				return _from_wav(wave_resource)
+	
+	push_warning("AudioPCMExtractor: Unsupported audio format: " + ext)
+	return PackedFloat32Array()
+
 func extract(audio_stream: AudioStream, source_path: String = "") -> PackedFloat32Array:
 	if not audio_stream:
 		return PackedFloat32Array()
@@ -50,9 +82,13 @@ func _from_miniaudio(file_path: String) -> PackedFloat32Array:
 		push_error("MiniaudioDecoder failed to extract PCM from: " + file_path)
 		return PackedFloat32Array()
 	
-	# Success - log info
+	# Success - log info and store metadata
 	var sample_rate: int = MiniaudioDecoder.get_sample_rate()
 	var channels: int = MiniaudioDecoder.get_channel_count()
+	
+	AudioPCMExtractor._last_sample_rate = sample_rate
+	AudioPCMExtractor._last_channel_count = channels
+	
 	print("AudioPCMExtractor: Decoded %d samples (%d Hz, %d channels) from %s" % [
 		samples.size(),
 		sample_rate,

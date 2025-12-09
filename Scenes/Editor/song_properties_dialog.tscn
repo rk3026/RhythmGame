@@ -110,6 +110,29 @@ max_value = 10.0
 step = 0.001
 value = 0.0
 
+[node name="BPMContainer" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/BPMContainer"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "BPM:"
+
+[node name="BPMSpin" type="SpinBox" parent="VBox/BPMContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 40.0
+max_value = 300.0
+step = 0.1
+value = 120.0
+suffix = " (auto-detected)"
+
+[node name="DetectBPMButton" type="Button" parent="VBox/BPMContainer"]
+visible = false
+layout_mode = 2
+text = "Detect"
+tooltip_text = "Automatically detect BPM from audio file"
+
 [node name="HSeparator" type="HSeparator" parent="VBox"]
 layout_mode = 2
 

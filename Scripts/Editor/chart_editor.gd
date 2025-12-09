@@ -9,6 +9,7 @@ const EditorNoteVisualManager = preload("res://Scripts/Editor/Services/editor_no
 const ChartEditorFileService = preload("res://Scripts/Editor/Services/chart_editor_file_service.gd")
 const RunwayInteractionController = preload("res://Scripts/Editor/Services/runway_interaction_controller.gd")
 const EditorTransportController = preload("res://Scripts/Editor/Services/editor_transport_controller.gd")
+const BeatLineRenderer = preload("res://Scripts/Editor/Services/beat_line_renderer.gd")
 
 # References to UI components
 @onready var toolbar = $MainLayout/Toolbar
@@ -27,6 +28,7 @@ const EditorTransportController = preload("res://Scripts/Editor/Services/editor_
 # Song properties dialog
 var song_properties_dialog: AcceptDialog
 var song_properties: Dictionary = {}
+var loading_overlay: Control = null
 
 # Chart data
 var current_chart_path: String = ""
@@ -34,6 +36,7 @@ var current_instrument: String = "Single"
 var current_difficulty: String = "Expert"
 var chart_document: ChartDocument
 var tempo_events: Array = []
+var time_signatures: Array = []
 var resolution: int = 192
 var chart_resolution: int = 192  # Ticks per beat
 var offset: float = 0.0
@@ -43,6 +46,7 @@ var note_visual_manager: EditorNoteVisualManager
 var file_service: ChartEditorFileService
 var runway_interaction: RunwayInteractionController
 var transport_controller: EditorTransportController
+var beat_line_renderer: BeatLineRenderer
 
 # Editor state
 var current_time: float = 0.0
@@ -74,16 +78,27 @@ func _ready():
 	file_service = ChartEditorFileService.new()
 	runway_interaction = RunwayInteractionController.new()
 	add_child(runway_interaction)
+	beat_line_renderer = BeatLineRenderer.new()
+	add_child(beat_line_renderer)
 	
 	# Initialize with default tempo if none exists
 	if tempo_events.is_empty():
-		tempo_events.append({"time": 0.0, "bpm": 120.0})
+		tempo_events.append({"tick": 0, "time": 0.0, "bpm": 120.0})
+	
+	# Initialize with default time signature if none exists
+	if time_signatures.is_empty():
+		time_signatures.append({"tick": 0, "numerator": 4, "denominator": 4})
+	
+	# Initialize song properties with default BPM
+	if not song_properties.has("bpm"):
+		song_properties["bpm"] = 120.0
 	
 	_setup_song_properties_dialog()
 	_setup_runway()
 	waveform_manager.configure(runway_board_renderer, num_lanes, settings_panel.hyperspeed)
 	note_visual_manager.set_lane_positions(lanes)
 	_configure_runway_interaction()
+	_configure_beat_line_renderer()
 	_setup_playback_controller()
 	_setup_transport_controller()
 	_connect_signals()
@@ -97,6 +112,12 @@ func _setup_song_properties_dialog():
 	song_properties_dialog = dialog_scene.instantiate()
 	add_child(song_properties_dialog)
 	song_properties_dialog.properties_saved.connect(_on_song_properties_saved)
+	
+	# Load loading overlay
+	var overlay_scene = load("res://Scenes/Editor/loading_overlay.tscn")
+	loading_overlay = overlay_scene.instantiate()
+	add_child(loading_overlay)
+	loading_overlay.visible = false
 
 func _setup_runway():
 	# Set up the 3D runway using the board_renderer system
@@ -147,7 +168,25 @@ func _configure_runway_interaction():
 	runway_interaction.set_note_type(_string_to_note_type(current_note_type))
 	runway_interaction.set_snap_division(snap_division)
 	runway_interaction.set_tempo_events(tempo_events)
+	runway_interaction.set_time_signatures(time_signatures)
+	runway_interaction.set_resolution(resolution)
 	runway_interaction.set_current_time(current_time)
+
+func _configure_beat_line_renderer():
+	if not beat_line_renderer:
+		return
+	var params = {
+		"runway_viewport": runway_viewport,
+		"camera": camera_3d,
+		"note_speed": SettingsManager.note_speed if SettingsManager else 20.0,
+		"viewport_height": runway_viewport.size.y if runway_viewport else 600.0
+	}
+	beat_line_renderer.configure(params)
+	beat_line_renderer.set_tempo_events(tempo_events)
+	beat_line_renderer.set_time_signatures(time_signatures)
+	beat_line_renderer.set_resolution(resolution)
+	beat_line_renderer.set_snap_division(snap_division)
+	beat_line_renderer.set_current_time(current_time)
 
 func _setup_playback_controller():
 	if not playback_controller:
@@ -288,6 +327,11 @@ func _update_editor_visuals():
 		note_visual_manager.refresh_positions()
 	if runway_interaction:
 		runway_interaction.set_current_time(current_time)
+	if beat_line_renderer:
+		beat_line_renderer.set_current_time(current_time)
+	
+	# Update beat display
+	_update_beat_display()
 
 func _update_editor_state():
 	# Full editor state update (called when manually seeking/scrubbing)
@@ -300,6 +344,21 @@ func _update_editor_state():
 		note_visual_manager.refresh_positions()
 	if runway_interaction:
 		runway_interaction.set_current_time(current_time)
+	if beat_line_renderer:
+		beat_line_renderer.set_current_time(current_time)
+
+func _update_beat_display():
+	# Calculate current beat and measure for display
+	if tempo_events.is_empty():
+		return
+	
+	var tick: int = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var beat_number: float = float(tick) / float(resolution)
+	var current_bpm: float = TempoCalculator.get_bpm_at_time(current_time, tempo_events)
+	
+	# Update settings panel with beat info (if it has a beat display label)
+	if settings_panel and settings_panel.has_method("set_beat_info"):
+		settings_panel.set_beat_info(beat_number, current_bpm, snap_division)
 
 # File operations
 func _on_file_new():
@@ -353,10 +412,17 @@ func load_chart(path: String):
 		push_error("Failed to load chart")
 		return
 	tempo_events = load_result.get("tempo_events", tempo_events)
+	time_signatures = load_result.get("time_signatures", time_signatures)
 	resolution = load_result.get("resolution", resolution)
 	offset = load_result.get("offset", offset)
 	if runway_interaction:
 		runway_interaction.set_tempo_events(tempo_events)
+		runway_interaction.set_time_signatures(time_signatures)
+		runway_interaction.set_resolution(resolution)
+	if beat_line_renderer:
+		beat_line_renderer.set_tempo_events(tempo_events)
+		beat_line_renderer.set_time_signatures(time_signatures)
+		beat_line_renderer.set_resolution(resolution)
 	print("Chart loaded successfully")
 
 func save_chart():
@@ -382,6 +448,30 @@ func _on_song_properties_saved(properties: Dictionary):
 		_load_audio_file(properties["audio_path"])
 	
 	offset = properties.get("offset", 0.0)
+	
+	# Update tempo events with BPM from song properties
+	var bpm = properties.get("bpm", 120.0)
+	if tempo_events.is_empty() or tempo_events[0].tick != 0:
+		# Create or update the initial tempo event
+		tempo_events.clear()
+		tempo_events.append({"tick": 0, "time": 0.0, "bpm": bpm})
+	else:
+		# Update existing initial tempo event
+		tempo_events[0].bpm = bpm
+	
+	# Propagate to all systems
+	if runway_interaction:
+		runway_interaction.set_tempo_events(tempo_events)
+	if beat_line_renderer:
+		beat_line_renderer.set_tempo_events(tempo_events)
+		# Force immediate visual update
+		beat_line_renderer.set_current_time(current_time)
+	
+	# Update settings panel beat display
+	if settings_panel and settings_panel.has_method("update_beat_info"):
+		settings_panel.update_beat_info()
+	
+	print("✓ Tempo events updated with BPM: ", bpm, " - UI refreshed")
 
 func _load_audio_file(path: String):
 	print("Loading audio file: ", path)
@@ -415,7 +505,12 @@ func _load_audio_file(path: String):
 		print("Audio loaded. Duration: ", song_duration, " seconds")
 		
 		if waveform_manager:
-			waveform_manager.regenerate_waveform(audio_stream, audio_file_path)
+			var progress_callback = func(message: String, progress: float):
+				_show_loading(message, progress)
+			
+			_show_loading("Processing audio...", 0.0)
+			await waveform_manager.regenerate_waveform(audio_stream, audio_file_path, progress_callback)
+			_hide_loading()
 	else:
 		audio_file_path = ""
 		push_error("Failed to load audio file: " + path)
@@ -490,13 +585,18 @@ func _place_note_at_cursor_time(lane: int):
 		print("Note already exists at this position")
 		return
 	
+	# Calculate tick position for the note
+	var tick: int = TempoCalculator.time_to_tick(time, tempo_events, resolution)
+	
 	# Create note data
 	var note_data = {
 		"lane": lane,
 		"time": time,
+		"tick": tick,
 		"note_type": _string_to_note_type(current_note_type),
 		"is_sustain": false,
-		"sustain_length": 0.0
+		"sustain_length": 0.0,
+		"sustain_length_ticks": 0
 	}
 	
 	_execute_add_note(note_data)
@@ -516,6 +616,8 @@ func _increase_snap_division():
 	settings_panel.set_snap_step(snap_division)
 	if runway_interaction:
 		runway_interaction.set_snap_division(snap_division)
+	if beat_line_renderer:
+		beat_line_renderer.set_snap_division(snap_division)
 	print("Snap division increased to 1/", snap_division)
 
 func _decrease_snap_division():
@@ -532,12 +634,28 @@ func _decrease_snap_division():
 	settings_panel.set_snap_step(snap_division)
 	if runway_interaction:
 		runway_interaction.set_snap_division(snap_division)
+	if beat_line_renderer:
+		beat_line_renderer.set_snap_division(snap_division)
 	print("Snap division decreased to 1/", snap_division)
 
 func _delete_selected_notes():
 	# TODO: Implement note selection system first
 	# For now, this is a placeholder
 	print("Delete selected notes - selection system not yet implemented")
+
+func _show_loading(message: String, progress: float = 0.0) -> void:
+	if loading_overlay:
+		loading_overlay.visible = true
+		var status_label = loading_overlay.get_node("CenterContainer/VBox/StatusLabel")
+		var progress_bar = loading_overlay.get_node("CenterContainer/VBox/ProgressBar")
+		if status_label:
+			status_label.text = message
+		if progress_bar:
+			progress_bar.value = progress
+
+func _hide_loading() -> void:
+	if loading_overlay:
+		loading_overlay.visible = false
 
 # Helper functions
 func _string_to_note_type(note_type_string: String) -> NoteType.Type:

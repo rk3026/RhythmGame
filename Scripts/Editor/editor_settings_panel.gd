@@ -4,6 +4,7 @@ extends PanelContainer
 @onready var note_count_label: Label = $VBox/NoteCountContainer/NoteCountLabel
 @onready var snap_step_label: Label = $VBox/SnapContainer/SnapStepLabel
 @onready var snap_step_option: OptionButton = $VBox/SnapContainer/SnapStepOption
+@onready var beat_info_label: Label = $VBox/BeatInfoLabel
 @onready var clap_checkbox: CheckBox = $VBox/ClapCheckbox
 @onready var hyperspeed_slider: HSlider = $VBox/HyperspeedContainer/HyperspeedSlider
 @onready var hyperspeed_label: Label = $VBox/HyperspeedContainer/HyperspeedLabel
@@ -76,3 +77,11 @@ func set_snap_step(value: int):
 		snap_step_option.selected = index
 		snap_step_label.text = "Step: 1/" + str(snap_step)
 		# Note: Don't emit signal here to avoid infinite loops
+
+func set_beat_info(beat: float, bpm: float, snap_div: int):
+	# Update beat display in the dedicated beat info label
+	# Format: "Beat: 12.50 | 120.0 BPM"
+	if beat_info_label:
+		var beat_str = "Beat: %.2f" % beat
+		var bpm_str = " | %.1f BPM" % bpm
+		beat_info_label.text = beat_str + bpm_str

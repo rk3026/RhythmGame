@@ -21,8 +21,13 @@ func load_chart(path: String, instrument: String, chart_document: ChartDocument,
 	_import_chart_notes(chart_document, chart_data)
 	if command_stack:
 		command_stack.clear()
+	
+	# Calculate time field for tempo events using TempoCalculator
+	var tempo_events_with_time = TempoCalculator.recalculate_tempo_event_times(chart_data.tempo_events, chart_data.resolution)
+	
 	return {
-		"tempo_events": chart_data.tempo_events,
+		"tempo_events": tempo_events_with_time,
+		"time_signatures": chart_data.time_signatures,
 		"resolution": chart_data.resolution,
 		"offset": chart_data.offset
 	}

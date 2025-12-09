@@ -11,6 +11,7 @@ class ChartData:
 	var resolution: int
 	var offset: float
 	var tempo_events: Array
+	var time_signatures: Array
 	var notes: Array
 	var music_stream: String  # Single audio file (legacy/non-MIDI songs)
 	var audio_tracks: Array   # Multiple audio tracks (MIDI songs) - Array of MidiTrackManager.AudioTrackInfo
@@ -18,12 +19,14 @@ class ChartData:
 	var parser: Variant       # ParserInterface implementation
 	
 	func _init(p_sections: Dictionary = {}, p_resolution: int = 0, p_offset: float = 0.0,
-			   p_tempo_events: Array = [], p_notes: Array = [], p_music_stream: String = "",
-			   p_audio_tracks: Array = [], p_is_midi: bool = false, p_parser: Variant = null):
+			   p_tempo_events: Array = [], p_time_signatures: Array = [], p_notes: Array = [], 
+			   p_music_stream: String = "", p_audio_tracks: Array = [], p_is_midi: bool = false, 
+			   p_parser: Variant = null):
 		sections = p_sections
 		resolution = p_resolution
 		offset = p_offset
 		tempo_events = p_tempo_events
+		time_signatures = p_time_signatures
 		notes = p_notes
 		music_stream = p_music_stream
 		audio_tracks = p_audio_tracks
@@ -67,6 +70,11 @@ func load_chart_data(chart_path: String, instrument: String, progress_callback: 
 		progress_callback.call(30.0, "Loading tempo events...")
 	
 	var tempo_events = parser.get_tempo_events(sections)
+	var time_signatures = []
+	
+	# Load time signatures if parser supports it
+	if parser.has_method("get_time_signatures"):
+		time_signatures = parser.get_time_signatures(sections)
 	
 	if progress_callback.is_valid():
 		progress_callback.call(35.0, "Processing notes...")
@@ -106,7 +114,7 @@ func load_chart_data(chart_path: String, instrument: String, progress_callback: 
 		progress_callback.call(100.0, "Chart loading complete")
 	
 	# Return structured data
-	return ChartData.new(sections, resolution, offset, tempo_events, notes, music_stream, audio_tracks, is_midi, parser)
+	return ChartData.new(sections, resolution, offset, tempo_events, time_signatures, notes, music_stream, audio_tracks, is_midi, parser)
 
 ## Load chart data synchronously (for quick loading without progress)
 ## @param chart_path: Path to the chart file

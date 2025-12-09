@@ -122,6 +122,25 @@ func get_tempo_events(sections: Dictionary) -> Array:
 	events.sort_custom(func(a, b): return a.tick < b.tick)
 	return events
 
+func get_time_signatures(sections: Dictionary) -> Array:
+	var time_sigs = []
+	if sections.has("SyncTrack"):
+		for line in sections["SyncTrack"]:
+			if " = TS " in line:
+				var parts = line.split(" = TS ")
+				var tick = int(parts[0])
+				var time_sig_parts = parts[1].split(" ")
+				var numerator = int(time_sig_parts[0])
+				var denominator = 4
+				if time_sig_parts.size() > 1:
+					denominator = int(time_sig_parts[1])
+				time_sigs.append({tick = tick, numerator = numerator, denominator = denominator})
+	time_sigs.sort_custom(func(a, b): return a.tick < b.tick)
+	# Ensure there's always a default 4/4 time signature at tick 0
+	if time_sigs.is_empty() or time_sigs[0].tick != 0:
+		time_sigs.insert(0, {tick = 0, numerator = 4, denominator = 4})
+	return time_sigs
+
 func get_notes(sections: Dictionary, instrument: String, resolution: int, progress_callback: Callable = Callable()) -> Array:
 	var notes = []
 	var specials = {}  # pos -> {hopo_flip: bool, tap_flip: bool}

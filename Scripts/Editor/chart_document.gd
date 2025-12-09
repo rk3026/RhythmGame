@@ -91,9 +91,11 @@ func _sanitize_note(source: Dictionary) -> Dictionary:
 	var sanitized := {
 		"lane": int(source.get("lane", 0)),
 		"time": float(source.get("time", 0.0)),
+		"tick": int(source.get("tick", 0)),
 		"note_type": source.get("note_type", NoteType.Type.REGULAR),
 		"is_sustain": bool(source.get("is_sustain", false)),
 		"sustain_length": float(source.get("sustain_length", 0.0)),
+		"sustain_length_ticks": int(source.get("sustain_length_ticks", 0)),
 		"note_flags": source.get("note_flags", {}),
 		"metadata": source.get("metadata", {}),
 		"id": int(source.get("id", 0))

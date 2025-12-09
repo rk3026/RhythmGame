@@ -85,11 +85,16 @@ func update_scroll(current_time_value: float, song_duration: float) -> void:
 	if waveform_data.size() > 0 and waveform_mesh_instance:
 		_update_waveform_positions()
 
-func regenerate_waveform(audio_stream: AudioStream, source_path: String = "") -> void:
+func regenerate_waveform(audio_stream: AudioStream, source_path: String = "", progress_callback: Callable = Callable()) -> void:
 	if not audio_stream:
 		return
 	
 	print("=== GENERATING WAVEFORM (MOONSCRAPER STYLE) ===")
+	
+	if progress_callback.is_valid():
+		progress_callback.call("Extracting audio data...", 0.1)
+	await Engine.get_main_loop().process_frame
+	
 	var pcm_data = pcm_extractor.extract(audio_stream, source_path)
 	if pcm_data.is_empty():
 		print("ERROR: No PCM data")
@@ -120,44 +125,62 @@ func regenerate_waveform(audio_stream: AudioStream, source_path: String = "") ->
 	
 	# Store time/amplitude data
 	waveform_data.clear()
-	for i in range(num_points):
-		# Calculate which samples this point represents
-		var sample_start: int = i * SAMPLES_PER_POINT
-		var sample_end: int = min(sample_start + SAMPLES_PER_POINT, total_samples)
+	
+	var batch_size: int = 1000  # Process in batches for responsiveness
+	var batches: int = ceili(float(num_points) / float(batch_size))
+	
+	for batch in range(batches):
+		var start_i = batch * batch_size
+		var end_i = min(start_i + batch_size, num_points)
 		
-		# Calculate RMS (Root Mean Square) for this window - better represents perceived loudness
-		var sum_squares: float = 0.0
-		var max_amp: float = 0.0
-		for j in range(sample_start, sample_end):
-			var amp = abs(pcm_data[j])
-			sum_squares += amp * amp
-			if amp > max_amp:
-				max_amp = amp
+		for i in range(start_i, end_i):
+			# Calculate which samples this point represents
+			var sample_start: int = i * SAMPLES_PER_POINT
+			var sample_end: int = min(sample_start + SAMPLES_PER_POINT, total_samples)
+			
+			# Calculate RMS (Root Mean Square) for this window - better represents perceived loudness
+			var sum_squares: float = 0.0
+			var max_amp: float = 0.0
+			for j in range(sample_start, sample_end):
+				var amp = abs(pcm_data[j])
+				sum_squares += amp * amp
+				if amp > max_amp:
+					max_amp = amp
+			
+			var sample_count = sample_end - sample_start
+			var rms = sqrt(sum_squares / float(sample_count)) if sample_count > 0 else 0.0
+			
+			# Use weighted average of RMS and peak for better beat detection
+			var combined_amp = (rms * 0.7) + (max_amp * 0.3)
+			
+			# Calculate time for this point
+			var time: float = float(sample_start) / float(sample_rate)
+			
+			# Dynamic range compression: boost loud parts (beats) more
+			var scaled_amp: float
+			if combined_amp > BEAT_THRESHOLD:
+				# Apply stronger boost to beats
+				scaled_amp = (BEAT_THRESHOLD + (combined_amp - BEAT_THRESHOLD) * BEAT_BOOST) * WAVEFORM_WIDTH
+			else:
+				# Keep quiet parts quieter
+				scaled_amp = combined_amp * WAVEFORM_WIDTH * 0.5
+			
+			# Clamp to prevent extreme values
+			scaled_amp = clamp(scaled_amp, 0.0, WAVEFORM_WIDTH * 1.5)
+			
+			waveform_data.append({"time": time, "amplitude": scaled_amp})
 		
-		var sample_count = sample_end - sample_start
-		var rms = sqrt(sum_squares / float(sample_count)) if sample_count > 0 else 0.0
-		
-		# Use weighted average of RMS and peak for better beat detection
-		var combined_amp = (rms * 0.7) + (max_amp * 0.3)
-		
-		# Calculate time for this point
-		var time: float = float(sample_start) / float(sample_rate)
-		
-		# Dynamic range compression: boost loud parts (beats) more
-		var scaled_amp: float
-		if combined_amp > BEAT_THRESHOLD:
-			# Apply stronger boost to beats
-			scaled_amp = (BEAT_THRESHOLD + (combined_amp - BEAT_THRESHOLD) * BEAT_BOOST) * WAVEFORM_WIDTH
-		else:
-			# Keep quiet parts quieter
-			scaled_amp = combined_amp * WAVEFORM_WIDTH * 0.5
-		
-		# Clamp to prevent extreme values
-		scaled_amp = clamp(scaled_amp, 0.0, WAVEFORM_WIDTH * 1.5)
-		
-		waveform_data.append({"time": time, "amplitude": scaled_amp})
+		# Update progress and yield to UI after each batch
+		if progress_callback.is_valid():
+			var progress = 0.2 + (float(batch) / float(batches)) * 0.7  # 20-90%
+			progress_callback.call("Generating waveform... %d%%" % int(progress * 100), progress)
+		await Engine.get_main_loop().process_frame
 	
 	# Create initial mesh
+	if progress_callback.is_valid():
+		progress_callback.call("Finalizing waveform...", 0.95)
+	await Engine.get_main_loop().process_frame
+	
 	_update_waveform_positions()
 	
 	if waveform_mesh_instance:
