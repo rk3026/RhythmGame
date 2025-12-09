@@ -20,7 +20,6 @@ func _populate_shortcuts():
 		
 		{"category": "NOTE PLACEMENT"},
 		{"key": "1-5", "action": "Place note in lane 1-5"},
-		{"key": "Hold 1-5 (playback)", "action": "Create sustain note"},
 		{"key": "Shift+1", "action": "Regular note type"},
 		{"key": "Shift+2", "action": "HOPO note type"},
 		{"key": "Shift+3", "action": "Tap note type"},

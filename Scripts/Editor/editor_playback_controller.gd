@@ -84,6 +84,9 @@ func seek(time_value: float):
 	_emit_time(true)
 
 func get_current_time() -> float:
+	# If playing, return the actual audio position for most accurate time
+	if is_playing and audio_player.stream and audio_player.playing:
+		return audio_player.get_playback_position()
 	return timeline_controller.current_time
 
 func _process(delta: float):

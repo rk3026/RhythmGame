@@ -45,9 +45,13 @@ func start_spawning():
 		var spawn_time = hit_time - travel_time  # World time when note should appear at runway_begin_z
 		var lane = notes[i].fret  # Use fret as lane index
 		var note_type = get_note_type(notes[i])
-		var is_sustain = notes[i].length > 0
+		var is_sustain = false
 		var sustain_length = 0.0
-		if is_sustain:
+		if notes[i].has("sustain_length"):
+			is_sustain = notes[i].sustain_length > 0.0
+			sustain_length = notes[i].sustain_length
+		elif notes[i].has("length"):
+			is_sustain = notes[i].length > 0
 			sustain_length = (notes[i].length / resolution) * (60.0 / get_current_bpm(tempo_events, notes[i].pos))
 		# Deduplicate spawn entries: if an existing spawn has same lane & hit_time within tiny epsilon, skip
 		add_spawn_entry(spawn_time, lane, hit_time, note_type, is_sustain, sustain_length, travel_time)

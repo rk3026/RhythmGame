@@ -57,9 +57,6 @@ var note_placement_mode: bool = true
 var num_lanes: int = 5
 var show_waveform: bool = true  # Toggle for waveform display
 
-# Sustain note recording state
-var _sustain_recording: Dictionary = {}  # lane -> {start_time, start_tick, note_id}
-
 # Audio system
 var audio_stream: AudioStream
 var song_duration: float = 0.0
@@ -262,11 +259,11 @@ func _disable_focus_recursive(node: Node):
 func _unhandled_key_input(event: InputEvent):
 	# Use _unhandled_key_input to handle shortcuts after UI has had a chance
 	# This prevents shortcuts from interfering with text input fields
-	if event is InputEventKey:
-		if event.pressed:
+	if event is InputEventKey and event.pressed:
+		# Allow echo (key repeat) for navigation keys
+		var allow_echo = event.keycode in [KEY_LEFT, KEY_RIGHT]
+		if allow_echo or not event.echo:
 			_handle_keyboard_shortcut(event)
-		else:
-			_handle_key_release(event)
 
 func _handle_keyboard_shortcut(event: InputEventKey):
 	# Don't process shortcuts if user is typing in a text field
@@ -276,11 +273,6 @@ func _handle_keyboard_shortcut(event: InputEventKey):
 	
 	# Handle keyboard shortcuts for chart editor
 	var key = event.keycode
-	
-	# Allow arrow keys to repeat when held (echo), but block echo for other keys
-	var is_arrow_key = key == KEY_LEFT or key == KEY_RIGHT
-	if event.echo and not is_arrow_key:
-		return
 	
 	# Tool selection shortcuts (Q/W/E/R)
 	if not event.ctrl_pressed and not event.shift_pressed and not event.alt_pressed:
@@ -314,13 +306,7 @@ func _handle_keyboard_shortcut(event: InputEventKey):
 	# Note placement shortcuts (1-5 for lanes)
 	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note" and not event.shift_pressed:
 		var lane = key - KEY_1  # Convert KEY_1 to lane 0, KEY_2 to lane 1, etc.
-		
-		# If playback is playing, start sustain recording on key press
-		if playback_controller and playback_controller.is_playing:
-			_start_sustain_recording(lane)
-		else:
-			# Otherwise place note at cursor time (non-playing mode)
-			_place_note_at_cursor_time(lane)
+		_place_note_at_cursor_time(lane)
 		return
 	
 	# Timeline navigation - Arrow keys
@@ -384,91 +370,6 @@ func _handle_keyboard_shortcut(event: InputEventKey):
 		_delete_selected_notes()
 		get_viewport().set_input_as_handled()
 		return
-
-func _handle_key_release(event: InputEventKey):
-	# Handle key release events for sustain note recording
-	var key = event.keycode
-	
-	# Check if releasing a lane key (1-5) during sustain recording
-	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note":
-		var lane = key - KEY_1
-		if _sustain_recording.has(lane):
-			_end_sustain_recording(lane)
-
-func _start_sustain_recording(lane: int):
-	# Start recording a sustain note in the specified lane
-	if _sustain_recording.has(lane):
-		return  # Already recording in this lane
-	
-	var start_time = current_time
-	var start_tick = TempoCalculator.time_to_tick(start_time, tempo_events, resolution)
-	
-	# Snap to grid
-	start_tick = TempoCalculator.snap_tick_to_grid(start_tick, snap_division, resolution)
-	start_time = TempoCalculator.tick_to_time(start_tick, tempo_events, resolution)
-	
-	# Create the initial note
-	var note_data = {
-		"tick": start_tick,
-		"lane": lane,
-		"length": 0,  # Will be updated when key is released
-		"type": _string_to_note_type(current_note_type)
-	}
-	
-	# Add note and get its ID
-	var note_id = chart_document.add_note(note_data)
-	
-	# Add to command stack for undo/redo
-	if command_stack:
-		var command = AddNoteCommand.new(chart_document, note_data, note_id)
-		command_stack.push(command)
-	
-	# Update visuals
-	if note_visual_manager:
-		note_visual_manager.add_note_visual(note_id, chart_document.get_note(note_id))
-	
-	# Store recording state
-	_sustain_recording[lane] = {
-		"start_time": start_time,
-		"start_tick": start_tick,
-		"note_id": note_id
-	}
-	
-	print("Started sustain recording in lane ", lane, " at tick ", start_tick)
-
-func _end_sustain_recording(lane: int):
-	# End recording a sustain note and set its final length
-	if not _sustain_recording.has(lane):
-		return
-	
-	var recording = _sustain_recording[lane]
-	var end_time = current_time
-	var end_tick = TempoCalculator.time_to_tick(end_time, tempo_events, resolution)
-	
-	# Snap to grid
-	end_tick = TempoCalculator.snap_tick_to_grid(end_tick, snap_division, resolution)
-	
-	# Calculate length
-	var length = max(0, end_tick - recording.start_tick)
-	
-	# Update the note with the sustain length
-	if length > 0:
-		var old_note = chart_document.get_note(recording.note_id)
-		if old_note and not old_note.is_empty():
-			var new_note = old_note.duplicate()
-			new_note["length"] = length
-			_execute_update_note(recording.note_id, old_note, new_note)
-			print("Ended sustain recording in lane ", lane, " with length ", length, " ticks")
-	else:
-		# If length is 0, remove the note since no sustain was created
-		if command_stack:
-			var note_data = chart_document.get_note(recording.note_id)
-			chart_document.remove_note(recording.note_id)
-			if note_visual_manager:
-				note_visual_manager.remove_note_visual(recording.note_id)
-	
-	# Clear recording state
-	_sustain_recording.erase(lane)
 
 func _undo_editor_action():
 	if command_stack:
@@ -843,9 +744,11 @@ func _move_timeline_forward():
 	
 	current_time = clamp(next_time, 0.0, song_duration)
 	
-	# Sync playback controller to prevent jumping back when play is pressed
+	# Sync with playback controller so play starts from correct position
 	if playback_controller:
 		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
 	
 	_update_editor_state()
 
@@ -859,25 +762,37 @@ func _move_timeline_backward():
 	
 	current_time = max(0.0, prev_time)
 	
-	# Sync playback controller to prevent jumping back when play is pressed
+	# Sync with playback controller so play starts from correct position
 	if playback_controller:
 		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
 	
 	_update_editor_state()
 
 func _jump_to_start():
 	# Jump to the beginning of the song
 	current_time = 0.0
-	_update_editor_state()
+	
+	# Sync with playback controller
+	if playback_controller:
+		playback_controller.seek(current_time)
 	if transport_controller:
-		transport_controller.stop_playback()
+		transport_controller.set_current_time(current_time)
+	
+	_update_editor_state()
 
 func _jump_to_end():
 	# Jump to the end of the song
 	current_time = song_duration
-	_update_editor_state()
+	
+	# Sync with playback controller
+	if playback_controller:
+		playback_controller.seek(current_time)
 	if transport_controller:
-		transport_controller.stop_playback()
+		transport_controller.set_current_time(current_time)
+	
+	_update_editor_state()
 
 func _delete_selected_notes():
 	# TODO: Implement note selection system first
