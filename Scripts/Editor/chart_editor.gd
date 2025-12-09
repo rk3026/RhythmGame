@@ -4,6 +4,7 @@ const ChartDocumentResource = preload("res://Scripts/Editor/chart_document.gd")
 const EditorCommandStack = preload("res://Scripts/Editor/editor_command_stack.gd")
 const AddNoteCommand = preload("res://Scripts/Editor/Commands/add_note_command.gd")
 const RemoveNoteCommand = preload("res://Scripts/Editor/Commands/remove_note_command.gd")
+const UpdateNoteCommand = preload("res://Scripts/Editor/Commands/update_note_command.gd")
 const ChartEditorWaveformManager = preload("res://Scripts/Editor/Services/chart_editor_waveform_manager.gd")
 const EditorNoteVisualManager = preload("res://Scripts/Editor/Services/editor_note_visual_manager.gd")
 const ChartEditorFileService = preload("res://Scripts/Editor/Services/chart_editor_file_service.gd")
@@ -54,7 +55,10 @@ var snap_division: int = 16  # 1/16 notes by default
 var playback_speed: float = 1.0
 var note_placement_mode: bool = true
 var num_lanes: int = 5
-var show_waveform: bool = false  # Toggle for waveform display
+var show_waveform: bool = true  # Toggle for waveform display
+
+# Sustain note recording state
+var _sustain_recording: Dictionary = {}  # lane -> {start_time, start_tick, note_id}
 
 # Audio system
 var audio_stream: AudioStream
@@ -161,7 +165,8 @@ func _configure_runway_interaction():
 		"note_visual_manager": note_visual_manager,
 		"chart_document": chart_document,
 		"add_note_callable": func(note_data): _execute_add_note(note_data),
-		"remove_note_callable": func(note_id): _execute_remove_note(note_id)
+		"remove_note_callable": func(note_id): _execute_remove_note(note_id),
+		"update_note_callable": func(note_id, changes): _execute_update_note(note_id, changes)
 	}
 	runway_interaction.configure(params)
 	runway_interaction.set_tool(current_tool)
@@ -231,18 +236,113 @@ func _connect_signals():
 	toolbox.tool_selected.connect(_on_tool_selected)
 	toolbox.note_type_selected.connect(_on_note_type_selected)
 	
-func _input(event: InputEvent):
-	if event is InputEventKey and event.pressed and not event.echo:
-		_handle_keyboard_shortcut(event)
+	# Disable UI focus navigation to prevent shortcuts from interfering with UI
+	_disable_ui_focus_navigation()
+
+func _disable_ui_focus_navigation():
+	# Disable focus mode on all controls to prevent arrow keys and shortcuts from navigating UI
+	for child in get_tree().get_nodes_in_group("editor_ui"):
+		if child is Control:
+			child.focus_mode = Control.FOCUS_NONE
+	
+	# Specifically disable focus on common UI elements
+	if settings_panel:
+		_disable_focus_recursive(settings_panel)
+	if toolbar:
+		_disable_focus_recursive(toolbar)
+	if toolbox:
+		_disable_focus_recursive(toolbox)
+
+func _disable_focus_recursive(node: Node):
+	if node is Control:
+		node.focus_mode = Control.FOCUS_NONE
+	for child in node.get_children():
+		_disable_focus_recursive(child)
+
+func _unhandled_key_input(event: InputEvent):
+	# Use _unhandled_key_input to handle shortcuts after UI has had a chance
+	# This prevents shortcuts from interfering with text input fields
+	if event is InputEventKey:
+		if event.pressed:
+			_handle_keyboard_shortcut(event)
+		else:
+			_handle_key_release(event)
 
 func _handle_keyboard_shortcut(event: InputEventKey):
+	# Don't process shortcuts if user is typing in a text field
+	var focused = get_viewport().gui_get_focus_owner()
+	if focused and (focused is LineEdit or focused is TextEdit):
+		return
+	
 	# Handle keyboard shortcuts for chart editor
 	var key = event.keycode
 	
+	# Allow arrow keys to repeat when held (echo), but block echo for other keys
+	var is_arrow_key = key == KEY_LEFT or key == KEY_RIGHT
+	if event.echo and not is_arrow_key:
+		return
+	
+	# Tool selection shortcuts (Q/W/E/R)
+	if not event.ctrl_pressed and not event.shift_pressed and not event.alt_pressed:
+		match key:
+			KEY_Q:
+				_on_tool_selected("Cursor")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_W:
+				_on_tool_selected("Note")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_E:
+				_on_tool_selected("Erase")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_R:
+				_on_tool_selected("BPM")
+				get_viewport().set_input_as_handled()
+				return
+	
+	# Note type shortcuts (Shift + 1-4)
+	if event.shift_pressed and not event.ctrl_pressed and key >= KEY_1 and key <= KEY_4:
+		var note_types = ["Regular", "HOPO", "Tap", "Open"]
+		var type_index = key - KEY_1
+		if type_index < note_types.size():
+			_on_note_type_selected(note_types[type_index])
+			get_viewport().set_input_as_handled()
+			return
+	
 	# Note placement shortcuts (1-5 for lanes)
-	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note":
+	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note" and not event.shift_pressed:
 		var lane = key - KEY_1  # Convert KEY_1 to lane 0, KEY_2 to lane 1, etc.
-		_place_note_at_cursor_time(lane)
+		
+		# If playback is playing, start sustain recording on key press
+		if playback_controller and playback_controller.is_playing:
+			_start_sustain_recording(lane)
+		else:
+			# Otherwise place note at cursor time (non-playing mode)
+			_place_note_at_cursor_time(lane)
+		return
+	
+	# Timeline navigation - Arrow keys
+	if key == KEY_LEFT and not event.ctrl_pressed:
+		_move_timeline_backward()
+		get_viewport().set_input_as_handled()
+		return
+	
+	if key == KEY_RIGHT and not event.ctrl_pressed:
+		_move_timeline_forward()
+		get_viewport().set_input_as_handled()
+		return
+	
+	# Jump to start/end
+	if key == KEY_HOME:
+		_jump_to_start()
+		get_viewport().set_input_as_handled()
+		return
+	
+	if key == KEY_END:
+		_jump_to_end()
+		get_viewport().set_input_as_handled()
 		return
 	
 	# Playback control
@@ -285,6 +385,91 @@ func _handle_keyboard_shortcut(event: InputEventKey):
 		get_viewport().set_input_as_handled()
 		return
 
+func _handle_key_release(event: InputEventKey):
+	# Handle key release events for sustain note recording
+	var key = event.keycode
+	
+	# Check if releasing a lane key (1-5) during sustain recording
+	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note":
+		var lane = key - KEY_1
+		if _sustain_recording.has(lane):
+			_end_sustain_recording(lane)
+
+func _start_sustain_recording(lane: int):
+	# Start recording a sustain note in the specified lane
+	if _sustain_recording.has(lane):
+		return  # Already recording in this lane
+	
+	var start_time = current_time
+	var start_tick = TempoCalculator.time_to_tick(start_time, tempo_events, resolution)
+	
+	# Snap to grid
+	start_tick = TempoCalculator.snap_tick_to_grid(start_tick, snap_division, resolution)
+	start_time = TempoCalculator.tick_to_time(start_tick, tempo_events, resolution)
+	
+	# Create the initial note
+	var note_data = {
+		"tick": start_tick,
+		"lane": lane,
+		"length": 0,  # Will be updated when key is released
+		"type": _string_to_note_type(current_note_type)
+	}
+	
+	# Add note and get its ID
+	var note_id = chart_document.add_note(note_data)
+	
+	# Add to command stack for undo/redo
+	if command_stack:
+		var command = AddNoteCommand.new(chart_document, note_data, note_id)
+		command_stack.push(command)
+	
+	# Update visuals
+	if note_visual_manager:
+		note_visual_manager.add_note_visual(note_id, chart_document.get_note(note_id))
+	
+	# Store recording state
+	_sustain_recording[lane] = {
+		"start_time": start_time,
+		"start_tick": start_tick,
+		"note_id": note_id
+	}
+	
+	print("Started sustain recording in lane ", lane, " at tick ", start_tick)
+
+func _end_sustain_recording(lane: int):
+	# End recording a sustain note and set its final length
+	if not _sustain_recording.has(lane):
+		return
+	
+	var recording = _sustain_recording[lane]
+	var end_time = current_time
+	var end_tick = TempoCalculator.time_to_tick(end_time, tempo_events, resolution)
+	
+	# Snap to grid
+	end_tick = TempoCalculator.snap_tick_to_grid(end_tick, snap_division, resolution)
+	
+	# Calculate length
+	var length = max(0, end_tick - recording.start_tick)
+	
+	# Update the note with the sustain length
+	if length > 0:
+		var old_note = chart_document.get_note(recording.note_id)
+		if old_note and not old_note.is_empty():
+			var new_note = old_note.duplicate()
+			new_note["length"] = length
+			_execute_update_note(recording.note_id, old_note, new_note)
+			print("Ended sustain recording in lane ", lane, " with length ", length, " ticks")
+	else:
+		# If length is 0, remove the note since no sustain was created
+		if command_stack:
+			var note_data = chart_document.get_note(recording.note_id)
+			chart_document.remove_note(recording.note_id)
+			if note_visual_manager:
+				note_visual_manager.remove_note_visual(recording.note_id)
+	
+	# Clear recording state
+	_sustain_recording.erase(lane)
+
 func _undo_editor_action():
 	if command_stack:
 		command_stack.undo()
@@ -306,6 +491,13 @@ func _execute_remove_note(note_id: int):
 		command_stack.execute(cmd)
 	else:
 		chart_document.remove_note(note_id)
+
+func _execute_update_note(note_id: int, changes: Dictionary):
+	if command_stack:
+		var cmd = UpdateNoteCommand.new(chart_document, note_id, changes)
+		command_stack.execute(cmd)
+	else:
+		chart_document.update_note(note_id, changes)
 
 func _on_command_stack_changed(_can_undo: bool, _can_redo: bool):
 	# Placeholder: integrate with toolbar indicators or menu items when available.
@@ -467,9 +659,8 @@ func _on_song_properties_saved(properties: Dictionary):
 		# Force immediate visual update
 		beat_line_renderer.set_current_time(current_time)
 	
-	# Update settings panel beat display
-	if settings_panel and settings_panel.has_method("update_beat_info"):
-		settings_panel.update_beat_info()
+	# Update beat display with new BPM
+	_update_beat_display()
 	
 	print("✓ Tempo events updated with BPM: ", bpm, " - UI refreshed")
 
@@ -511,6 +702,9 @@ func _load_audio_file(path: String):
 			_show_loading("Processing audio...", 0.0)
 			await waveform_manager.regenerate_waveform(audio_stream, audio_file_path, progress_callback)
 			_hide_loading()
+			
+			# Enable waveform display by default
+			waveform_manager.set_waveform_enabled(show_waveform)
 	else:
 		audio_file_path = ""
 		push_error("Failed to load audio file: " + path)
@@ -637,6 +831,53 @@ func _decrease_snap_division():
 	if beat_line_renderer:
 		beat_line_renderer.set_snap_division(snap_division)
 	print("Snap division decreased to 1/", snap_division)
+
+# Timeline navigation functions
+func _move_timeline_forward():
+	# Move forward by one snap division
+	var subdivisions_per_beat = snap_division / 4.0
+	var ticks_per_subdivision = resolution / subdivisions_per_beat
+	var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var next_tick = current_tick + int(ticks_per_subdivision)
+	var next_time = TempoCalculator.tick_to_time(next_tick, tempo_events, resolution)
+	
+	current_time = clamp(next_time, 0.0, song_duration)
+	
+	# Sync playback controller to prevent jumping back when play is pressed
+	if playback_controller:
+		playback_controller.seek(current_time)
+	
+	_update_editor_state()
+
+func _move_timeline_backward():
+	# Move backward by one snap division
+	var subdivisions_per_beat = snap_division / 4.0
+	var ticks_per_subdivision = resolution / subdivisions_per_beat
+	var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var prev_tick = max(0, current_tick - int(ticks_per_subdivision))
+	var prev_time = TempoCalculator.tick_to_time(prev_tick, tempo_events, resolution)
+	
+	current_time = max(0.0, prev_time)
+	
+	# Sync playback controller to prevent jumping back when play is pressed
+	if playback_controller:
+		playback_controller.seek(current_time)
+	
+	_update_editor_state()
+
+func _jump_to_start():
+	# Jump to the beginning of the song
+	current_time = 0.0
+	_update_editor_state()
+	if transport_controller:
+		transport_controller.stop_playback()
+
+func _jump_to_end():
+	# Jump to the end of the song
+	current_time = song_duration
+	_update_editor_state()
+	if transport_controller:
+		transport_controller.stop_playback()
 
 func _delete_selected_notes():
 	# TODO: Implement note selection system first

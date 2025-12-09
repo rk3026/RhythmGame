@@ -79,6 +79,7 @@ func _setup_menus():
 	options_menu.add_check_item("Show Waveform", 11)
 	options_menu.add_check_item("Metronome", 12)
 	options_menu.set_item_checked(options_menu.get_item_index(10), true)  # Grid on by default
+	options_menu.set_item_checked(options_menu.get_item_index(11), true)  # Waveform on by default
 	options_menu.id_pressed.connect(_on_options_menu_id_pressed)
 	
 	# Help Menu
@@ -133,5 +134,16 @@ func _on_options_menu_id_pressed(id: int):
 			12:  # Metronome
 				metronome_toggled.emit(!is_checked)
 
-func _on_help_menu_id_pressed(_id: int):
-	help_requested.emit()
+func _on_help_menu_id_pressed(id: int):
+	match id:
+		0:  # Keyboard Shortcuts
+			_show_keyboard_shortcuts()
+		1:  # User Guide
+			help_requested.emit()
+		2:  # About
+			help_requested.emit()
+
+func _show_keyboard_shortcuts():
+	var shortcuts_panel_scene = load("res://Scenes/Editor/keyboard_shortcuts_panel.tscn")
+	var shortcuts_panel = shortcuts_panel_scene.instantiate()
+	get_tree().root.add_child(shortcuts_panel)

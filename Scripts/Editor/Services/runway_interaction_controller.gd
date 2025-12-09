@@ -14,6 +14,7 @@ var note_visual_manager: EditorNoteVisualManager = null
 var chart_document: ChartDocument = null
 var add_note_callable: Callable = Callable()
 var remove_note_callable: Callable = Callable()
+var update_note_callable: Callable = Callable()
 
 var preview_note: Sprite3D = null
 var current_tool: String = "Note"
@@ -25,6 +26,12 @@ var resolution: int = 192
 var current_time: float = 0.0
 var erase_threshold: float = 0.2
 
+# Sustain dragging state
+var is_dragging_sustain: bool = false
+var sustain_drag_note_id: int = 0
+var sustain_drag_start_time: float = 0.0
+var sustain_original_length: float = 0.0
+
 func configure(params: Dictionary) -> void:
 	runway_viewport = params.get("runway_viewport")
 	camera_3d = params.get("camera")
@@ -34,6 +41,7 @@ func configure(params: Dictionary) -> void:
 	chart_document = params.get("chart_document")
 	add_note_callable = params.get("add_note_callable", Callable())
 	remove_note_callable = params.get("remove_note_callable", Callable())
+	update_note_callable = params.get("update_note_callable", Callable())
 	_setup_preview_note()
 	if runway_viewport:
 		runway_viewport.gui_input.connect(_on_runway_input)
@@ -72,7 +80,8 @@ func snap_time_to_grid(time_value: float) -> float:
 	# Snap tick to grid based on resolution, snap division, and time signatures
 	var snapped_tick: int = TempoCalculator.snap_tick_to_grid(tick, snap_division, resolution, time_signatures)
 	# Convert snapped tick back to time
-	return TempoCalculator.tick_to_time(snapped_tick, tempo_events, resolution)
+	var snapped_time: float = TempoCalculator.tick_to_time(snapped_tick, tempo_events, resolution)
+	return snapped_time
 
 func _setup_preview_note() -> void:
 	preview_note = PreviewNoteScene.instantiate()
@@ -89,13 +98,26 @@ func _setup_preview_note() -> void:
 
 func _on_runway_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			if current_tool == "Note":
-				_place_note_at_mouse(event.position)
-			elif current_tool == "Erase":
-				_erase_note_at_mouse(event.position)
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				if current_tool == "Note":
+					_place_note_at_mouse(event.position)
+				elif current_tool == "Erase":
+					_erase_note_at_mouse(event.position)
+			else:
+				# Released - end any sustain drag
+				if is_dragging_sustain:
+					_end_sustain_drag()
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			if event.pressed:
+				_start_sustain_drag(event.position)
+			else:
+				if is_dragging_sustain:
+					_end_sustain_drag()
 	elif event is InputEventMouseMotion:
-		if current_tool == "Note":
+		if is_dragging_sustain:
+			_update_sustain_drag(event.position)
+		elif current_tool == "Note":
 			_update_preview_note(event.position)
 
 func _on_runway_mouse_entered() -> void:
@@ -111,7 +133,9 @@ func _place_note_at_mouse(mouse_pos: Vector2) -> void:
 	if world_pos == Vector3.ZERO:
 		return
 	var lane: int = _position_to_lane(world_pos.x)
-	var time_value: float = snap_time_to_grid(_position_to_time(world_pos.z))
+	var raw_time: float = _position_to_time(world_pos.z)
+	var time_value: float = snap_time_to_grid(raw_time)
+	
 	if chart_document and not chart_document.find_note_by_lane_and_time(lane, time_value, 0.01).is_empty():
 		return
 	# Calculate tick position for the note
@@ -193,3 +217,76 @@ func _position_to_lane(x_pos: float) -> int:
 func _position_to_time(z_pos: float) -> float:
 	var note_speed := SettingsManager.note_speed if SettingsManager else 20.0
 	return current_time - (z_pos / note_speed)
+
+# Sustain editing functions
+func _start_sustain_drag(mouse_pos: Vector2) -> void:
+	var world_pos: Vector3 = _mouse_to_runway_position(mouse_pos)
+	if world_pos == Vector3.ZERO:
+		return
+	
+	var lane: int = _position_to_lane(world_pos.x)
+	var time_value: float = _position_to_time(world_pos.z)
+	
+	# Find note at this position
+	if not chart_document:
+		return
+	var note: Dictionary = chart_document.find_note_by_lane_and_time(lane, time_value, 0.2)
+	if note.is_empty():
+		return
+	
+	# Start dragging this note's sustain
+	is_dragging_sustain = true
+	sustain_drag_note_id = note.get("id", 0)
+	sustain_drag_start_time = note.get("time", 0.0)
+	sustain_original_length = note.get("sustain_length", 0.0)
+
+func _update_sustain_drag(mouse_pos: Vector2) -> void:
+	if not is_dragging_sustain or sustain_drag_note_id == 0:
+		return
+	
+	var world_pos: Vector3 = _mouse_to_runway_position(mouse_pos)
+	if world_pos == Vector3.ZERO:
+		return
+	
+	var end_time: float = snap_time_to_grid(_position_to_time(world_pos.z))
+	
+	# Calculate new sustain length
+	var new_length: float = max(0.0, end_time - sustain_drag_start_time)
+	
+	# Update the note's sustain length directly (visual feedback during drag)
+	if chart_document:
+		var changes: Dictionary = {
+			"sustain_length": new_length,
+			"is_sustain": new_length > 0.0
+		}
+		chart_document.update_note(sustain_drag_note_id, changes)
+
+func _end_sustain_drag() -> void:
+	if not is_dragging_sustain:
+		return
+	
+	# Get the final sustain length
+	var note: Dictionary = chart_document.get_note(sustain_drag_note_id) if chart_document else {}
+	if not note.is_empty():
+		var final_length: float = note.get("sustain_length", 0.0)
+		
+		# Only create command if length actually changed
+		if abs(final_length - sustain_original_length) > 0.001:
+			# Calculate sustain length in ticks
+			var start_tick: int = TempoCalculator.time_to_tick(sustain_drag_start_time, tempo_events, resolution)
+			var end_tick: int = TempoCalculator.time_to_tick(sustain_drag_start_time + final_length, tempo_events, resolution)
+			var sustain_ticks: int = end_tick - start_tick
+			
+			# Execute through command for undo/redo support
+			if update_note_callable.is_valid():
+				var changes: Dictionary = {
+					"sustain_length": final_length,
+					"is_sustain": final_length > 0.0,
+					"sustain_length_ticks": sustain_ticks
+				}
+				update_note_callable.call(sustain_drag_note_id, changes)
+	
+	is_dragging_sustain = false
+	sustain_drag_note_id = 0
+	sustain_drag_start_time = 0.0
+	sustain_original_length = 0.0

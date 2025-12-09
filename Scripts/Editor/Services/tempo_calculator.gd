@@ -119,16 +119,21 @@ static func snap_tick_to_grid(tick: int, snap_division: int, resolution: int, ti
 	# snap_division = 4 means 1/4 notes (one per beat)
 	# snap_division = 8 means 1/8 notes (two per beat)
 	# snap_division = 16 means 1/16 notes (four per beat)
-	var real_beat_step = snap_division / 4.0  # 16/4 = 4 snaps per beat
-	var tick_gap = ticks_per_beat / real_beat_step
+	var subdivisions_per_beat = snap_division / 4  # 16/4 = 4 snaps per beat
+	var tick_gap = ticks_per_beat / subdivisions_per_beat
+	
+	# Ensure tick_gap is an integer to match beat line positions exactly
+	tick_gap = int(tick_gap)
+	if tick_gap < 1:
+		tick_gap = 1
 	
 	# Find offset from time signature start
 	var tick_offset_from_ts = tick - ts.get("tick", 0)
 	
-	# Snap to nearest grid line
-	var snapped_offset = round(float(tick_offset_from_ts) / tick_gap) * tick_gap
+	# Snap to nearest grid line using integer division for exact alignment
+	var snapped_offset = roundi(float(tick_offset_from_ts) / float(tick_gap)) * tick_gap
 	
-	return ts.get("tick", 0) + int(snapped_offset)
+	return ts.get("tick", 0) + snapped_offset
 
 # Helper function: Calculate ticks between two time points at a given BPM
 static func time_diff_to_ticks(time_delta: float, bpm: float, resolution: int) -> int:
