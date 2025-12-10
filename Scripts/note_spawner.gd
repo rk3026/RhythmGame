@@ -332,9 +332,9 @@ func reposition_active_notes(current_time: float):
 			var fraction = rel / note.travel_time
 			note.position.z = runway_begin_z + distance * fraction
 		else:
+			# Continue moving forward past the hit zone - don't cap at runway_end_z for sustains
 			var extra = rel - note.travel_time
-			var forward_z = min(runway_end_z, speed * extra)
-			note.position.z = forward_z
+			note.position.z = speed * extra
 
 func _check_passive_misses(current_time: float):
 	# Check if any unhit notes have passed beyond the miss window
