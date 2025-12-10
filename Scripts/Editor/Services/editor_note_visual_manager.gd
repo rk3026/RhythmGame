@@ -84,7 +84,10 @@ func _on_note_changed(note_id: int, note_data: Dictionary) -> void:
 	visual.is_sustain = note_data.is_sustain
 	visual.sustain_length = note_data.sustain_length
 	visual.position = _to_runway_position(note_data.time, note_data.lane)
+	
+	# Force immediate visual update - critical for sustain tails during playback
 	visual.update_visuals()
+	
 	if visual.has_method("set_selected"):
 		visual.set_selected(_selected_ids.has(note_id))
 

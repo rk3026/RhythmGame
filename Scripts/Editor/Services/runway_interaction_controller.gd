@@ -503,10 +503,13 @@ func _update_sustain_drag(mouse_pos: Vector2) -> void:
 	if world_pos == Vector3.ZERO:
 		return
 	
-	var end_time: float = snap_time_to_grid(_position_to_time(world_pos.z))
+	# Snap both start and end time to grid for clean sustain length
+	var snapped_start: float = snap_time_to_grid(sustain_drag_start_time)
+	var end_time_raw: float = _position_to_time(world_pos.z)
+	var snapped_end: float = snap_time_to_grid(end_time_raw)
 	
-	# Calculate new sustain length
-	var new_length: float = max(0.0, end_time - sustain_drag_start_time)
+	# Calculate new sustain length from snapped positions
+	var new_length: float = max(0.0, snapped_end - snapped_start)
 	
 	# Update the note's sustain length directly (visual feedback during drag)
 	if chart_document:

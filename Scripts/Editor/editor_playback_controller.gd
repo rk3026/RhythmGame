@@ -13,10 +13,13 @@ var is_playing: bool = false
 var _manual_time: float = 0.0
 var _last_reported_time: float = -1.0
 
+
+
 func _ready():
 	set_process(true)
 	timeline_controller.active = false
 	audio_player.finished.connect(_on_audio_finished)
+	print("[EditorPlayback] Ready")
 
 func configure(commands: Array = [], ctx: Dictionary = {}):
 	# Reuse the existing TimelineController so commands stay compatible with gameplay.
@@ -25,6 +28,8 @@ func configure(commands: Array = [], ctx: Dictionary = {}):
 	timeline_controller.scrub_to(0.0)
 	_manual_time = 0.0
 	_emit_time(true)
+	
+
 
 func set_audio_stream(stream: AudioStream):
 	if audio_player.playing:

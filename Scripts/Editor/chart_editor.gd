@@ -242,6 +242,7 @@ func _connect_signals():
 	# Toolbox signals
 	toolbox.tool_selected.connect(_on_tool_selected)
 	toolbox.note_type_selected.connect(_on_note_type_selected)
+	toolbox.sustain_toggled.connect(_on_sustain_toggled)
 	
 	# Progress bar / events panel signals
 	progress_bar.event_add_requested.connect(_on_event_add_requested)
@@ -325,7 +326,26 @@ func _handle_keyboard_shortcut(event: InputEventKey):
 	# Note placement shortcuts (1-5 for lanes)
 	if key >= KEY_1 and key <= KEY_5 and current_tool == "Note" and not event.shift_pressed:
 		var lane = key - KEY_1  # Convert KEY_1 to lane 0, KEY_2 to lane 1, etc.
-		_place_note_at_cursor_time(lane)
+		
+		# During playback with sustain mode: handle hold notes
+		if playback_controller and playback_controller.is_playing and sustain_mode_enabled:
+			if event.pressed:
+				_on_hold_key_pressed(lane)
+			else:
+				_on_hold_key_released(lane)
+			get_viewport().set_input_as_handled()
+			return
+		
+		# During playback WITHOUT sustain mode, or not playing: place regular note on key press only
+		if event.pressed:
+			if playback_controller and playback_controller.is_playing:
+				# Place note at current playback time
+				var current_time = playback_controller.get_current_time()
+				_place_note_at_time(lane, current_time)
+			else:
+				# Place note at cursor time
+				_place_note_at_cursor_time(lane)
+			get_viewport().set_input_as_handled()
 		return
 	
 	# Timeline navigation - Arrow keys with modifiers
@@ -415,6 +435,15 @@ func _execute_add_note(note_data: Dictionary):
 	else:
 		chart_document.add_note(note_data)
 
+func _execute_add_note_direct(note_data: Dictionary) -> int:
+	# Direct add that returns note ID (for playback hold notes)
+	if command_stack:
+		var cmd = AddNoteCommand.new(chart_document, note_data)
+		command_stack.execute(cmd)
+		return cmd.note_id
+	else:
+		return chart_document.add_note(note_data)
+
 func _execute_remove_note(note_id: int):
 	if command_stack:
 		var cmd = RemoveNoteCommand.new(chart_document, note_id)
@@ -428,6 +457,10 @@ func _execute_update_note(note_id: int, changes: Dictionary):
 		command_stack.execute(cmd)
 	else:
 		chart_document.update_note(note_id, changes)
+	
+	# The chart_document.update_note triggers note_changed signal
+	# which calls _on_note_changed in visual_manager
+	# That handler now forces immediate visual update
 
 func _execute_add_event(event_data: Dictionary):
 	if command_stack:
@@ -568,6 +601,9 @@ func load_chart(path: String):
 		beat_line_renderer.set_tempo_events(tempo_events)
 		beat_line_renderer.set_time_signatures(time_signatures)
 		beat_line_renderer.set_resolution(resolution)
+	# Update playback controller with new tempo data
+	if playback_controller:
+		_setup_playback_controller()
 	print("Chart loaded successfully")
 
 func save_chart():
@@ -679,6 +715,11 @@ func _on_hyperspeed_changed(speed: float):
 # Tool and note type selection
 var current_tool: String = "Note"
 var current_note_type: String = "Regular"
+var sustain_mode_enabled: bool = false
+
+# Hold note tracking (for sustain mode during playback)
+# Simple array: each index is a lane, value is null or {note_id, start_time, start_tick}
+var _hold_notes: Array = [null, null, null, null, null]  # 5 lanes
 
 func _on_tool_selected(tool_name: String):
 	current_tool = tool_name
@@ -691,6 +732,10 @@ func _on_note_type_selected(note_type: String):
 	if runway_interaction:
 		runway_interaction.set_note_type(_string_to_note_type(current_note_type))
 	print("Note type selected: ", note_type)
+
+func _on_sustain_toggled(enabled: bool):
+	sustain_mode_enabled = enabled
+	print("Sustain mode: ", "enabled" if enabled else "disabled")
 
 # Settings
 func set_snap_division(division: int):
@@ -724,6 +769,82 @@ func _on_transport_time_scrubbed(time_value: float):
 	if progress_bar:
 		progress_bar.set_current_time(current_time)
 	_update_editor_state()
+
+func _on_hold_key_pressed(lane: int):
+	# Ignore if already holding a note on this lane
+	if _hold_notes[lane] != null:
+		return
+	
+	var press_time = playback_controller.get_current_time()
+	var tick: int = TempoCalculator.time_to_tick(press_time, tempo_events, resolution)
+	
+	# Store the start time and tick, but don't create the note yet
+	_hold_notes[lane] = {
+		"start_time": press_time,
+		"start_tick": tick
+	}
+
+func _on_hold_key_released(lane: int):
+	if _hold_notes[lane] == null:
+		return
+	
+	var hold_data = _hold_notes[lane]
+	var start_time = hold_data["start_time"]
+	var start_tick = hold_data["start_tick"]
+	
+	# Clear tracking immediately
+	_hold_notes[lane] = null
+	
+	var release_time = playback_controller.get_current_time()
+	var sustain_length = release_time - start_time
+	var end_tick = TempoCalculator.time_to_tick(release_time, tempo_events, resolution)
+	var sustain_ticks = end_tick - start_tick
+	
+	# Create the note with the final sustain length
+	var note_data = {
+		"lane": lane,
+		"time": start_time,
+		"tick": start_tick,
+		"note_type": _string_to_note_type(current_note_type),
+		"is_sustain": sustain_length > 0.1,
+		"sustain_length": sustain_length if sustain_length > 0.1 else 0.0,
+		"sustain_length_ticks": sustain_ticks if sustain_length > 0.1 else 0
+	}
+	
+	_execute_add_note(note_data)
+
+func _finalize_all_hold_notes():
+	# Called when playback stops - finalize any notes still being held
+	for lane in range(5):
+		if _hold_notes[lane] != null:
+			_on_hold_key_released(lane)
+
+func _place_note_at_time(lane: int, time: float):
+	# Place a note at the specified time in the specified lane
+	if lane < 0 or lane >= num_lanes:
+		return
+	
+	# Check if a note already exists at this time and lane
+	if not chart_document.find_note_by_lane_and_time(lane, time, 0.01).is_empty():
+		print("Note already exists at this position")
+		return
+	
+	# Calculate tick position for the note
+	var tick: int = TempoCalculator.time_to_tick(time, tempo_events, resolution)
+	
+	# Create note data
+	var note_data = {
+		"lane": lane,
+		"time": time,
+		"tick": tick,
+		"note_type": _string_to_note_type(current_note_type),
+		"is_sustain": false,
+		"sustain_length": 0.0,
+		"sustain_length_ticks": 0
+	}
+	
+	_execute_add_note(note_data)
+	print("Note placed at lane ", lane, " time ", time, " (during playback)")
 
 func _place_note_at_cursor_time(lane: int):
 	# Place a note at the current timeline time in the specified lane

@@ -103,6 +103,7 @@ func update_visuals():
 			tail_instance = tail_scene.instantiate()
 			add_child(tail_instance)
 			tail_instance.connect("note_finished", Callable(self, "_on_tail_finished"))
+			tail_instance.visible = true
 		# Update tail properties
 		tail_instance.sustain_length = sustain_length
 		tail_instance.fret = fret

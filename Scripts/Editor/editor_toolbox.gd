@@ -3,6 +3,7 @@ extends PanelContainer
 # Signals for tool selection
 signal tool_selected(tool_name: String)
 signal note_type_selected(note_type: String)
+signal sustain_toggled(enabled: bool)
 
 # Tool buttons
 @onready var cursor_button: Button = $VBox/CursorButton
@@ -19,9 +20,13 @@ signal note_type_selected(note_type: String)
 @onready var open_button: Button = $VBox/OpenButton
 @onready var starpower_button: Button = $VBox/StarPowerButton
 
+# Sustain button
+@onready var sustain_button: Button = $VBox/SustainButton
+
 # Current selections
 var current_tool: String = "Note"
 var current_note_type: String = "Regular"
+var sustain_enabled: bool = false
 
 func _ready():
 	_connect_signals()
@@ -39,6 +44,8 @@ func _connect_signals():
 	tap_button.pressed.connect(_on_note_type_selected.bind("Tap"))
 	open_button.pressed.connect(_on_note_type_selected.bind("Open"))
 	starpower_button.pressed.connect(_on_note_type_selected.bind("StarPower"))
+	
+	sustain_button.toggled.connect(_on_sustain_toggled)
 
 func _on_tool_selected(tool_name: String):
 	current_tool = tool_name
@@ -50,8 +57,16 @@ func _on_note_type_selected(note_type: String):
 	note_type_selected.emit(note_type)
 	print("Note type selected: ", note_type)
 
+func _on_sustain_toggled(enabled: bool):
+	sustain_enabled = enabled
+	sustain_toggled.emit(enabled)
+	print("Sustain mode: ", "enabled" if enabled else "disabled")
+
 func get_current_tool() -> String:
 	return current_tool
 
 func get_current_note_type() -> String:
 	return current_note_type
+
+func is_sustain_enabled() -> bool:
+	return sustain_enabled

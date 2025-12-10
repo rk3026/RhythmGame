@@ -28,6 +28,14 @@ func set_current_time(time: float):
 func _connect_chart_signals():
 	if not chart_document:
 		return
+	# Disconnect first to avoid duplicate connections
+	if chart_document.event_added.is_connected(_on_event_added):
+		chart_document.event_added.disconnect(_on_event_added)
+	if chart_document.event_removed.is_connected(_on_event_removed):
+		chart_document.event_removed.disconnect(_on_event_removed)
+	if chart_document.event_changed.is_connected(_on_event_changed):
+		chart_document.event_changed.disconnect(_on_event_changed)
+	# Now connect
 	chart_document.event_added.connect(_on_event_added)
 	chart_document.event_removed.connect(_on_event_removed)
 	chart_document.event_changed.connect(_on_event_changed)
