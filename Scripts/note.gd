@@ -22,6 +22,16 @@ var reverse_mode: bool = false
 var spawn_command = null
 var movement_paused: bool = false  # Set externally by spawner to control movement
 var use_timeline_positioning: bool = false  # If true, spawner handles positioning, not delta movement
+var is_selected: bool = false : set = set_selected
+
+var _selection_indicator: MeshInstance3D = null
+
+func _get_visual_size() -> Vector2:
+	# Convert texture pixel size into world units using Sprite3D.pixel_size
+	if texture:
+		var tex_size: Vector2 = texture.get_size()
+		return tex_size * pixel_size
+	return Vector2(0.8, 0.8)
 
 func _ready():
 	# Elevated priority so it draws above board; tail will use a higher one
@@ -43,6 +53,7 @@ func reset():
 	spawn_command = null
 	movement_paused = false
 	use_timeline_positioning = false
+	is_selected = false
 	if tail_instance:
 		tail_instance.queue_free()
 		tail_instance = null
@@ -51,10 +62,13 @@ func reset():
 	modulate = Color.WHITE
 	visible = true
 	render_priority = 2
+	if _selection_indicator:
+		_selection_indicator.visible = false
 
 func update_visuals():
 	var texture_path = ""
 	var base_path = "res://Assets/Textures/Notes/"
+	scale = Vector3.ONE
 	
 	if note_type == NoteType.Type.OPEN:
 		texture_path = base_path + "note_star.png"
@@ -82,7 +96,6 @@ func update_visuals():
 		texture = load(texture_path)
 	
 	if is_sustain:
-		scale.y = 1.0 + sustain_length * SettingsManager.note_speed / 10.0  # make taller based on sustain length
 		modulate = Color(0.7, 0.7, 0.7)  # dimmer for sustain
 		# Create or update tail instance
 		if not tail_instance:
@@ -98,11 +111,11 @@ func update_visuals():
 		tail_instance.was_hit = was_hit
 		tail_instance.update_visuals()
 	else:
-		scale.y = 1.0
 		modulate = Color.WHITE
 		if tail_instance:
 			tail_instance.queue_free()
 			tail_instance = null
+	_update_selection_visuals()
 
 func _process(delta: float):
 	# Only use delta-based movement if NOT using timeline positioning
@@ -112,12 +125,52 @@ func _process(delta: float):
 		position.z += SettingsManager.note_speed * delta * dir
 
 	# Passive miss: note passed the hit zone without being hit
-	if position.z >= 5 and not was_hit and not was_missed and not reverse_mode:
+	if position.z >= 5 and not was_hit and not was_missed and not reverse_mode and not use_timeline_positioning:
 		was_missed = true
 		emit_signal("note_miss", self)
 		visible = false
 		if tail_instance:
 			tail_instance.visible = false
+
+func set_selected(selected: bool):
+	is_selected = selected
+	_update_selection_visuals()
+
+func _ensure_selection_indicator():
+	if _selection_indicator:
+		return
+	_selection_indicator = MeshInstance3D.new()
+	var mesh := QuadMesh.new()
+	mesh.size = _get_visual_size() * 1.05
+	_selection_indicator.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.1, 0.9, 1.0, 0.45)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.no_depth_test = true
+	mat.render_priority = 4
+	_selection_indicator.material_override = mat
+	_selection_indicator.position = Vector3(0, 0, 0.01)
+	add_child(_selection_indicator)
+
+func _resize_selection_indicator():
+	if not _selection_indicator:
+		return
+	var mesh := _selection_indicator.mesh
+	if mesh is QuadMesh:
+		mesh.size = _get_visual_size() * 1.05
+
+func _update_selection_visuals():
+	if is_selected:
+		_ensure_selection_indicator()
+		_resize_selection_indicator()
+		_selection_indicator.visible = true
+	else:
+		if _selection_indicator:
+			_selection_indicator.visible = false
+	if tail_instance and tail_instance.has_method("set_selected"):
+		tail_instance.set_selected(is_selected)
 
 func _on_tail_finished(_tail):
 	emit_signal("note_finished", self)

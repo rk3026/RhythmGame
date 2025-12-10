@@ -9,6 +9,7 @@ var settings_panel: Node = null
 var lanes: Array = []
 var note_visuals: Dictionary = {}
 var current_time: float = 0.0
+var _selected_ids: Dictionary = {}
 
 func _init(doc: ChartDocument, viewport: Node, panel: Node) -> void:
 	chart_document = doc
@@ -31,8 +32,14 @@ func refresh_positions() -> void:
 		if not visual:
 			continue
 		visual.position = _to_runway_position(note_data.time, note_data.lane)
-		var time_diff = note_data.time - current_time
-		visual.visible = time_diff > -1.0 and time_diff < 10.0
+		var head_time: float = note_data.time
+		var tail_end_time: float = head_time + (note_data.sustain_length if note_data.is_sustain else 0.0)
+		var pre_window: float = 1.0
+		var post_window: float = 10.0
+		var visible_by_time: bool = (tail_end_time - current_time) >= -pre_window and (head_time - current_time) <= post_window
+		visual.visible = visible_by_time
+		if visual.has_method("set_selected"):
+			visual.set_selected(_selected_ids.has(note_id))
 
 func to_runway_position(time_value: float, lane: int) -> Vector3:
 	return _to_runway_position(time_value, lane)
@@ -42,6 +49,7 @@ func clear_all() -> void:
 		if visual:
 			visual.queue_free()
 	note_visuals.clear()
+	_selected_ids.clear()
 
 func _connect_document() -> void:
 	if not chart_document:
@@ -62,6 +70,7 @@ func _on_note_removed(note_id: int) -> void:
 	if visual:
 		visual.queue_free()
 	note_visuals.erase(note_id)
+	_selected_ids.erase(note_id)
 	_update_note_count()
 
 func _on_note_changed(note_id: int, note_data: Dictionary) -> void:
@@ -76,6 +85,8 @@ func _on_note_changed(note_id: int, note_data: Dictionary) -> void:
 	visual.sustain_length = note_data.sustain_length
 	visual.position = _to_runway_position(note_data.time, note_data.lane)
 	visual.update_visuals()
+	if visual.has_method("set_selected"):
+		visual.set_selected(_selected_ids.has(note_id))
 
 func _on_document_cleared() -> void:
 	clear_all()
@@ -91,10 +102,22 @@ func _create_note_visual(note_id: int, note_data: Dictionary) -> void:
 	note.use_timeline_positioning = true
 	note.position = _to_runway_position(note_data.time, note_data.lane)
 	note.update_visuals()
+	note.set_selected(_selected_ids.has(note_id))
 	var viewport := runway_viewport.get_node("SubViewport") if runway_viewport else null
 	if viewport:
 		viewport.add_child(note)
 	note_visuals[note_id] = note
+
+func set_selection(selected_ids: Array) -> void:
+	_selected_ids.clear()
+	for id in selected_ids:
+		_selected_ids[id] = true
+	for note_id in note_visuals.keys():
+		var visual = note_visuals[note_id]
+		if not visual:
+			continue
+		if visual.has_method("set_selected"):
+			visual.set_selected(_selected_ids.has(note_id))
 
 func _update_note_count(forced_value: int = -1) -> void:
 	if not settings_panel:

@@ -19,6 +19,14 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="VBox"]
 layout_mode = 2
 
+[node name="ButtonContainer" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="AddButton" type="Button" parent="VBox/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ Add"
+
 [node name="ScrollContainer" type="ScrollContainer" parent="VBox"]
 custom_minimum_size = Vector2(0, 400)
 layout_mode = 2
@@ -27,3 +35,5 @@ size_flags_vertical = 3
 [node name="SectionList" type="VBoxContainer" parent="VBox/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[connection signal="pressed" from="VBox/ButtonContainer/AddButton" to="." method="_on_add_button_pressed"]

@@ -1,43 +1,61 @@
 extends PanelContainer
 
 # Signals
-signal section_selected(section_name: String)
+signal section_selected(event_id: int, time: float)
+signal event_add_requested(time: float)
+signal event_edit_requested(event_id: int)
+signal event_delete_requested(event_id: int)
 
 # UI elements
 @onready var section_list: VBoxContainer = $VBox/ScrollContainer/SectionList
 var sections: Array = []
+var chart_document: ChartDocument
+var song_duration: float = 0.0
+var current_time: float = 0.0
 
 func _ready():
-	# Add some default sections for visualization
-	_add_default_sections()
+	pass  # Wait for chart_document to be set
 
-func _add_default_sections():
-	# These will be replaced with actual song sections when a chart is loaded
-	var default_sections = [
-		{"name": "Intro", "time": 0.0, "percentage": 0.0},
-		{"name": "Verse 1A", "time": 10.0, "percentage": 5.0},
-		{"name": "Verse 2A", "time": 20.0, "percentage": 10.0},
-		{"name": "Riff 1A", "time": 30.0, "percentage": 15.0},
-		{"name": "Riff 2A", "time": 40.0, "percentage": 20.0},
-		{"name": "Bridge", "time": 50.0, "percentage": 25.0},
-		{"name": "Solo A", "time": 60.0, "percentage": 30.0},
-		{"name": "Solo B", "time": 70.0, "percentage": 35.0},
-		{"name": "Breakdown", "time": 80.0, "percentage": 40.0},
-		{"name": "Lotta Oranges", "time": 90.0, "percentage": 45.0},
-		{"name": "Chorus 1", "time": 100.0, "percentage": 50.0},
-		{"name": "Chorus 2", "time": 110.0, "percentage": 55.0},
-		{"name": "Verse 1B", "time": 120.0, "percentage": 60.0},
-		{"name": "Verse 2B", "time": 130.0, "percentage": 65.0},
-		{"name": "Riff 1B", "time": 140.0, "percentage": 70.0},
-		{"name": "Riff 2B", "time": 150.0, "percentage": 75.0},
-		{"name": "Outro A", "time": 160.0, "percentage": 80.0},
-		{"name": "Outro B", "time": 170.0, "percentage": 85.0},
-	]
+func configure(doc: ChartDocument, duration: float):
+	chart_document = doc
+	song_duration = duration
+	_connect_chart_signals()
+	refresh_sections()
+
+func set_current_time(time: float):
+	current_time = time
+
+func _connect_chart_signals():
+	if not chart_document:
+		return
+	chart_document.event_added.connect(_on_event_added)
+	chart_document.event_removed.connect(_on_event_removed)
+	chart_document.event_changed.connect(_on_event_changed)
+
+func _on_event_added(_event_id: int, _event_data: Dictionary):
+	refresh_sections()
+
+func _on_event_removed(_event_id: int):
+	refresh_sections()
+
+func _on_event_changed(_event_id: int, _event_data: Dictionary):
+	refresh_sections()
+
+func refresh_sections():
+	clear_sections()
+	if not chart_document:
+		return
 	
-	for section_data in default_sections:
-		add_section(section_data.name, section_data.time, section_data.percentage)
+	var events = chart_document.get_events()
+	for event_data in events:
+		var percentage = (event_data.time / song_duration * 100.0) if song_duration > 0 else 0.0
+		add_section(event_data.id, event_data.text, event_data.time, percentage)
 
-func add_section(section_name: String, time: float, percentage: float):
+func _on_add_button_pressed():
+	# Request to add event at current timeline position
+	event_add_requested.emit(current_time)
+
+func add_section(event_id: int, section_name: String, time: float, percentage: float):
 	var section_container = HBoxContainer.new()
 	
 	# Progress indicator (colored bar)
@@ -51,15 +69,34 @@ func add_section(section_name: String, time: float, percentage: float):
 	section_button.text = section_name
 	section_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	section_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	section_button.pressed.connect(_on_section_pressed.bind(section_name, time))
+	section_button.pressed.connect(_on_section_pressed.bind(event_id, time))
 	section_container.add_child(section_button)
 	
+	# Edit button
+	var edit_button = Button.new()
+	edit_button.text = "✎"
+	edit_button.custom_minimum_size = Vector2(30, 0)
+	edit_button.pressed.connect(_on_edit_pressed.bind(event_id))
+	section_container.add_child(edit_button)
+	
+	# Delete button
+	var delete_button = Button.new()
+	delete_button.text = "×"
+	delete_button.custom_minimum_size = Vector2(30, 0)
+	delete_button.pressed.connect(_on_delete_pressed.bind(event_id))
+	section_container.add_child(delete_button)
+	
 	section_list.add_child(section_container)
-	sections.append({"name": section_name, "time": time, "container": section_container})
+	sections.append({"id": event_id, "name": section_name, "time": time, "container": section_container})
 
-func _on_section_pressed(section_name: String, time: float):
-	section_selected.emit(section_name)
-	print("Section selected: ", section_name, " at time: ", time)
+func _on_section_pressed(event_id: int, time: float):
+	section_selected.emit(event_id, time)
+
+func _on_edit_pressed(event_id: int):
+	event_edit_requested.emit(event_id)
+
+func _on_delete_pressed(event_id: int):
+	event_delete_requested.emit(event_id)
 
 func _get_color_for_percentage(percentage: float) -> Color:
 	# Create a gradient from cyan to magenta based on song progress
@@ -76,12 +113,4 @@ func clear_sections():
 		child.queue_free()
 	sections.clear()
 
-func load_sections_from_chart(chart_sections: Array):
-	clear_sections()
-	var total_time = 100.0  # Will be replaced with actual song duration
-	
-	for section_data in chart_sections:
-		var section_name = section_data.name if section_data.has("name") else "Section"
-		var time = section_data.time if section_data.has("time") else 0.0
-		var percentage = (time / total_time) * 100.0
-		add_section(section_name, time, percentage)
+

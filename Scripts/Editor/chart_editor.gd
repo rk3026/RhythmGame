@@ -5,6 +5,9 @@ const EditorCommandStack = preload("res://Scripts/Editor/editor_command_stack.gd
 const AddNoteCommand = preload("res://Scripts/Editor/Commands/add_note_command.gd")
 const RemoveNoteCommand = preload("res://Scripts/Editor/Commands/remove_note_command.gd")
 const UpdateNoteCommand = preload("res://Scripts/Editor/Commands/update_note_command.gd")
+const AddEventCommand = preload("res://Scripts/Editor/Commands/add_event_command.gd")
+const RemoveEventCommand = preload("res://Scripts/Editor/Commands/remove_event_command.gd")
+const UpdateEventCommand = preload("res://Scripts/Editor/Commands/update_event_command.gd")
 const ChartEditorWaveformManager = preload("res://Scripts/Editor/Services/chart_editor_waveform_manager.gd")
 const EditorNoteVisualManager = preload("res://Scripts/Editor/Services/editor_note_visual_manager.gd")
 const ChartEditorFileService = preload("res://Scripts/Editor/Services/chart_editor_file_service.gd")
@@ -30,6 +33,7 @@ const BeatLineRenderer = preload("res://Scripts/Editor/Services/beat_line_render
 var song_properties_dialog: AcceptDialog
 var song_properties: Dictionary = {}
 var loading_overlay: Control = null
+var event_dialog: AcceptDialog = null
 
 # Chart data
 var current_chart_path: String = ""
@@ -119,6 +123,12 @@ func _setup_song_properties_dialog():
 	loading_overlay = overlay_scene.instantiate()
 	add_child(loading_overlay)
 	loading_overlay.visible = false
+	
+	# Load event dialog
+	var event_dialog_scene = load("res://Scenes/Editor/event_dialog.tscn")
+	event_dialog = event_dialog_scene.instantiate()
+	add_child(event_dialog)
+	event_dialog.event_saved.connect(_on_event_saved)
 
 func _setup_runway():
 	# Set up the 3D runway using the board_renderer system
@@ -233,6 +243,15 @@ func _connect_signals():
 	toolbox.tool_selected.connect(_on_tool_selected)
 	toolbox.note_type_selected.connect(_on_note_type_selected)
 	
+	# Progress bar / events panel signals
+	progress_bar.event_add_requested.connect(_on_event_add_requested)
+	progress_bar.event_edit_requested.connect(_on_event_edit_requested)
+	progress_bar.event_delete_requested.connect(_on_event_delete_requested)
+	progress_bar.section_selected.connect(_on_section_selected)
+	
+	# Configure progress bar with chart document
+	progress_bar.configure(chart_document, song_duration)
+	
 	# Disable UI focus navigation to prevent shortcuts from interfering with UI
 	_disable_ui_focus_navigation()
 
@@ -309,14 +328,24 @@ func _handle_keyboard_shortcut(event: InputEventKey):
 		_place_note_at_cursor_time(lane)
 		return
 	
-	# Timeline navigation - Arrow keys
-	if key == KEY_LEFT and not event.ctrl_pressed:
-		_move_timeline_backward()
+	# Timeline navigation - Arrow keys with modifiers
+	if key == KEY_LEFT:
+		if event.shift_pressed:
+			_move_timeline_backward_measure()
+		elif event.ctrl_pressed:
+			_move_timeline_backward_beat()
+		else:
+			_move_timeline_backward()
 		get_viewport().set_input_as_handled()
 		return
 	
-	if key == KEY_RIGHT and not event.ctrl_pressed:
-		_move_timeline_forward()
+	if key == KEY_RIGHT:
+		if event.shift_pressed:
+			_move_timeline_forward_measure()
+		elif event.ctrl_pressed:
+			_move_timeline_forward_beat()
+		else:
+			_move_timeline_forward()
 		get_viewport().set_input_as_handled()
 		return
 	
@@ -400,6 +429,27 @@ func _execute_update_note(note_id: int, changes: Dictionary):
 	else:
 		chart_document.update_note(note_id, changes)
 
+func _execute_add_event(event_data: Dictionary):
+	if command_stack:
+		var cmd = AddEventCommand.new(chart_document, event_data)
+		command_stack.execute(cmd)
+	else:
+		chart_document.add_event(event_data)
+
+func _execute_remove_event(event_id: int):
+	if command_stack:
+		var cmd = RemoveEventCommand.new(chart_document, event_id)
+		command_stack.execute(cmd)
+	else:
+		chart_document.remove_event(event_id)
+
+func _execute_update_event(event_id: int, changes: Dictionary):
+	if command_stack:
+		var cmd = UpdateEventCommand.new(chart_document, event_id, changes)
+		command_stack.execute(cmd)
+	else:
+		chart_document.update_event(event_id, changes)
+
 func _on_command_stack_changed(_can_undo: bool, _can_redo: bool):
 	# Placeholder: integrate with toolbar indicators or menu items when available.
 	pass
@@ -421,6 +471,7 @@ func _update_editor_visuals():
 	if runway_interaction:
 		runway_interaction.set_current_time(current_time)
 	if beat_line_renderer:
+		beat_line_renderer.set_note_speed(SettingsManager.note_speed if SettingsManager else 20.0)
 		beat_line_renderer.set_current_time(current_time)
 	
 	# Update beat display
@@ -438,6 +489,7 @@ func _update_editor_state():
 	if runway_interaction:
 		runway_interaction.set_current_time(current_time)
 	if beat_line_renderer:
+		beat_line_renderer.set_note_speed(SettingsManager.note_speed if SettingsManager else 20.0)
 		beat_line_renderer.set_current_time(current_time)
 
 func _update_beat_display():
@@ -596,6 +648,10 @@ func _load_audio_file(path: String):
 			timeline_slider.max_value = song_duration
 		print("Audio loaded. Duration: ", song_duration, " seconds")
 		
+		# Update progress bar with new song duration
+		if progress_bar:
+			progress_bar.configure(chart_document, song_duration)
+		
 		if waveform_manager:
 			var progress_callback = func(message: String, progress: float):
 				_show_loading(message, progress)
@@ -659,10 +715,14 @@ func _on_waveform_toggled(enabled: bool):
 
 func _on_playback_time_changed(time_value: float):
 	current_time = time_value
+	if progress_bar:
+		progress_bar.set_current_time(current_time)
 	_update_editor_state()
 
 func _on_transport_time_scrubbed(time_value: float):
 	current_time = time_value
+	if progress_bar:
+		progress_bar.set_current_time(current_time)
 	_update_editor_state()
 
 func _place_note_at_cursor_time(lane: int):
@@ -770,6 +830,84 @@ func _move_timeline_backward():
 	
 	_update_editor_state()
 
+func _move_timeline_forward_beat():
+	# Move forward by exactly 1 beat
+	var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var next_tick = current_tick + resolution
+	var next_time = TempoCalculator.tick_to_time(next_tick, tempo_events, resolution)
+	
+	current_time = clamp(next_time, 0.0, song_duration)
+	
+	if playback_controller:
+		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
+	
+	_update_editor_state()
+
+func _move_timeline_backward_beat():
+	# Move backward by exactly 1 beat
+	var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var prev_tick = max(0, current_tick - resolution)
+	var prev_time = TempoCalculator.tick_to_time(prev_tick, tempo_events, resolution)
+	
+	current_time = max(0.0, prev_time)
+	
+	if playback_controller:
+		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
+	
+	_update_editor_state()
+
+func _move_timeline_forward_measure():
+	# Move forward by 1 measure (bar)
+	# Get time signature at current position (default to 4/4)
+	var beats_per_measure = 4
+	if not time_signatures.is_empty():
+		var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+		for ts in time_signatures:
+			if ts["tick"] <= current_tick:
+				beats_per_measure = ts["numerator"]
+	
+	var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var ticks_per_measure = resolution * beats_per_measure
+	var next_tick = current_tick + ticks_per_measure
+	var next_time = TempoCalculator.tick_to_time(next_tick, tempo_events, resolution)
+	
+	current_time = clamp(next_time, 0.0, song_duration)
+	
+	if playback_controller:
+		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
+	
+	_update_editor_state()
+
+func _move_timeline_backward_measure():
+	# Move backward by 1 measure (bar)
+	# Get time signature at current position (default to 4/4)
+	var beats_per_measure = 4
+	if not time_signatures.is_empty():
+		var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+		for ts in time_signatures:
+			if ts["tick"] <= current_tick:
+				beats_per_measure = ts["numerator"]
+	
+	var current_tick = TempoCalculator.time_to_tick(current_time, tempo_events, resolution)
+	var ticks_per_measure = resolution * beats_per_measure
+	var prev_tick = max(0, current_tick - ticks_per_measure)
+	var prev_time = TempoCalculator.tick_to_time(prev_tick, tempo_events, resolution)
+	
+	current_time = max(0.0, prev_time)
+	
+	if playback_controller:
+		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
+	
+	_update_editor_state()
+
 func _jump_to_start():
 	# Jump to the beginning of the song
 	current_time = 0.0
@@ -812,6 +950,46 @@ func _show_loading(message: String, progress: float = 0.0) -> void:
 func _hide_loading() -> void:
 	if loading_overlay:
 		loading_overlay.visible = false
+
+# Event management
+func _on_event_add_requested(time: float):
+	if event_dialog:
+		event_dialog.configure(tempo_events, resolution)
+		event_dialog.show_for_new_event(time)
+
+func _on_event_edit_requested(event_id: int):
+	var event_data = chart_document.get_event(event_id)
+	if event_data.is_empty():
+		return
+	if event_dialog:
+		event_dialog.configure(tempo_events, resolution)
+		event_dialog.show_for_edit_event(event_data)
+
+func _on_event_delete_requested(event_id: int):
+	_execute_remove_event(event_id)
+
+func _on_section_selected(_event_id: int, time: float):
+	# Jump to the section's time
+	current_time = time
+	if playback_controller:
+		playback_controller.seek(current_time)
+	if transport_controller:
+		transport_controller.set_current_time(current_time)
+	_update_editor_state()
+
+func _on_event_saved(event_data: Dictionary):
+	if event_data.has("id") and event_data.id >= 0:
+		# Editing existing event
+		var changes = {
+			"time": event_data.time,
+			"tick": event_data.tick,
+			"text": event_data.text,
+			"type": event_data.type
+		}
+		_execute_update_event(event_data.id, changes)
+	else:
+		# Adding new event
+		_execute_add_event(event_data)
 
 # Helper functions
 func _string_to_note_type(note_type_string: String) -> NoteType.Type:

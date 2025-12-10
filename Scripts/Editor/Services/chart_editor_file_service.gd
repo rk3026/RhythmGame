@@ -19,6 +19,7 @@ func load_chart(path: String, instrument: String, chart_document: ChartDocument,
 		return {}
 	_reset_for_import(chart_document, command_stack)
 	_import_chart_notes(chart_document, chart_data)
+	_import_chart_events(chart_document, chart_data)
 	if command_stack:
 		command_stack.clear()
 	
@@ -59,6 +60,12 @@ func save_chart(path: String, chart_document: ChartDocument, song_properties: Di
 	file.store_line("}")
 	file.store_line("[Events]")
 	file.store_line("{")
+	# Write events
+	var sorted_events: Array = chart_document.get_events()
+	sorted_events.sort_custom(func(a, b): return a.tick < b.tick)
+	for event_data in sorted_events:
+		var event_type = event_data.get("type", "section")
+		file.store_line("  " + str(event_data.tick) + " = E \"" + event_type + " " + event_data.text + "\"")
 	file.store_line("}")
 	var difficulty_name: String = "[" + difficulty + instrument.capitalize() + "]"
 	file.store_line(difficulty_name)
@@ -105,6 +112,39 @@ func _import_chart_notes(chart_document: ChartDocument, chart_data) -> void:
 		}
 		imported.append(note_entry)
 	chart_document.import_notes(imported)
+
+func _import_chart_events(chart_document: ChartDocument, chart_data) -> void:
+	if not chart_data.has("events"):
+		return
+	
+	var source_events: Array = chart_data.events
+	var imported: Array = []
+	
+	for raw_event in source_events:
+		# Parse event text to determine type (section vs event)
+		var event_text: String = raw_event.get("text", "")
+		var event_type: String = "section"  # default
+		var event_name: String = event_text
+		
+		# Check if it starts with "section " to determine type
+		if event_text.begins_with("section "):
+			event_type = "section"
+			event_name = event_text.substr(8)  # Remove "section " prefix
+		else:
+			event_type = "event"
+		
+		# Calculate time from tick
+		var time_seconds: float = TempoCalculator.tick_to_time(raw_event.pos, chart_data.tempo_events, chart_data.resolution)
+		
+		var event_entry: Dictionary = {
+			"tick": raw_event.pos,
+			"time": time_seconds,
+			"type": event_type,
+			"text": event_name
+		}
+		imported.append(event_entry)
+	
+	chart_document.import_events(imported)
 
 func _time_to_tick(time: float, tempo_events: Array, chart_resolution: int) -> int:
 	if tempo_events.is_empty():

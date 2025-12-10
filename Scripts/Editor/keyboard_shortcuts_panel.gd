@@ -28,8 +28,12 @@ func _populate_shortcuts():
 		
 		{"category": "TIMELINE NAVIGATION"},
 		{"key": "Space", "action": "Play/Pause"},
-		{"key": "←", "action": "Move backward (1 snap)"},
-		{"key": "→", "action": "Move forward (1 snap)"},
+		{"key": "←", "action": "Move backward (snap division)"},
+		{"key": "→", "action": "Move forward (snap division)"},
+		{"key": "Ctrl+←", "action": "Move backward (1 beat)"},
+		{"key": "Ctrl+→", "action": "Move forward (1 beat)"},
+		{"key": "Shift+←", "action": "Move backward (1 measure)"},
+		{"key": "Shift+→", "action": "Move forward (1 measure)"},
 		{"key": "Home", "action": "Jump to start"},
 		{"key": "End", "action": "Jump to end"},
 		

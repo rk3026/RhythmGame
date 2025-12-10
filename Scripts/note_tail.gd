@@ -13,6 +13,7 @@ var sustain_emit_interval: float = 0.09  # seconds between grind particles
 var sustain_effect_scale: float = 0.6
 var hit_effect_pool: Node = null
 var _input_handler: Node = null
+var is_selected: bool = false
 
 func _ready():
 	update_visuals()
@@ -23,6 +24,12 @@ func update_visuals():
 		var mat = StandardMaterial3D.new()
 		var colors = [Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.ORANGE]
 		mat.albedo_color = colors[fret] if fret < colors.size() else Color.WHITE
+		if is_selected:
+			mat.emission_enabled = true
+			mat.emission = mat.albedo_color.lerp(Color(0.2, 0.9, 1.0), 0.6)
+			mat.emission_energy_multiplier = 1.25
+		else:
+			mat.emission_enabled = false
 		# Set priority below note (1 < 2) and adjust depth draw to prevent z-fighting
 		mat.render_priority = 1
 		mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_ALWAYS
@@ -37,6 +44,10 @@ func update_visuals():
 		mesh.size = Vector2(0.1, sustain_length * SettingsManager.note_speed)
 	else:
 		mesh = null
+
+func set_selected(selected: bool):
+	is_selected = selected
+	update_visuals()
 
 func _process(_delta: float):
 	# Mark sustain start time once hit

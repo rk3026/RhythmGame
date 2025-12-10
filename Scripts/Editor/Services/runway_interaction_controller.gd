@@ -26,6 +26,12 @@ var resolution: int = 192
 var current_time: float = 0.0
 var erase_threshold: float = 0.2
 
+# Selection state
+var selected_note_ids: Array = []
+var _selection_dragging: bool = false
+var _selection_start: Vector2 = Vector2.ZERO
+var _selection_rect: ColorRect = null
+
 # Sustain dragging state
 var is_dragging_sustain: bool = false
 var sustain_drag_note_id: int = 0
@@ -43,14 +49,15 @@ func configure(params: Dictionary) -> void:
 	remove_note_callable = params.get("remove_note_callable", Callable())
 	update_note_callable = params.get("update_note_callable", Callable())
 	_setup_preview_note()
+	_setup_selection_rect()
 	if runway_viewport:
 		runway_viewport.gui_input.connect(_on_runway_input)
 		runway_viewport.mouse_entered.connect(_on_runway_mouse_entered)
 		runway_viewport.mouse_exited.connect(_on_runway_mouse_exited)
 
 func set_tool(tool_name: String) -> void:
-	current_tool = tool_name
-	if tool_name != "Note" and preview_note:
+	current_tool = _normalize_tool_name(tool_name)
+	if current_tool != "Note" and preview_note:
 		preview_note.visible = false
 
 func set_note_type(note_type: NoteType.Type) -> void:
@@ -74,6 +81,14 @@ func set_resolution(res: int) -> void:
 func set_current_time(time_value: float) -> void:
 	current_time = time_value
 
+func _normalize_tool_name(tool_name: String) -> String:
+	if tool_name == "Cursor":
+		return "Select"
+	return tool_name
+
+func _is_selection_tool() -> bool:
+	return current_tool == "Select"
+
 func snap_time_to_grid(time_value: float) -> float:
 	# Convert time to tick using tempo events
 	var tick: int = TempoCalculator.time_to_tick(time_value, tempo_events, resolution)
@@ -96,6 +111,17 @@ func _setup_preview_note() -> void:
 		if viewport:
 			viewport.add_child(preview_note)
 
+func _setup_selection_rect() -> void:
+	if not runway_viewport:
+		return
+	_selection_rect = ColorRect.new()
+	_selection_rect.color = Color(0.2, 0.8, 1.0, 0.2)
+	_selection_rect.visible = false
+	_selection_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selection_rect.size = Vector2.ZERO
+	_selection_rect.z_index = 10
+	runway_viewport.add_child(_selection_rect)
+
 func _on_runway_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -104,10 +130,14 @@ func _on_runway_input(event: InputEvent) -> void:
 					_place_note_at_mouse(event.position)
 				elif current_tool == "Erase":
 					_erase_note_at_mouse(event.position)
+				elif _is_selection_tool():
+					_start_selection(event.position, event.shift_pressed)
 			else:
 				# Released - end any sustain drag
 				if is_dragging_sustain:
 					_end_sustain_drag()
+				if _selection_dragging:
+					_end_selection(event.position, event.shift_pressed)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			if event.pressed:
 				_start_sustain_drag(event.position)
@@ -119,6 +149,8 @@ func _on_runway_input(event: InputEvent) -> void:
 			_update_sustain_drag(event.position)
 		elif current_tool == "Note":
 			_update_preview_note(event.position)
+		elif _is_selection_tool():
+			_update_selection_drag(event.position)
 
 func _on_runway_mouse_entered() -> void:
 	if preview_note and current_tool == "Note":
@@ -168,6 +200,106 @@ func _erase_note_at_mouse(mouse_pos: Vector2) -> void:
 		return
 	if remove_note_callable.is_valid():
 		remove_note_callable.call(note_id)
+		_selected_after_removal(note_id)
+
+func _clear_selection() -> void:
+	selected_note_ids.clear()
+	_sync_selection_visuals()
+
+func _selected_after_removal(note_id: int) -> void:
+	if selected_note_ids.has(note_id):
+		selected_note_ids.erase(note_id)
+		_sync_selection_visuals()
+
+func _sync_selection_visuals() -> void:
+	if note_visual_manager:
+		note_visual_manager.set_selection(selected_note_ids)
+
+func _start_selection(mouse_pos: Vector2, additive: bool) -> void:
+	_selection_dragging = true
+	_selection_start = mouse_pos
+	if not additive:
+		selected_note_ids.clear()
+	_sync_selection_visuals()
+	if _selection_rect:
+		_selection_rect.visible = true
+		_selection_rect.position = mouse_pos
+		_selection_rect.size = Vector2.ZERO
+
+func _update_selection_drag(mouse_pos: Vector2) -> void:
+	if not _selection_dragging or not _selection_rect:
+		return
+	var rect_pos = Vector2(min(_selection_start.x, mouse_pos.x), min(_selection_start.y, mouse_pos.y))
+	var rect_size = (mouse_pos - _selection_start).abs()
+	_selection_rect.position = rect_pos
+	_selection_rect.size = rect_size
+
+func _end_selection(mouse_pos: Vector2, additive: bool) -> void:
+	if not _selection_dragging:
+		return
+	_selection_dragging = false
+	if _selection_rect:
+		_selection_rect.visible = false
+		_selection_rect.size = Vector2.ZERO
+
+	var drag_distance = (_selection_start - mouse_pos).length()
+	var did_drag = drag_distance > 6.0
+	if did_drag:
+		_select_in_rect(_selection_start, mouse_pos, additive)
+	else:
+		_select_single(mouse_pos, additive)
+
+func _select_single(mouse_pos: Vector2, additive: bool) -> void:
+	var world_pos: Vector3 = _mouse_to_runway_position(mouse_pos)
+	if world_pos == Vector3.ZERO:
+		if not additive:
+			_clear_selection()
+		return
+	var lane: int = _position_to_lane(world_pos.x)
+	var time_value: float = _position_to_time(world_pos.z)
+	if not chart_document:
+		return
+	var note: Dictionary = chart_document.find_note_by_lane_and_time(lane, time_value, 0.2)
+	if note.is_empty():
+		if not additive:
+			_clear_selection()
+		return
+	var note_id: int = note.get("id", 0)
+	if note_id == 0:
+		return
+	if not additive:
+		selected_note_ids.clear()
+	elif selected_note_ids.has(note_id):
+		selected_note_ids.erase(note_id)
+		_sync_selection_visuals()
+		return
+	selected_note_ids.append(note_id)
+	_sync_selection_visuals()
+
+func _select_in_rect(start: Vector2, end: Vector2, additive: bool) -> void:
+	if not chart_document or not note_visual_manager or not camera_3d:
+		return
+	var viewport: SubViewport = runway_viewport.get_node("SubViewport") if runway_viewport else null
+	if not viewport:
+		return
+	var min_x = min(start.x, end.x)
+	var max_x = max(start.x, end.x)
+	var min_y = min(start.y, end.y)
+	var max_y = max(start.y, end.y)
+	if not additive:
+		selected_note_ids.clear()
+	for note_id in note_visual_manager.note_visuals.keys():
+		var visual = note_visual_manager.note_visuals[note_id]
+		if not visual:
+			continue
+		var world_pos: Vector3 = visual.global_transform.origin
+		if not camera_3d.has_method("unproject_position"):
+			continue
+		var screen_pos: Vector2 = camera_3d.unproject_position(world_pos)
+		if screen_pos.x >= min_x and screen_pos.x <= max_x and screen_pos.y >= min_y and screen_pos.y <= max_y:
+			if not selected_note_ids.has(note_id):
+				selected_note_ids.append(note_id)
+	_sync_selection_visuals()
 
 func _update_preview_note(mouse_pos: Vector2) -> void:
 	if not preview_note:
