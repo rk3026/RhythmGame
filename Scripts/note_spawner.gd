@@ -128,6 +128,11 @@ func _process(_delta: float):
 		# When timeline is active, always use timeline positioning (not delta movement)
 		# This ensures notes stay synced to timeline instead of accumulating delta errors
 		reposition_active_notes(timeline_controller.current_time)
+		
+		# Passive miss check for timeline-positioned notes
+		# Since note.gd's passive miss is disabled when use_timeline_positioning=true,
+		# we need to check here if notes have passed the miss window
+		_check_passive_misses(timeline_controller.current_time)
 	_cleanup_pass()
 
 func spawn_note_for_lane(lane_index: int, hit_time: float, note_type: int, is_sustain: bool, sustain_length: float, initial_z: float = runway_begin_z, relative_spawn_time: float = -1.0):
@@ -204,12 +209,12 @@ func _on_note_miss(note):
 	if gameplay and gameplay.has_method("_on_note_miss"):
 		gameplay._on_note_miss(note)
 	
-	# Remove the note from active notes (it's already hidden by was_missed flag)
-	if not note.is_sustain:
-		var removal_time = timeline_controller.current_time if timeline_controller else note.expected_hit_time
-		_release_note(note, removal_time)
-		active_notes.erase(note)
-		note_pool.return_note(note)
+	# Remove ALL missed notes from active_notes (both sustain and regular)
+	# Previously only removed non-sustain notes, causing missed sustains to interfere with hit detection
+	var removal_time = timeline_controller.current_time if timeline_controller else note.expected_hit_time
+	_release_note(note, removal_time)
+	active_notes.erase(note)
+	note_pool.return_note(note)
 
 func _spawn_hit_effect(note, sustain_end: bool):
 	# VFX are now handled by gameplay.gd's _on_note_hit via GameplayVFXManager
@@ -330,6 +335,26 @@ func reposition_active_notes(current_time: float):
 			var extra = rel - note.travel_time
 			var forward_z = min(runway_end_z, speed * extra)
 			note.position.z = forward_z
+
+func _check_passive_misses(current_time: float):
+	# Check if any unhit notes have passed beyond the miss window
+	var miss_window = SettingsManager.miss_window if is_instance_valid(SettingsManager) else 0.7
+	
+	for note in active_notes:
+		if not is_instance_valid(note):
+			continue
+		# Skip notes already processed
+		if note.was_hit or note.was_missed:
+			continue
+		# Check if note has passed beyond the miss window (player had their chance and missed it)
+		var time_past_hit_point = current_time - note.expected_hit_time
+		if time_past_hit_point > miss_window:
+			# Passive miss - note was never hit and is now too late
+			note.was_missed = true
+			note.visible = false
+			if note.tail_instance:
+				note.tail_instance.visible = false
+			note.emit_signal("note_miss", note)
 
 func _cleanup_pass():
 	for i in range(active_notes.size() - 1, -1, -1):

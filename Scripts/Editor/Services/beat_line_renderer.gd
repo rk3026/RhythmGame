@@ -79,8 +79,6 @@ func _setup_line_renderer() -> void:
 	line_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	line_mesh_instance.position = Vector3(0, 0, 0)  # Position in world space
 	viewport.add_child(line_mesh_instance)
-	print("✓ Beat line renderer initialized in SubViewport")
-	print("  - Material: no_depth_test=", line_material.no_depth_test, ", cull_mode=", line_material.cull_mode)
 
 func _update_beat_lines() -> void:
 	if not line_mesh_instance:
@@ -102,9 +100,6 @@ func _update_beat_lines() -> void:
 	_draw_lines_to_mesh(mesh, line_data)
 	line_mesh_instance.mesh = mesh
 	
-	if line_data.size() > 0:
-		print("Beat lines rendered: ", line_data.size(), " lines")
-
 func _generate_beat_line_data(start_time: float, end_time: float) -> Array:
 	var lines: Array = []
 	

@@ -158,27 +158,54 @@ func _process_lane_input(lane_index: int):
 	var good_window = SettingsManager.good_window if is_instance_valid(SettingsManager) else 0.1
 	var miss_window = SettingsManager.miss_window if is_instance_valid(SettingsManager) else 0.7
 	
-	# Find the earliest unhit note in this lane that's within the miss window
-	var target_note = _find_next_hittable_note(lane_index, current_time, miss_window, note_spawner)
+	# Find the closest unhit note in this lane within hit window first
+	var target_note = _find_closest_hittable_note(lane_index, current_time, good_window, note_spawner)
 	
 	if not target_note:
-		return # No note to hit
+		# No note within hit window - check for notes to actively miss (hit too early)
+		target_note = _find_earliest_note_ahead(lane_index, current_time, miss_window, note_spawner)
+		if target_note:
+			# Player pressed too early - active miss
+			_register_miss(target_note, true)
+		return
 	
-	# Calculate timing difference
+	# Found a hittable note within good window
 	var time_diff = current_time - target_note.expected_hit_time
 	var abs_diff = abs(time_diff)
-	
-	# Determine if this is a hit or miss based on timing
-	if abs_diff <= good_window:
-		# Within hit window - grade the hit
-		var grade = _calculate_grade(abs_diff, perfect_window, great_window, good_window)
-		_register_hit(target_note, grade, lane_index, current_time)
-	else:
-		# Outside hit window but within miss window - active miss (early)
-		_register_miss(target_note, true)
+	var grade = _calculate_grade(abs_diff, perfect_window, great_window, good_window)
+	_register_hit(target_note, grade, lane_index, current_time)
 
-## Find the next note in a lane that can be hit (earliest by expected hit time)
-func _find_next_hittable_note(lane_index: int, current_time: float, miss_window: float, note_spawner: Node) -> Node:
+## Find the closest note to current time within the hit window (for successful hits)
+func _find_closest_hittable_note(lane_index: int, current_time: float, good_window: float, note_spawner: Node) -> Node:
+	var lane_x = lanes[lane_index]
+	var closest_note: Node = null
+	var closest_diff: float = INF
+	
+	for note in note_spawner.active_notes:
+		# Skip invalid or already processed notes
+		if not is_instance_valid(note):
+			continue
+		if note.was_hit or note.was_missed:
+			continue
+		
+		# Check if note is in the correct lane
+		if abs(note.position.x - lane_x) > 0.1 or note.fret != lane_index:
+			continue
+		
+		# Check if note is within the good window (can be hit)
+		var time_diff = abs(note.expected_hit_time - current_time)
+		if time_diff > good_window:
+			continue # Note is outside hit window
+		
+		# Track the closest note to current time
+		if time_diff < closest_diff:
+			closest_diff = time_diff
+			closest_note = note
+	
+	return closest_note
+
+## Find the earliest note ahead of current time (for early misses)
+func _find_earliest_note_ahead(lane_index: int, current_time: float, miss_window: float, note_spawner: Node) -> Node:
 	var lane_x = lanes[lane_index]
 	var earliest_note: Node = null
 	var earliest_time: float = INF
@@ -194,14 +221,14 @@ func _find_next_hittable_note(lane_index: int, current_time: float, miss_window:
 		if abs(note.position.x - lane_x) > 0.1 or note.fret != lane_index:
 			continue
 		
-		# Check if note is within the miss window (can only hit notes ahead or slightly behind)
-		var time_diff = note.expected_hit_time - current_time
-		if time_diff > miss_window:
+		# Only consider notes that are ahead of current time (not yet reached)
+		var time_ahead = note.expected_hit_time - current_time
+		if time_ahead <= 0:
+			continue # Note has already passed or is at hit point
+		if time_ahead > miss_window:
 			continue # Note is too far in the future
-		if time_diff < -miss_window:
-			continue # Note is too far in the past (should have been passive missed already)
 		
-		# Track the earliest note by expected hit time
+		# Track the earliest upcoming note
 		if note.expected_hit_time < earliest_time:
 			earliest_time = note.expected_hit_time
 			earliest_note = note
@@ -231,6 +258,8 @@ func _register_miss(note: Node, _is_active: bool):
 	note.visible = false
 	if note.tail_instance:
 		note.tail_instance.visible = false
+	# Emit signal so note_spawner removes it from active_notes
+	# This is critical - without the signal emission, actively missed notes stay in the array
 	note.emit_signal("note_miss", note)
 
 ## Check if a sustain note is currently being held in this lane

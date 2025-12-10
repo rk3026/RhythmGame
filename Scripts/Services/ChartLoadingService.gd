@@ -160,6 +160,7 @@ static func chart_data_from_preloaded(preloaded_data: Dictionary) -> ChartData:
 		preloaded_data.get("resolution", 0),
 		preloaded_data.get("offset", 0.0),
 		preloaded_data.get("tempo_events", []),
+		preloaded_data.get("time_signatures", []),
 		preloaded_data.get("notes", []),
 		preloaded_data.get("music_stream", ""),
 		preloaded_data.get("audio_tracks", []),
