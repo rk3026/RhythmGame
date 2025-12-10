@@ -32,6 +32,16 @@ var _selection_dragging: bool = false
 var _selection_start: Vector2 = Vector2.ZERO
 var _selection_rect: ColorRect = null
 
+# Move-drag state
+var _move_dragging: bool = false
+var _move_start_mouse: Vector2 = Vector2.ZERO
+var _move_start_world: Vector3 = Vector3.ZERO
+var _move_snapshot: Array = []  # Array of {id, lane, time, tick}
+var _move_anchor_lane: int = 0
+var _move_anchor_time: float = 0.0
+var _move_lane_delta: int = 0
+var _move_time_delta: float = 0.0
+
 # Sustain dragging state
 var is_dragging_sustain: bool = false
 var sustain_drag_note_id: int = 0
@@ -131,11 +141,16 @@ func _on_runway_input(event: InputEvent) -> void:
 				elif current_tool == "Erase":
 					_erase_note_at_mouse(event.position)
 				elif _is_selection_tool():
-					_start_selection(event.position, event.shift_pressed)
+					if _start_move_drag(event.position):
+						pass
+					else:
+						_start_selection(event.position, event.shift_pressed)
 			else:
 				# Released - end any sustain drag
 				if is_dragging_sustain:
 					_end_sustain_drag()
+				if _move_dragging:
+					_end_move_drag(event.position)
 				if _selection_dragging:
 					_end_selection(event.position, event.shift_pressed)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
@@ -150,7 +165,10 @@ func _on_runway_input(event: InputEvent) -> void:
 		elif current_tool == "Note":
 			_update_preview_note(event.position)
 		elif _is_selection_tool():
-			_update_selection_drag(event.position)
+			if _move_dragging:
+				_update_move_drag(event.position)
+			else:
+				_update_selection_drag(event.position)
 
 func _on_runway_mouse_entered() -> void:
 	if preview_note and current_tool == "Note":
@@ -301,6 +319,101 @@ func _select_in_rect(start: Vector2, end: Vector2, additive: bool) -> void:
 				selected_note_ids.append(note_id)
 	_sync_selection_visuals()
 
+func _start_move_drag(mouse_pos: Vector2) -> bool:
+	# Begin dragging only if clicking an already-selected note
+	if selected_note_ids.is_empty():
+		return false
+	var note: Dictionary = _get_note_under_cursor(mouse_pos, 0.25)
+	if note.is_empty():
+		return false
+	var note_id: int = note.get("id", 0)
+	if note_id == 0 or not selected_note_ids.has(note_id):
+		return false
+
+	_move_dragging = true
+	_move_start_mouse = mouse_pos
+	_move_start_world = _mouse_to_runway_position(mouse_pos)
+	_move_anchor_lane = note.get("lane", 0)
+	_move_anchor_time = note.get("time", 0.0)
+	_move_lane_delta = 0
+	_move_time_delta = 0.0
+	_move_snapshot.clear()
+	for id in selected_note_ids:
+		var data := chart_document.get_note(id) if chart_document else {}
+		if data.is_empty():
+			continue
+		_move_snapshot.append({
+			"id": id,
+			"lane": data.get("lane", 0),
+			"time": data.get("time", 0.0),
+			"tick": data.get("tick", 0),
+			"sustain_length": data.get("sustain_length", 0.0)
+		})
+	return true
+
+func _update_move_drag(mouse_pos: Vector2) -> void:
+	if not _move_dragging:
+		return
+	var world_pos: Vector3 = _mouse_to_runway_position(mouse_pos)
+	if world_pos == Vector3.ZERO:
+		return
+
+	var target_lane: int = _position_to_lane(world_pos.x)
+	var target_time_raw: float = _position_to_time(world_pos.z)
+	var target_time: float = snap_time_to_grid(target_time_raw)
+	_move_lane_delta = target_lane - _move_anchor_lane
+	_move_time_delta = target_time - snap_time_to_grid(_move_anchor_time)
+
+	for entry in _move_snapshot:
+		var note_id: int = entry.get("id", 0)
+		if note_id == 0:
+			continue
+		var base_lane: int = entry.get("lane", 0)
+		var base_time: float = entry.get("time", 0.0)
+		var base_sustain: float = entry.get("sustain_length", 0.0)
+
+		var new_lane: int = clamp(base_lane + _move_lane_delta, 0, lane_positions.size() - 1)
+		var new_time: float = max(0.0, snap_time_to_grid(base_time + _move_time_delta))
+		var new_tick: int = TempoCalculator.time_to_tick(new_time, tempo_events, resolution)
+		var sustain_ticks: int = TempoCalculator.time_to_tick(new_time + base_sustain, tempo_events, resolution) - new_tick
+
+		if chart_document:
+			chart_document.update_note(note_id, {
+				"lane": new_lane,
+				"time": new_time,
+				"tick": new_tick,
+				"sustain_length_ticks": sustain_ticks
+			})
+
+func _end_move_drag(mouse_pos: Vector2) -> void:
+	if not _move_dragging:
+		return
+	_move_dragging = false
+
+	# Finalize with undoable command(s)
+	for entry in _move_snapshot:
+		var note_id: int = entry.get("id", 0)
+		if note_id == 0:
+			continue
+		var base_lane: int = entry.get("lane", 0)
+		var base_time: float = entry.get("time", 0.0)
+		var base_sustain: float = entry.get("sustain_length", 0.0)
+
+		var new_lane: int = clamp(base_lane + _move_lane_delta, 0, lane_positions.size() - 1)
+		var new_time: float = max(0.0, snap_time_to_grid(base_time + _move_time_delta))
+		var new_tick: int = TempoCalculator.time_to_tick(new_time, tempo_events, resolution)
+		var sustain_ticks: int = TempoCalculator.time_to_tick(new_time + base_sustain, tempo_events, resolution) - new_tick
+
+		if update_note_callable.is_valid():
+			update_note_callable.call(note_id, {
+				"lane": new_lane,
+				"time": new_time,
+				"tick": new_tick,
+				"sustain_length_ticks": sustain_ticks
+			})
+
+	_move_snapshot.clear()
+
 func _update_preview_note(mouse_pos: Vector2) -> void:
 	if not preview_note:
 		return
@@ -334,6 +447,16 @@ func _mouse_to_runway_position(mouse_pos: Vector2) -> Vector3:
 	var plane := Plane(Vector3.UP, 0)
 	var intersection: Variant = plane.intersects_ray(from, to - from)
 	return Vector3(intersection) if intersection else Vector3.ZERO
+
+func _get_note_under_cursor(mouse_pos: Vector2, tolerance: float = 0.2) -> Dictionary:
+	if not chart_document:
+		return {}
+	var world_pos: Vector3 = _mouse_to_runway_position(mouse_pos)
+	if world_pos == Vector3.ZERO:
+		return {}
+	var lane: int = _position_to_lane(world_pos.x)
+	var time_value: float = _position_to_time(world_pos.z)
+	return chart_document.find_note_by_lane_and_time(lane, time_value, tolerance)
 
 func _position_to_lane(x_pos: float) -> int:
 	var zone_width: float = 1.0
