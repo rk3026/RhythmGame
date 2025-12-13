@@ -50,7 +50,7 @@ func load_tracks(tracks: Array) -> bool:
 			push_error("MidiTrackManager: Invalid track info")
 			continue
 		
-		if not FileAccess.file_exists(track.file_path):
+		if not ResourceLoader.exists(track.file_path):
 			push_warning("MidiTrackManager: Track file not found: " + track.file_path)
 			continue
 		

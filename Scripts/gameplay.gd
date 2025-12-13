@@ -189,7 +189,7 @@ func _ready():
 			# Scan for any .ogg file in the folder
 			audio_path = FileSystemHelper.find_audio_file(folder)
 		
-		if audio_path and FileAccess.file_exists(audio_path):
+		if audio_path and ResourceLoader.exists(audio_path):
 			audio_player = AudioStreamPlayer.new()
 			audio_player.stream = load(audio_path)
 			audio_player.bus = "Music"  # Route to Music bus for proper volume control

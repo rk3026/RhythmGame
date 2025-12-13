@@ -24,21 +24,17 @@ func _ready():
 
 func scan_songs():
 	var tracks_dir = "res://Assets/Tracks/"
-	var dir = DirAccess.open(tracks_dir)
-	if not dir:
-		print("Tracks directory not found")
+	var subdirs = FileSystemHelper.list_subdirectories(tracks_dir)
+	
+	if subdirs.is_empty():
+		print("No song folders found in Tracks directory")
 		return
 	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if dir.current_is_dir():
-			var song_info = parse_song_info(file_name)
-			if song_info:
-				all_songs.append(song_info)
-				add_song_to_ui(song_info)
-		file_name = dir.get_next()
-	dir.list_dir_end()
+	for folder_name in subdirs:
+		var song_info = parse_song_info(folder_name)
+		if song_info:
+			all_songs.append(song_info)
+			add_song_to_ui(song_info)
 
 func parse_song_info(folder_name: String) -> Dictionary:
 	var folder_path = "res://Assets/Tracks/" + folder_name + "/"
@@ -268,8 +264,11 @@ func _on_song_selected(song_info: Dictionary):
 	
 	# Update album art
 	var album_art = song_info_panel.get_node("AlbumArt")
-	if song_info.image_path and FileAccess.file_exists(song_info.image_path):
+	if song_info.image_path:
+		print("DEBUG: Attempting to load image from: ", song_info.image_path)
+		print("DEBUG: ResourceLoader exists check: ", ResourceLoader.exists(song_info.image_path))
 		var texture = load(song_info.image_path)
+		print("DEBUG: Texture loaded: ", texture != null)
 		if texture:
 			# Replace ColorRect with TextureRect if needed
 			if album_art is ColorRect:
@@ -391,7 +390,7 @@ func _on_preview(song_info: Dictionary):
 	else:
 		# Regular single-track preview
 		var music_path = song_info.music_path
-		if music_path and FileAccess.file_exists(music_path):
+		if music_path and ResourceLoader.exists(music_path):
 			var stream = load(music_path)
 			if stream:
 				audio_player.stream = stream

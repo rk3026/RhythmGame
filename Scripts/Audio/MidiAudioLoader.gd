@@ -11,9 +11,35 @@ static func scan_audio_files(folder_path: String) -> Array:
 	var MidiTrackManagerClass = load("res://Scripts/Audio/MidiTrackManager.gd")
 	var tracks: Array = []
 	
+	# Ensure folder_path ends with /
+	if not folder_path.ends_with("/"):
+		folder_path += "/"
+	
+	# First, check for standard Clone Hero filenames (works in exported games)
+	var standard_files = [
+		"song.ogg", "guitar.ogg", "bass.ogg", "drums.ogg", "drums_1.ogg", "drums_2.ogg", 
+		"drums_3.ogg", "drums_4.ogg", "vocals.ogg", "keys.ogg", "rhythm.ogg", "crowd.ogg",
+		"song.opus", "guitar.opus", "bass.opus", "drums.opus", "vocals.opus"
+	]
+	
+	for file_name in standard_files:
+		var full_path = folder_path + file_name
+		if ResourceLoader.exists(full_path):
+			var track_type = _detect_track_type(file_name)
+			var volume = _get_default_volume(track_type)
+			var track_info = MidiTrackManagerClass.AudioTrackInfo.new(full_path, track_type, volume)
+			tracks.append(track_info)
+			print("MidiAudioLoader: Found track - %s (type: %s)" % [file_name, _track_type_to_string(track_type)])
+	
+	# If we found tracks using standard names, return them (works in exported games)
+	if not tracks.is_empty():
+		tracks.sort_custom(func(a, b): return _get_track_priority(a.track_type) < _get_track_priority(b.track_type))
+		return tracks
+	
+	# Fall back to directory scanning (only works in editor)
 	var dir = DirAccess.open(folder_path)
 	if not dir:
-		push_error("MidiAudioLoader: Failed to open folder: " + folder_path)
+		push_error("MidiAudioLoader: Failed to open folder and no standard files found: " + folder_path)
 		return tracks
 	
 	dir.list_dir_begin()
@@ -23,7 +49,7 @@ static func scan_audio_files(folder_path: String) -> Array:
 		if not dir.current_is_dir():
 			var extension = file_name.get_extension().to_lower()
 			if extension in ["ogg", "mp3", "wav", "opus"]:
-				var full_path = folder_path + "/" + file_name
+				var full_path = folder_path + file_name
 				var track_type = _detect_track_type(file_name)
 				var volume = _get_default_volume(track_type)
 				

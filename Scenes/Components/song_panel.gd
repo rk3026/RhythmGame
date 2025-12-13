@@ -73,10 +73,9 @@ func set_song_data(data: Dictionary) -> void:
 	
 	# Set album art
 	if album_art and data.has("image_path") and data.image_path:
-		if FileAccess.file_exists(data.image_path):
-			var image = Image.load_from_file(data.image_path)
-			if image:
-				var texture = ImageTexture.create_from_image(image)
+		if ResourceLoader.exists(data.image_path):
+			var texture = load(data.image_path)
+			if texture:
 				album_art.texture = texture
 	
 	# Set difficulty and stars (you can customize this based on your needs)
