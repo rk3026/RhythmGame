@@ -3,12 +3,13 @@
 A 3D rhythm game inspired by Guitar Hero, built with Godot 4.
 
 https://youtu.be/V7NG0nYTCh4
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/252ec1ed-f081-4379-b3aa-09a6302c1504" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/1cd24ddc-7ca0-49af-aa23-124f7385a853" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/25a67de2-535e-4053-992e-8bf60cdafb96" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e2b4750b-4990-43bf-aa80-4a62392b3f33" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/0a06aee7-43e8-46c9-85b2-0db91f394947" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6de3b1b7-adb3-4753-a331-10b27dc9697a" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d8d99fd1-2d77-494a-bf32-796e33b3746c" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/498251e0-922e-432f-a6a9-14ed48fd9691" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c7ac495e-a205-4545-a086-dc2083ed439b" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b7a22497-1c8d-41dc-982e-bae68347f83d" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5263e05b-3f1a-42dd-9b5e-de647fa06501" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/18b5f073-a245-41da-a943-9a24f0e223c8" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8440bf72-e4b3-4ea7-83d2-2127699f1f20" />
 
 
 ## Features
